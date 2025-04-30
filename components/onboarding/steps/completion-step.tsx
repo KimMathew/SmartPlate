@@ -1,17 +1,20 @@
-"use client"
+"use client";
 
-import { Check, ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { motion } from "framer-motion"
+import { Check, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 
 interface CompletionStepProps {
-  firstName: string
-  onContinue: () => void
+  firstName: string;
+  onContinue: () => void;
 }
 
-export default function CompletionStep({ firstName, onContinue }: CompletionStepProps) {
+export default function CompletionStep({
+  firstName,
+  onContinue,
+}: CompletionStepProps) {
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center py-12">
+    <div className="h-full flex flex-col items-center justify-center text-center py-12 rounded-xl bg-white shadow-lg">
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
@@ -21,7 +24,12 @@ export default function CompletionStep({ firstName, onContinue }: CompletionStep
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          transition={{ delay: 0.3, type: "spring", stiffness: 200, damping: 20 }}
+          transition={{
+            delay: 0.3,
+            type: "spring",
+            stiffness: 200,
+            damping: 20,
+          }}
           className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center"
         >
           <Check className="w-10 h-10 text-white" />
@@ -43,18 +51,22 @@ export default function CompletionStep({ firstName, onContinue }: CompletionStep
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
       >
-        Your profile has been created successfully. Your personalized meal plan is ready for you!
+        Your profile has been created successfully. Your personalized meal plan
+        is ready for you!
       </motion.p>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.9 }}
+      >
         <Button
           onClick={onContinue}
           className="px-8 py-6 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium text-lg shadow-lg hover:shadow-xl transition-all duration-200"
         >
           Go to Dashboard
-          <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </motion.div>
     </div>
-  )
+  );
 }

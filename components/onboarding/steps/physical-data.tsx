@@ -1,14 +1,19 @@
-"use client"
+"use client";
 
 interface PhysicalDataProps {
-  formData: any
-  onChange: (field: string, value: string | string[]) => void
-  onNext: () => void
-  onBack: () => void
-  onSkip: () => void
+  formData: any;
+  onChange: (field: string, value: string | string[]) => void;
+  onNext: () => void;
+  onBack: () => void;
+  onSkip: () => void;
 }
 
-export default function PhysicalData({ formData, onChange, onNext, onBack }: PhysicalDataProps) {
+export default function PhysicalData({
+  formData,
+  onChange,
+  onNext,
+  onBack,
+}: PhysicalDataProps) {
   const activityLevels = [
     {
       value: "sedentary",
@@ -30,27 +35,34 @@ export default function PhysicalData({ formData, onChange, onNext, onBack }: Phy
       label: "Very Active",
       description: "Hard exercise 6-7 days/week",
     },
-  ]
+  ];
 
   return (
     <div className="flex h-full w-full">
       {/* Left side - Form */}
-      <div className="w-[55%] p-10 flex flex-col">
+      <div className="w-[65%] p-10 flex flex-col h-full overflow-auto pb-10">
         {/* Progress indicator */}
-        <div className="flex gap-2 mb-12">
-          <div className="h-1 w-16 bg-emerald-500 rounded-full"></div>
-          <div className="h-1 w-16 bg-emerald-500 rounded-full"></div>
-          <div className="h-1 w-16 bg-gray-200 rounded-full"></div>
-          <div className="h-1 w-16 bg-gray-200 rounded-full"></div>
+        <div className="flex gap-2 mb-8 top-0 bg-white pt-2 justify-center">
+          <div className="h-1.5 w-20 bg-emerald-500 rounded-full"></div>
+          <div className="h-1.5 w-20 bg-emerald-500 rounded-full"></div>
+          <div className="h-1.5 w-20 bg-gray-200 rounded-full"></div>
+          <div className="h-1.5 w-20 bg-gray-200 rounded-full"></div>
         </div>
 
-        <div className="flex-1">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Tell Us About Your Body</h2>
-          <p className="text-gray-600 mb-8">This helps us calculate your calorie needs for better meal plans.</p>
+        <div className="flex-1 min-h-min ">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Tell Us About Your Body
+          </h2>
+          <p className="text-gray-600 mb-6">
+            This helps us calculate your calorie needs for better meal plans.
+          </p>
 
-          <div className="space-y-6">
+          <div className="space-y-5">
             <div className="space-y-1">
-              <label htmlFor="height" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="height"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Height
               </label>
               <input
@@ -64,7 +76,10 @@ export default function PhysicalData({ formData, onChange, onNext, onBack }: Phy
             </div>
 
             <div className="space-y-1">
-              <label htmlFor="weight" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="weight"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Weight
               </label>
               <input
@@ -77,14 +92,16 @@ export default function PhysicalData({ formData, onChange, onNext, onBack }: Phy
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Activity</label>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Activity
+              </label>
               <div className="grid grid-cols-2 gap-3">
                 {activityLevels.map((level) => (
                   <div
                     key={level.value}
                     onClick={() => onChange("activityLevel", level.value)}
-                    className={`border rounded-md p-3 cursor-pointer transition-colors
+                    className={`min-w-[180px] border rounded-md p-3 cursor-pointer transition-colors
                       ${
                         formData.activityLevel === level.value
                           ? "border-emerald-500 bg-white"
@@ -92,8 +109,12 @@ export default function PhysicalData({ formData, onChange, onNext, onBack }: Phy
                       }
                     `}
                   >
-                    <div className="font-medium text-gray-900">{level.label}</div>
-                    <div className="text-sm text-gray-500">{level.description}</div>
+                    <div className="font-medium text-gray-900">
+                      {level.label}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {level.description}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -101,8 +122,11 @@ export default function PhysicalData({ formData, onChange, onNext, onBack }: Phy
           </div>
         </div>
 
-        <div className="flex justify-between mt-8">
-          <button onClick={onBack} className="text-gray-700 hover:text-gray-900 font-medium">
+        <div className="flex justify-between mt-10 mb-0">
+          <button
+            onClick={onBack}
+            className="text-gray-700 hover:text-gray-900 font-medium"
+          >
             Back
           </button>
           <button
@@ -115,7 +139,7 @@ export default function PhysicalData({ formData, onChange, onNext, onBack }: Phy
       </div>
 
       {/* Right side - Green panel */}
-      <div className="w-[45%] bg-emerald-500"></div>
+      <div className="w-[35%] bg-emerald-500 h-full"></div>
     </div>
-  )
+  );
 }
