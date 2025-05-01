@@ -1,5 +1,5 @@
-import Link from "next/link"
-import { Facebook, Twitter, Instagram } from "lucide-react"
+import Link from "next/link";
+import { Facebook, Twitter, Instagram } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -7,7 +7,9 @@ export default function Footer() {
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
           <h3 className="text-lg font-semibold mb-4">NutriPlan</h3>
-          <p className="text-gray-600">Smart meal planning for a healthier life.</p>
+          <p className="text-gray-600">
+            Smart meal planning for a healthier life.
+          </p>
         </div>
         <div>
           <h4 className="text-lg font-semibold mb-4">Product</h4>
@@ -68,5 +70,5 @@ export default function Footer() {
         <p>&copy; {new Date().getFullYear()} NutriPlan. All rights reserved.</p>
       </div>
     </footer>
-  )
+  );
 }
