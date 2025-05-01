@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Utensils,
   Calendar,
@@ -56,25 +58,25 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex justify-center border-b pb-2 pt-1">
+        <div className="flex justify-center">
           <h1 className="text-xl font-bold text-emerald-600">SmartPlate</h1>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-2">
+            <SidebarMenu>
               {items.map((item) => {
                 const isActive = pathname === item.url;
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <a
-                        href={item.url}
-                        className={`${
-                          isActive ? "bg-emerald-100 text-emerald-800" : ""
-                        } hover:bg-emerald-100 hover:text-emerald-800`}
-                      >
+                    <SidebarMenuButton
+                      asChild
+                      className={`${
+                        isActive ? "bg-emerald-100 text-emerald-800" : ""
+                      }`}
+                    >
+                      <a href={item.url}>
                         <item.icon />
                         <span>{item.title}</span>
                       </a>
