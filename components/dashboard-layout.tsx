@@ -18,9 +18,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <SidebarTrigger />
           </div>
         </div>
-        <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6">
-          <div className="container mx-auto">
-            {children}
+        <div className="flex flex-col flex-1 h-full overflow-hidden">
+          <div className="flex-1 p-6 overflow-auto">
+            <div className="mx-auto max-w-7xl space-y-6">{children}</div>
           </div>
         </div>
       </main>
