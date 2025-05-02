@@ -1,4 +1,6 @@
 "use client";
+import { useState, useEffect } from "react";
+import ProgressIndicator from "../progress-indicator";
 
 interface PhysicalDataProps {
   formData: any;
@@ -37,18 +39,25 @@ export default function PhysicalData({
     },
   ];
 
+  // Animated progress bar state
+  const [currentStep, setCurrentStep] = useState(1);
+  const [segmentProgress, setSegmentProgress] = useState([100, 0, 0, 0]);
+
+  useEffect(() => {
+    setCurrentStep(1); // step 2
+    setSegmentProgress([100, 0, 0, 0]);
+    setTimeout(() => {
+      setSegmentProgress([100, 100, 0, 0]);
+    }, 100);
+  }, []);
+
   return (
     <div className="flex h-full w-full">
-      {/* Left side - Form */}
-      <div className="w-[65%] p-10 flex flex-col h-full overflow-auto pb-10">
+      <div className="w-[65%] p-10 flex flex-col h-full overflow-auto">
         {/* Progress indicator */}
-        <div className="flex gap-2 mb-8 top-0 bg-white pt-2 justify-center">
-          <div className="h-1.5 w-20 bg-emerald-500 rounded-full"></div>
-          <div className="h-1.5 w-20 bg-emerald-500 rounded-full"></div>
-          <div className="h-1.5 w-20 bg-gray-200 rounded-full"></div>
-          <div className="h-1.5 w-20 bg-gray-200 rounded-full"></div>
+        <div className="mb-10 pt-2 flex justify-center bg-white">
+          <ProgressIndicator currentStep={1} />
         </div>
-
         <div className="flex-1 min-h-min ">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Tell Us About Your Body

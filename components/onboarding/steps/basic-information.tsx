@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
+import ProgressIndicator from "../progress-indicator";
 
 interface BasicInformationProps {
   formData: any;
@@ -16,6 +17,17 @@ export default function BasicInformation({
   onNext,
 }: BasicInformationProps) {
   const [genderOpen, setGenderOpen] = useState(false);
+  // Animated progress bar state
+  const [currentStep, setCurrentStep] = useState(0);
+  const [segmentProgress, setSegmentProgress] = useState([0, 0, 0, 0]);
+
+  useEffect(() => {
+    setCurrentStep(0); // step 1
+    setSegmentProgress([0, 0, 0, 0]);
+    setTimeout(() => {
+      setSegmentProgress([100, 0, 0, 0]);
+    }, 100);
+  }, []);
 
   const handleGenderSelect = (gender: string) => {
     onChange("gender", gender);
@@ -24,16 +36,12 @@ export default function BasicInformation({
 
   return (
     <div className="flex h-full w-full">
-      {/* Left side - Form */}
       <div className="w-[65%] p-10 flex flex-col justify-center h-full">
         {/* Progress indicator */}
-        <div className="flex gap-2 mb-8 sticky top-0 bg-white pt-2 justify-center">
-          <div className="h-1.5 w-20 bg-emerald-500 rounded-full"></div>
-          <div className="h-1.5 w-20 bg-gray-200 rounded-full"></div>
-          <div className="h-1.5 w-20 bg-gray-200 rounded-full"></div>
-          <div className="h-1.5 w-20 bg-gray-200 rounded-full"></div>
+        <div className="mb-10 pt-2 flex justify-center bg-white">
+          <ProgressIndicator currentStep={0} />
         </div>
-
+        {/* Form content */}
         <div className="flex-1 flex flex-col justify-center min-h-min">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Let's Get to Know You!
@@ -149,7 +157,7 @@ export default function BasicInformation({
           </div>
         </div>
 
-        <div className="flex justify-end mt-8 sticky bottom-0 pt-4 bg-white">
+        <div className="flex justify-end mt-8 pt-4 bg-white">
           <button
             onClick={onNext}
             className="px-6 py-2 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors"
