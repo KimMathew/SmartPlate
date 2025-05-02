@@ -7,7 +7,7 @@ export default function Hero() {
     <section className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center pt-16 pb-16 relative">
       {/* Hero content */}
       <div className="max-w-3xl mx-auto z-10">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-[#1a2942] mb-4">
+        <h1 className="text-5xl sm:text-6xl lg:text-6xl font-bold tracking-tight text-[#1a2942] mb-4">
           Smart Meal Planning
           <br />
           <span className="text-emerald-500">Made Simple</span>
@@ -24,7 +24,6 @@ export default function Hero() {
           className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-6 text-lg rounded-md"
         >
           Get Started
-          <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </div>
 
@@ -33,7 +32,7 @@ export default function Hero() {
         {/* This is a placeholder. Replace with your actual image */}
         <div className="aspect-square rounded-full overflow-hidden border-8 border-[#2D2217] shadow-2xl shadow-black/35">
           <Image
-            src="/images/hero-img2.png"
+            src="/images/hero-img.png"
             alt="Healthy meal in a plate"
             width={600}
             height={600}
