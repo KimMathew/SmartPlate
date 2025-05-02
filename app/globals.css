@@ -83,3 +83,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+.feature-card {
+  @apply bg-white p-8 rounded-lg shadow-sm flex flex-col items-center text-center;
+}
+.feature-icon {
+  @apply w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-6;
+}
