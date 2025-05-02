@@ -3,6 +3,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Check } from "lucide-react";
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import ProgressIndicator from "../progress-indicator";
 
 interface DietaryPreferencesProps {
   formData: any;
@@ -19,6 +21,18 @@ export default function DietaryPreferences({
   onBack,
   onSkip,
 }: DietaryPreferencesProps) {
+  // Animated progress bar state
+  const [currentStep, setCurrentStep] = useState(3);
+  const [segmentProgress, setSegmentProgress] = useState([100, 100, 100, 0]);
+
+  useEffect(() => {
+    setCurrentStep(3); // step 4
+    setSegmentProgress([100, 100, 100, 0]);
+    setTimeout(() => {
+      setSegmentProgress([100, 100, 100, 100]);
+    }, 100);
+  }, []);
+
   const handleMultiSelect = (field: string, value: string) => {
     const currentValues = formData[field] as string[];
     const newValues = currentValues.includes(value)
@@ -30,13 +44,10 @@ export default function DietaryPreferences({
 
   return (
     <div className="flex h-full w-full">
-      <div className="w-[65%] p-10 flex flex-col h-full overflow-auto pb-10">
+      <div className="w-[65%] p-10 flex flex-col h-full overflow-auto">
         {/* Progress indicator */}
-        <div className="flex gap-2 mb-8 top-0 bg-white pt-2 justify-center">
-          <div className="h-1.5 w-20 bg-emerald-500 rounded-full"></div>
-          <div className="h-1.5 w-20 bg-emerald-500 rounded-full"></div>
-          <div className="h-1.5 w-20 bg-emerald-500 rounded-full"></div>
-          <div className="h-1.5 w-20 bg-emerald-500 rounded-full"></div>
+        <div className="mb-10 pt-2 flex justify-center bg-white">
+          <ProgressIndicator currentStep={3} />
         </div>
         <div className="flex-1 flex flex-col justify-center min-h-min">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
