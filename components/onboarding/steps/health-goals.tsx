@@ -25,6 +25,10 @@ export default function HealthGoals({
   // Animated progress bar state
   const [currentStep, setCurrentStep] = useState(2);
   const [segmentProgress, setSegmentProgress] = useState([100, 100, 0, 0]);
+  const [error, setError] = useState<string | null>(null);
+  const [targetWeightError, setTargetWeightError] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     setCurrentStep(2); // step 3
@@ -58,71 +62,126 @@ export default function HealthGoals({
                 {[
                   { value: "lose-weight", label: "Lose Weight", icon: "⬇️" },
                   { value: "maintain", label: "Maintain", icon: "⚖️" },
-                  { value: "gain-muscle", label: "Gain Muscle", icon: "💪" },
-                ].map((option) => (
-                  <div
-                    key={option.value}
-                    onClick={() => onChange("goalType", option.value)}
-                    className={`px-2 py-4 rounded-lg border cursor-pointer transition-all duration-200 text-center relative text-sm
-                      ${
-                        formData.goalType === option.value
-                          ? "border-emerald-500 shadow-md ring-2 ring-emerald-500/20"
-                          : "border-gray-300 hover:border-emerald-300 hover:bg-emerald-50/30"
-                      }`}
-                    style={{ minWidth: 0 }}
-                  >
-                    {formData.goalType === option.value && (
-                      <div className="absolute top-0 right-0 w-0 h-0 border-t-[28px] border-r-[28px] border-t-emerald-500 border-r-transparent">
-                        <Check className="absolute -top-[20px] right-[-20px] h-3 w-3 text-white" />
-                      </div>
-                    )}
-                    <div className="text-xl mb-1">{option.icon}</div>
+                  { value: "gain-weight", label: "Gain Weight", icon: "⬆️" },
+                ].map((option) => {
+                  const isSelected = formData.goalType === option.value;
+                  return (
                     <div
-                      className={`font-medium ${
-                        formData.goalType === option.value
-                          ? "text-emerald-700"
-                          : "text-gray-700"
-                      }`}
+                      key={option.value}
+                      onClick={() => onChange("goalType", option.value)}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          onChange("goalType", option.value);
+                        }
+                      }}
+                      className={`relative px-2 py-4 rounded-lg border cursor-pointer transition-all duration-200 text-center text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400
+                        ${
+                          isSelected
+                            ? "border-emerald-500 bg-emerald-50 scale-102 shadow-lg"
+                            : "border-gray-300 hover:border-emerald-300 hover:bg-emerald-50"
+                        }
+                      `}
+                      aria-pressed={isSelected}
+                      style={{ minWidth: 0 }}
                     >
-                      {option.label}
+                      {/* Checkmark icon */}
+                      {isSelected && (
+                        <span className="absolute top-2 right-2 text-emerald-500">
+                          <svg
+                            width="20"
+                            height="20"
+                            fill="none"
+                            viewBox="0 0 20 20"
+                          >
+                            <circle cx="10" cy="10" r="10" fill="#10B981" />
+                            <path
+                              d="M6 10.5l2.5 2.5 5-5"
+                              stroke="#fff"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </span>
+                      )}
+                      <div className="text-xl mb-1">{option.icon}</div>
+                      <div
+                        className={`font-medium ${
+                          isSelected ? "text-emerald-700" : "text-gray-700"
+                        }`}
+                      >
+                        {option.label}
+                      </div>
+                      {/* Show numeric input for weekly rate if Lose/Gain Weight is selected */}
+                      {isSelected &&
+                        (option.value === "lose-weight" ||
+                          option.value === "gain-weight") && (
+                          <div className="mt-3 flex flex-col items-center">
+                            <Label className="mb-1 text-xs text-gray-500 self-start">
+                              Optional
+                            </Label>
+                            <div className="flex items-center w-full">
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                placeholder={`e.g., 0.5`}
+                                value={formData.weeklyGoal || ""}
+                                onChange={(e) =>
+                                  onChange("weeklyGoal", e.target.value)
+                                }
+                                className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 text-gray-900 bg-white shadow-sm text-sm"
+                                aria-label="Weekly rate in kg per week"
+                              />
+                              <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">
+                                kg/week
+                              </span>
+                            </div>
+                          </div>
+                        )}
                     </div>
-                    {formData.goalType === option.value && (
-                      <div className="absolute inset-0 bg-emerald-500/5 rounded-lg pointer-events-none" />
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+              {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
             </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="weeklyGoal" className="text-gray-900 text-base">
-                Weekly Goal (Optional)
-              </Label>
-              <div className="relative">
-                <input
-                  type="text"
-                  id="weeklyGoal"
-                  placeholder="e.g., Lose 0.5kg/week"
-                  value={formData.weeklyGoal}
-                  onChange={(e) => onChange("weeklyGoal", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-gray-900 bg-white shadow-sm transition-all duration-200"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-3">
+            <div className="space-y-1">
               <Label htmlFor="targetWeight" className="text-gray-900 text-base">
-                Target Weight (Optional)
+                Target Weight (in kg)
               </Label>
+              <div className="text-xs text-gray-500">Optional</div>
               <div className="relative">
                 <input
-                  type="text"
+                  type="number"
                   id="targetWeight"
-                  placeholder="e.g., 65 kg or 143 lbs"
+                  min="0"
+                  placeholder="e.g., 65"
                   value={formData.targetWeight}
-                  onChange={(e) => onChange("targetWeight", e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    onChange("targetWeight", value);
+                    if (value === "") {
+                      setTargetWeightError(null);
+                      return;
+                    }
+                    const num = parseFloat(value);
+                    if (num < 20 || num > 300) {
+                      setTargetWeightError(
+                        "Please enter a realistic weight between 20 and 300 kg."
+                      );
+                    } else {
+                      setTargetWeightError(null);
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-gray-900 bg-white shadow-sm transition-all duration-200"
                 />
+                {targetWeightError && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {targetWeightError}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -136,7 +195,14 @@ export default function HealthGoals({
             Back
           </button>
           <button
-            onClick={onNext}
+            onClick={() => {
+              if (!formData.goalType) {
+                setError("Please select a goal type to continue.");
+                return;
+              }
+              setError(null);
+              onNext();
+            }}
             className="px-6 py-2 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors"
           >
             Next

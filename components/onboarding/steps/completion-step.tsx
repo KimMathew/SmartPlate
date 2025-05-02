@@ -14,12 +14,12 @@ export default function CompletionStep({
   onContinue,
 }: CompletionStepProps) {
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center py-12 rounded-xl bg-white shadow-lg">
+    <div className="h-full flex flex-col items-center justify-center text-center p-6 rounded-xl bg-white shadow-lg">
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 20 }}
-        className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center mb-8"
+        className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center mb-[40px]"
       >
         <motion.div
           initial={{ scale: 0 }}
@@ -37,7 +37,7 @@ export default function CompletionStep({
       </motion.div>
 
       <motion.h2
-        className="text-3xl font-bold text-gray-900 mb-4"
+        className="text-4xl font-bold text-gray-900 mb-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
@@ -46,7 +46,7 @@ export default function CompletionStep({
       </motion.h2>
 
       <motion.p
-        className="text-xl text-gray-700 mb-8 max-w-md"
+        className="text-xl text-gray-600 mb-8 max-w-[580px]"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
@@ -62,7 +62,7 @@ export default function CompletionStep({
       >
         <Button
           onClick={onContinue}
-          className="px-8 py-6 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+          className="px-8 py-6 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium text-lg transition-all duration-200"
         >
           Go to Meal Plan
         </Button>
