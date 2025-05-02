@@ -92,3 +92,24 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Hide default calendar icon in date input for consistency with custom icon */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  pointer-events: none;
+}
+input[type="date"]::-ms-input-placeholder {
+  color: transparent;
+}
+input[type="date"]::-webkit-input-placeholder {
+  color: transparent;
+}
+input[type="date"]::-moz-placeholder {
+  color: transparent;
+}
+input[type="date"]:-ms-input-placeholder {
+  color: transparent;
+}
+input[type="date"]::placeholder {
+  color: transparent;
+}

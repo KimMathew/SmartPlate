@@ -3,6 +3,12 @@
 import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import ProgressIndicator from "../progress-indicator";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 
 interface BasicInformationProps {
   formData: any;
@@ -20,6 +26,8 @@ export default function BasicInformation({
   // Animated progress bar state
   const [currentStep, setCurrentStep] = useState(0);
   const [segmentProgress, setSegmentProgress] = useState([0, 0, 0, 0]);
+  const [dobError, setDobError] = useState("");
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   useEffect(() => {
     setCurrentStep(0); // step 1
@@ -34,9 +42,35 @@ export default function BasicInformation({
     setGenderOpen(false);
   };
 
+  const handleNext = () => {
+    if (!formData.dateOfBirth || formData.dateOfBirth.trim() === "") {
+      setDobError("Date of birth is required.");
+      return;
+    }
+    setDobError("");
+    onNext();
+  };
+
+  // Helper to format date as mm/dd/yyyy
+  function formatDate(date: Date | undefined) {
+    if (!date) return "";
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const yyyy = date.getFullYear();
+    return `${mm}/${dd}/${yyyy}`;
+  }
+
+  // Parse input value to Date
+  function parseDate(value: string): Date | undefined {
+    const [mm, dd, yyyy] = value.split("/");
+    if (!mm || !dd || !yyyy) return undefined;
+    const date = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+    return isNaN(date.getTime()) ? undefined : date;
+  }
+
   return (
     <div className="flex h-full w-full">
-      <div className="w-[65%] p-10 flex flex-col justify-center h-full">
+      <div className="w-[65%] p-10 flex flex-col justify-center h-full overflow-auto">
         {/* Progress indicator */}
         <div className="mb-10 pt-2 flex justify-center bg-white">
           <ProgressIndicator currentStep={0} />
@@ -57,61 +91,94 @@ export default function BasicInformation({
                 htmlFor="dateOfBirth"
                 className="block text-sm font-medium text-gray-700"
               >
-                Date of Birth
+                Date of Birth <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <input
-                  type="text"
-                  id="dateOfBirth"
-                  placeholder="mm/dd/yyyy"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => onChange("dateOfBirth", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 pr-10"
-                  onFocus={(e) => (e.target.type = "date")}
-                  onBlur={(e) => {
-                    if (!e.target.value) e.target.type = "text";
-                  }}
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  {/* Calendar icon as per design */}
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <input
+                      type="text"
+                      id="dateOfBirth"
+                      placeholder="mm/dd/yyyy"
+                      value={formData.dateOfBirth}
+                      readOnly
+                      onClick={() => setCalendarOpen(true)}
+                      className={`w-full px-3 py-2 border ${
+                        dobError ? "border-red-500" : "border-gray-300"
+                      } rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 pr-10 cursor-pointer`}
+                      aria-invalid={dobError ? "true" : undefined}
+                      aria-describedby={dobError ? "dob-error" : undefined}
+                      autoComplete="off"
+                    />
+                  </PopoverTrigger>
+                  <div
+                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer z-10"
+                    onClick={() => setCalendarOpen((v) => !v)}
                   >
-                    <path
-                      d="M12 2.66675H3.99998C2.52722 2.66675 1.33331 3.86066 1.33331 5.33341V12.0001C1.33331 13.4728 2.52722 14.6667 3.99998 14.6667H12C13.4727 14.6667 14.6666 13.4728 14.6666 12.0001V5.33341C14.6666 3.86066 13.4727 2.66675 12 2.66675Z"
-                      stroke="#6B7280"
-                      strokeWidth="1.33333"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                    {/* Calendar icon as per design */}
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12 2.66675H3.99998C2.52722 2.66675 1.33331 3.86066 1.33331 5.33341V12.0001C1.33331 13.4728 2.52722 14.6667 3.99998 14.6667H12C13.4727 14.6667 14.6666 13.4728 14.6666 12.0001V5.33341C14.6666 3.86066 13.4727 2.66675 12 2.66675Z"
+                        stroke="#6B7280"
+                        strokeWidth="1.33333"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M5.33331 1.33337V4.00004"
+                        stroke="#6B7280"
+                        strokeWidth="1.33333"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M10.6666 1.33337V4.00004"
+                        stroke="#6B7280"
+                        strokeWidth="1.33333"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M1.33331 6.66675H14.6666"
+                        stroke="#6B7280"
+                        strokeWidth="1.33333"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <PopoverContent align="start" className="p-0 w-auto bg-white">
+                    <Calendar
+                      mode="single"
+                      selected={parseDate(formData.dateOfBirth)}
+                      onSelect={(date) => {
+                        setCalendarOpen(false);
+                        if (date) {
+                          onChange("dateOfBirth", formatDate(date));
+                          if (dobError) setDobError("");
+                        }
+                      }}
+                      initialFocus
+                      fromYear={1900}
+                      toYear={new Date().getFullYear()}
                     />
-                    <path
-                      d="M5.33331 1.33337V4.00004"
-                      stroke="#6B7280"
-                      strokeWidth="1.33333"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M10.6666 1.33337V4.00004"
-                      stroke="#6B7280"
-                      strokeWidth="1.33333"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M1.33331 6.66675H14.6666"
-                      stroke="#6B7280"
-                      strokeWidth="1.33333"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
+                  </PopoverContent>
+                </Popover>
               </div>
+              {dobError && (
+                <p
+                  id="dob-error"
+                  className="text-red-500 text-xs mt-1 animate-fade-in"
+                >
+                  {dobError}
+                </p>
+              )}
             </div>
 
             <div className="space-y-1">
@@ -159,7 +226,7 @@ export default function BasicInformation({
 
         <div className="flex justify-end mt-8 pt-4 bg-white">
           <button
-            onClick={onNext}
+            onClick={handleNext}
             className="px-6 py-2 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors"
           >
             Next
@@ -168,7 +235,7 @@ export default function BasicInformation({
       </div>
 
       {/* Right side - Green panel */}
-      <div className="w-[35%] bg-emerald-500"></div>
+      <div className="w-[35%] bg-emerald-500 h-full"></div>
     </div>
   );
 }
