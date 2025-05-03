@@ -40,7 +40,7 @@ export default function HealthGoals({
 
   return (
     <div className="flex h-full w-full">
-      <div className="w-[65%] p-10 flex flex-col h-full overflow-auto">
+      <div className="w-full md:w-[65%] p-10 flex flex-col h-full overflow-auto">
         {/* Progress indicator */}
         <div className="mb-10 pt-2 flex justify-center bg-white">
           <ProgressIndicator currentStep={2} />
@@ -117,7 +117,7 @@ export default function HealthGoals({
                       {isSelected &&
                         (option.value === "lose-weight" ||
                           option.value === "gain-weight") && (
-                          <div className="mt-3 flex flex-col items-center">
+                          <div className="mt-3 flex flex-col items-center w-full">
                             <Label className="mb-1 text-xs text-gray-500 self-start">
                               Optional
                             </Label>
@@ -134,10 +134,10 @@ export default function HealthGoals({
                                 className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 text-gray-900 bg-white shadow-sm text-sm"
                                 aria-label="Weekly rate in kg per week"
                               />
-                              <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">
-                                kg/week
-                              </span>
                             </div>
+                            <span className="text-xs text-gray-500 mt-1 self-start">
+                              kg/week
+                            </span>
                           </div>
                         )}
                     </div>
@@ -210,8 +210,14 @@ export default function HealthGoals({
         </div>
       </div>
 
-      {/* Right side - Green panel */}
-      <div className="w-[35%] bg-emerald-500 h-full"></div>
+      {/* Right side - Green panel, hidden on small screens */}
+      <div className="hidden md:flex w-[35%] bg-emerald-500 h-full items-center justify-center">
+        <img
+          src="/step-3.png"
+          alt="Health Goals Step"
+          className="max-w-[80%] max-h-[80%] object-contain"
+        />
+      </div>
     </div>
   );
 }

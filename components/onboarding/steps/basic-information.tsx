@@ -43,8 +43,38 @@ export default function BasicInformation({
   };
 
   const handleNext = () => {
+    const today = new Date();
+    let error = "";
+    const dob = parseDate(formData.dateOfBirth);
     if (!formData.dateOfBirth || formData.dateOfBirth.trim() === "") {
-      setDobError("Date of birth is required.");
+      error = "Date of birth is required.";
+    } else if (!dob) {
+      error = "Invalid date format.";
+    } else {
+      // Check if date is in the future
+      const dobNoTime = new Date(
+        dob.getFullYear(),
+        dob.getMonth(),
+        dob.getDate()
+      );
+      const todayNoTime = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+      );
+      if (dobNoTime >= todayNoTime) {
+        error = "Date must be before today.";
+      } else {
+        // Check if user is at least 13 years old
+        const minAgeDate = new Date(todayNoTime);
+        minAgeDate.setFullYear(minAgeDate.getFullYear() - 13);
+        if (dobNoTime > minAgeDate) {
+          error = "You must be at least 13 years old.";
+        }
+      }
+    }
+    if (error) {
+      setDobError(error);
       return;
     }
     setDobError("");
@@ -70,7 +100,7 @@ export default function BasicInformation({
 
   return (
     <div className="flex h-full w-full">
-      <div className="w-[65%] p-10 flex flex-col justify-center h-full overflow-auto">
+      <div className="w-full md:w-[65%] p-10 flex flex-col justify-center h-full overflow-auto">
         {/* Progress indicator */}
         <div className="mb-10 pt-2 flex justify-center bg-white">
           <ProgressIndicator currentStep={0} />
@@ -234,8 +264,14 @@ export default function BasicInformation({
         </div>
       </div>
 
-      {/* Right side - Green panel */}
-      <div className="w-[35%] bg-emerald-500 h-full"></div>
+      {/* Right side - Green panel, hidden on small screens */}
+      <div className="hidden md:flex w-[35%] bg-emerald-500 h-full items-center justify-center">
+        <img
+          src="/step-1.png"
+          alt="Onboarding graphic"
+          className="max-w-[80%] max-h-[80%] object-contain"
+        />
+      </div>
     </div>
   );
 }

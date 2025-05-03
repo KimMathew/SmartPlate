@@ -265,7 +265,7 @@ export default function DietaryPreferences({
 
   return (
     <div className="flex h-full w-full">
-      <div className="w-[65%] p-10 flex flex-col h-full overflow-auto">
+      <div className="w-full md:w-[65%] p-10 flex flex-col h-full overflow-auto">
         {/* Progress indicator */}
         <div className="mb-10 pt-2 flex justify-center bg-white">
           <ProgressIndicator currentStep={3} />
@@ -702,7 +702,14 @@ export default function DietaryPreferences({
           </button>
         </div>
       </div>
-      <div className="w-[35%] bg-emerald-500 h-full"></div>
+      {/* Right side - Green panel, hidden on small screens */}
+      <div className="hidden md:flex w-[35%] bg-emerald-500 h-full items-center justify-center">
+        <img
+          src="/step-4.png"
+          alt="Dietary Preferences Step"
+          className="max-w-[80%] max-h-[80%] object-contain"
+        />
+      </div>
     </div>
   );
 }
