@@ -52,6 +52,7 @@ export default function DietaryPreferences({
   const [dislikedIngredientsError, setDislikedIngredientsError] = useState("");
   const [mealsPerDayError, setMealsPerDayError] = useState("");
   const [mealPrepTimeLimitError, setMealPrepTimeLimitError] = useState("");
+  const [imageVisible, setImageVisible] = useState(false);
 
   const dietOptions = [
     { value: "vegan", label: "Vegan", icon: "🌱" },
@@ -77,6 +78,7 @@ export default function DietaryPreferences({
     setTimeout(() => {
       setSegmentProgress([100, 100, 100, 100]);
     }, 100);
+    setTimeout(() => setImageVisible(true), 200); // trigger fade-in
   }, []);
 
   const handleMultiSelect = (field: string, value: string) => {
@@ -706,8 +708,10 @@ export default function DietaryPreferences({
       <div className="hidden md:flex w-[35%] bg-emerald-500 h-full items-center justify-center">
         <img
           src="/step-4.png"
-          alt="Dietary Preferences Step"
-          className="max-w-[80%] max-h-[80%] object-contain"
+          alt="Illustration of a grocery basket"
+          className={`max-w-[80%] max-h-[80%] object-contain transition-opacity duration-700 fade-in-illustration${
+            imageVisible ? " opacity-100" : " opacity-0"
+          }`}
         />
       </div>
     </div>
