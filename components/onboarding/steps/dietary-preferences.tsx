@@ -706,7 +706,7 @@ export default function DietaryPreferences({
       <div className="hidden md:flex w-[35%] bg-emerald-500 h-full items-center justify-center">
         <img
           src="/step-4.png"
-          alt="Dietary Preferences Step"
+          alt="Illustration of a grocery basket"
           className="max-w-[80%] max-h-[80%] object-contain"
         />
       </div>

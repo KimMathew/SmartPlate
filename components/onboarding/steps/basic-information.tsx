@@ -268,7 +268,7 @@ export default function BasicInformation({
       <div className="hidden md:flex w-[35%] bg-emerald-500 h-full items-center justify-center">
         <img
           src="/step-1.png"
-          alt="Onboarding graphic"
+          alt="Illustration of a calendar and silhouette for personal info"
           className="max-w-[80%] max-h-[80%] object-contain"
         />
       </div>

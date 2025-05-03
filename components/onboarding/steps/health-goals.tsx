@@ -214,7 +214,7 @@ export default function HealthGoals({
       <div className="hidden md:flex w-[35%] bg-emerald-500 h-full items-center justify-center">
         <img
           src="/step-3.png"
-          alt="Health Goals Step"
+          alt="Illustration of a target"
           className="max-w-[80%] max-h-[80%] object-contain"
         />
       </div>

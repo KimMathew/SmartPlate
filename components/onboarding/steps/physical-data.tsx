@@ -259,7 +259,7 @@ export default function PhysicalData({
       <div className="hidden md:flex w-[35%] bg-emerald-500 h-full items-center justify-center">
         <img
           src="/step-2.png"
-          alt="Physical Data Step"
+          alt="Illustration of a measuring tape for body stats"
           className="max-w-[80%] max-h-[80%] object-contain"
         />
       </div>
