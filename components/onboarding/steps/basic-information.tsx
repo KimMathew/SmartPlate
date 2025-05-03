@@ -28,6 +28,7 @@ export default function BasicInformation({
   const [segmentProgress, setSegmentProgress] = useState([0, 0, 0, 0]);
   const [dobError, setDobError] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [imageVisible, setImageVisible] = useState(false);
 
   useEffect(() => {
     setCurrentStep(0); // step 1
@@ -35,6 +36,7 @@ export default function BasicInformation({
     setTimeout(() => {
       setSegmentProgress([100, 0, 0, 0]);
     }, 100);
+    setTimeout(() => setImageVisible(true), 200); // trigger fade-in
   }, []);
 
   const handleGenderSelect = (gender: string) => {
@@ -269,7 +271,9 @@ export default function BasicInformation({
         <img
           src="/step-1.png"
           alt="Illustration of a calendar and silhouette for personal info"
-          className="max-w-[80%] max-h-[80%] object-contain"
+          className={`max-w-[80%] max-h-[80%] object-contain transition-opacity duration-700 fade-in-illustration${
+            imageVisible ? " opacity-100" : " opacity-0"
+          }`}
         />
       </div>
     </div>

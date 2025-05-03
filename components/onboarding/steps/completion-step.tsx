@@ -19,7 +19,7 @@ export default function CompletionStep({
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 20 }}
-        className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center mb-[40px]"
+        className="w-32 h-32 rounded-full bg-emerald-100 flex items-center justify-center mb-[40px]"
       >
         <motion.div
           initial={{ scale: 0 }}
@@ -30,9 +30,9 @@ export default function CompletionStep({
             stiffness: 200,
             damping: 20,
           }}
-          className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center"
+          className="w-24 h-24 rounded-full bg-emerald-500 flex items-center justify-center"
         >
-          <Check className="w-10 h-10 text-white" />
+          <Check className="w-16 h-16 text-white" />
         </motion.div>
       </motion.div>
 

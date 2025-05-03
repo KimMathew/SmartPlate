@@ -29,13 +29,15 @@ export default function HealthGoals({
   const [targetWeightError, setTargetWeightError] = useState<string | null>(
     null
   );
+  const [imageVisible, setImageVisible] = useState(false);
 
   useEffect(() => {
-    setCurrentStep(2); // step 3
-    setSegmentProgress([100, 100, 0, 0]);
+    setCurrentStep(3); // step 4
+    setSegmentProgress([100, 100, 100, 0]);
     setTimeout(() => {
-      setSegmentProgress([100, 100, 100, 0]);
+      setSegmentProgress([100, 100, 100, 100]);
     }, 100);
+    setTimeout(() => setImageVisible(true), 200); // trigger fade-in
   }, []);
 
   return (
@@ -214,8 +216,10 @@ export default function HealthGoals({
       <div className="hidden md:flex w-[35%] bg-emerald-500 h-full items-center justify-center">
         <img
           src="/step-3.png"
-          alt="Illustration of a target"
-          className="max-w-[80%] max-h-[80%] object-contain"
+          alt="Illustration of health goals"
+          className={`max-w-[80%] max-h-[80%] object-contain transition-opacity duration-700 fade-in-illustration${
+            imageVisible ? " opacity-100" : " opacity-0"
+          }`}
         />
       </div>
     </div>

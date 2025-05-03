@@ -42,6 +42,7 @@ export default function PhysicalData({
   // Animated progress bar state
   const [currentStep, setCurrentStep] = useState(1);
   const [segmentProgress, setSegmentProgress] = useState([100, 0, 0, 0]);
+  const [imageVisible, setImageVisible] = useState(false);
 
   useEffect(() => {
     setCurrentStep(1); // step 2
@@ -49,6 +50,7 @@ export default function PhysicalData({
     setTimeout(() => {
       setSegmentProgress([100, 100, 0, 0]);
     }, 100);
+    setTimeout(() => setImageVisible(true), 200); // trigger fade-in
   }, []);
 
   // Validation state
@@ -260,7 +262,9 @@ export default function PhysicalData({
         <img
           src="/step-2.png"
           alt="Illustration of a measuring tape for body stats"
-          className="max-w-[80%] max-h-[80%] object-contain"
+          className={`max-w-[80%] max-h-[80%] object-contain transition-opacity duration-700 fade-in-illustration${
+            imageVisible ? " opacity-100" : " opacity-0"
+          }`}
         />
       </div>
     </div>
