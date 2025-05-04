@@ -67,7 +67,7 @@ const MealLogRow: React.FC<MealLogRowProps> = ({
           <span className="font-semibold text-black text-base tracking-tight">
             {calories} kcal
           </span>
-          <span className="text-xs text-emerald-800 mt-1 whitespace-nowrap flex gap-2">
+          <span className="text-xs text-black mt-1 whitespace-nowrap flex gap-2">
             <span>C: {carbs}g</span>
             <span>P: {protein}g</span>
             <span>F: {fat}g</span>
