@@ -82,9 +82,9 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
           >
             <ChartContainer
               config={{
-                Carbs: { label: "Carbs", color: "#66CCCC" },
-                Protein: { label: "Protein", color: "#00C4B4" },
-                Fat: { label: "Fat", color: "#006666" },
+                Carbs: { label: "Carbs", color: "#34D399" }, // Emerald 400
+                Protein: { label: "Protein", color: "#10B981" }, // Emerald 500
+                Fat: { label: "Fat", color: "#059669" }, // Emerald 600
               }}
               style={{ height: 200, width: 200 }}
             >
@@ -164,11 +164,11 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
               <div className="flex items-center justify-between text-sm">
                 <span
                   className="flex items-center gap-2 font-semibold"
-                  style={{ color: "#66CCCC" }}
+                  style={{ color: "#34D399" }} // Emerald 400
                 >
                   <span
                     className="w-3 h-3 rounded-full inline-block"
-                    style={{ backgroundColor: "#66CCCC" }}
+                    style={{ backgroundColor: "#34D399" }}
                   />
                   Carbs
                 </span>
@@ -179,11 +179,11 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
               <div className="flex items-center justify-between text-sm">
                 <span
                   className="flex items-center gap-2 font-semibold"
-                  style={{ color: "#00C4B4" }}
+                  style={{ color: "#10B981" }} // Emerald 500
                 >
                   <span
                     className="w-3 h-3 rounded-full inline-block"
-                    style={{ backgroundColor: "#00C4B4" }}
+                    style={{ backgroundColor: "#10B981" }}
                   />
                   Protein
                 </span>
@@ -194,11 +194,11 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
               <div className="flex items-center justify-between text-sm">
                 <span
                   className="flex items-center gap-2 font-semibold"
-                  style={{ color: "#006666" }}
+                  style={{ color: "#059669" }} // Emerald 600
                 >
                   <span
                     className="w-3 h-3 rounded-full inline-block"
-                    style={{ backgroundColor: "#006666" }}
+                    style={{ backgroundColor: "#059669" }}
                   />
                   Fat
                 </span>
@@ -224,9 +224,9 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
               config={{
                 consumed: {
                   label: "Calories Consumed",
-                  color: "#4DA8A8",
+                  color: "#10B981", // Emerald 500
                 },
-                goal: { label: "Calorie Goal", color: "#B2DFDB" },
+                goal: { label: "Calorie Goal", color: "#A7F3D0" }, // Emerald 200
               }}
             >
               <ResponsiveContainer width="100%" height={220}>
@@ -242,13 +242,13 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
                   <YAxis hide domain={[0, 2400]} />
                   <Bar
                     dataKey="goal"
-                    fill="#B2DFDB"
+                    fill="#A7F3D0" // Emerald 200
                     radius={[4, 4, 0, 0]}
                     barSize={18}
                   />
                   <Bar
                     dataKey="consumed"
-                    fill="#4DA8A8"
+                    fill="#10B981" // Emerald 500
                     radius={[4, 4, 0, 0]}
                     barSize={18}
                   />
@@ -275,7 +275,7 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
               <div className="flex items-center gap-2">
                 <span
                   className="inline-block w-4 h-3 rounded-sm"
-                  style={{ background: "#4DA8A8" }} // Muted teal
+                  style={{ background: "#10B981" }} // Emerald 500
                 ></span>
                 <span className="text-sm text-gray-700 font-medium">
                   Calories Consumed
@@ -284,7 +284,7 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
               <div className="flex items-center gap-2">
                 <span
                   className="inline-block w-4 h-3 rounded-sm"
-                  style={{ background: "#B2DFDB" }} // Light teal
+                  style={{ background: "#A7F3D0" }} // Emerald 200
                 ></span>
                 <span className="text-sm text-gray-700 font-medium">
                   Calorie Goal

@@ -3,40 +3,41 @@
 import React, { useState } from "react";
 import NutritionSummaryCard from "@/components/NutritionSummaryCard";
 import NutritionVisualizationCard from "@/components/NutritionVisualizationCard";
+import MealLogCard from "@/components/MealLogCard";
 
 // TODO: Replace this with data from the backend/database
 const nutritionData = {
   calories: {
     consumed: 1450,
     goal: 2000,
-    color: "#4DA8A8", // Muted Teal for Calories
+    color: "#10B981", // Emerald 500 for Calories
   },
   macronutrients: {
-    carbs: { consumed: 180, goal: 250, color: "#66CCCC" }, // Light Teal
-    protein: { consumed: 125, goal: 150, color: "#00C4B4" }, // Primary Teal
-    fat: { consumed: 45, goal: 60, color: "#006666" }, // Dark Teal
+    carbs: { consumed: 180, goal: 250, color: "#34D399" }, // Emerald 400
+    protein: { consumed: 125, goal: 150, color: "#10B981" }, // Emerald 500
+    fat: { consumed: 45, goal: 60, color: "#059669" }, // Emerald 600
   },
   micronutrients: [
     {
       name: "Vitamin A",
       percent: 83,
-      color: "#4DA8A8", // Muted Teal for consistency
+      color: "#10B981", // Emerald 500 for consistency
     },
     {
       name: "Vitamin C",
       percent: 94,
-      color: "#4DA8A8", // Muted Teal for consistency
+      color: "#10B981", // Emerald 500 for consistency
     },
     {
       name: "Vitamin D",
       percent: 25,
-      color: "#4DA8A8", // Muted Teal for consistency
+      color: "#10B981", // Emerald 500 for consistency
     },
   ],
   macronutrientSplit: [
-    { name: "Carbs", percent: 51, color: "#66CCCC" },
-    { name: "Protein", percent: 36, color: "#00C4B4" },
-    { name: "Fat", percent: 13, color: "#006666" },
+    { name: "Carbs", percent: 51, color: "#34D399" }, // Emerald 400
+    { name: "Protein", percent: 36, color: "#10B981" }, // Emerald 500
+    { name: "Fat", percent: 13, color: "#059669" }, // Emerald 600
   ],
 };
 
@@ -71,7 +72,7 @@ export default function NutritionPage() {
           Monitor your nutrition intake and progress
         </p>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
         <NutritionSummaryCard
           summaryView={summaryView}
           setSummaryView={setSummaryView}
@@ -85,6 +86,9 @@ export default function NutritionPage() {
           weeklyCalories={weeklyCalories}
           weeklyAvg={weeklyAvg}
         />
+        <div className="lg:col-span-2">
+          <MealLogCard />
+        </div>
       </div>
     </div>
   );
