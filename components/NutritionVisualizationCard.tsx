@@ -228,8 +228,9 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
                 },
                 goal: { label: "Calorie Goal", color: "#A7F3D0" }, // Emerald 200
               }}
+              style={{ height: 180, aspectRatio: "unset" }}
             >
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={weeklyCalories} barGap={2} barCategoryGap={10}>
                   <CartesianGrid stroke="#222a" vertical={false} />
                   <XAxis
