@@ -47,55 +47,63 @@ export default function BasicInformation({
   const handleNext = () => {
     const today = new Date();
     let error = "";
-    const dob = parseDate(formData.dateOfBirth);
-    if (!formData.dateOfBirth || formData.dateOfBirth.trim() === "") {
+
+    // Check if dateOfBirth is defined and not empty
+    const dobValue = formData.dateOfBirth ? formData.dateOfBirth.trim() : "";
+
+    if (!dobValue) {
       error = "Date of birth is required.";
-    } else if (!dob) {
-      error = "Invalid date format.";
     } else {
-      // Check if date is in the future
-      const dobNoTime = new Date(
-        dob.getFullYear(),
-        dob.getMonth(),
-        dob.getDate()
-      );
-      const todayNoTime = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate()
-      );
-      if (dobNoTime >= todayNoTime) {
-        error = "Date must be before today.";
+      const dob = parseDate(dobValue);
+      if (!dob) {
+        error = "Invalid date format.";
       } else {
-        // Check if user is at least 13 years old
-        const minAgeDate = new Date(todayNoTime);
-        minAgeDate.setFullYear(minAgeDate.getFullYear() - 13);
-        if (dobNoTime > minAgeDate) {
-          error = "You must be at least 13 years old.";
+        // Check if date is in the future
+        const dobNoTime = new Date(dob.getFullYear(), dob.getMonth(), dob.getDate());
+        const todayNoTime = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+        if (dobNoTime >= todayNoTime) {
+          error = "Date must be before today.";
+        } else {
+          // Check if user is at least 13 years old
+          const minAgeDate = new Date(todayNoTime);
+          minAgeDate.setFullYear(minAgeDate.getFullYear() - 13);
+
+          if (dobNoTime > minAgeDate) {
+            error = "You must be at least 13 years old.";
+          }
         }
       }
     }
+
     if (error) {
       setDobError(error);
       return;
     }
+
     setDobError("");
     onNext();
   };
 
   // Helper to format date as mm/dd/yyyy
   function formatDate(date: Date | undefined) {
-    if (!date) return "";
+    if (!date) {
+      console.log("error on formatDate")
+      return "";
+    }
     const mm = String(date.getMonth() + 1).padStart(2, "0");
     const dd = String(date.getDate()).padStart(2, "0");
     const yyyy = date.getFullYear();
-    return `${mm}/${dd}/${yyyy}`;
+    return `${yyyy}-${mm}-${dd}`;
   }
 
   // Parse input value to Date
   function parseDate(value: string): Date | undefined {
-    const [mm, dd, yyyy] = value.split("/");
-    if (!mm || !dd || !yyyy) return undefined;
+    //if (!value || value.trim() === "") return undefined;
+
+    const [yyyy, mm, dd] = value.split("-");
+    //if (!yyyy || !mm || !dd) return undefined;
+
     const date = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
     return isNaN(date.getTime()) ? undefined : date;
   }
@@ -135,9 +143,8 @@ export default function BasicInformation({
                       value={formData.dateOfBirth}
                       readOnly
                       onClick={() => setCalendarOpen(true)}
-                      className={`w-full px-3 py-2 border ${
-                        dobError ? "border-red-500" : "border-gray-300"
-                      } rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 pr-10 cursor-pointer`}
+                      className={`w-full px-3 py-2 border ${dobError ? "border-red-500" : "border-gray-300"
+                        } rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 pr-10 cursor-pointer`}
                       aria-invalid={dobError ? "true" : undefined}
                       aria-describedby={dobError ? "dob-error" : undefined}
                       autoComplete="off"
@@ -271,9 +278,8 @@ export default function BasicInformation({
         <img
           src="/step-1.png"
           alt="Illustration of a calendar and silhouette for personal info"
-          className={`max-w-[80%] max-h-[80%] object-contain transition-opacity duration-700 fade-in-illustration${
-            imageVisible ? " opacity-100" : " opacity-0"
-          }`}
+          className={`max-w-[80%] max-h-[80%] object-contain transition-opacity duration-700 fade-in-illustration${imageVisible ? " opacity-100" : " opacity-0"
+            }`}
         />
       </div>
     </div>

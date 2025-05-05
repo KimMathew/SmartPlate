@@ -1,7 +1,8 @@
 "use client";
 
 import type React from "react";
-
+import { createClient } from "../../lib/supabase"
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
@@ -45,6 +46,9 @@ export default function SignupModal({
   const nameRegex = /^[A-Za-z\s'-]+$/;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const passwordRegex = /^.{8,}$/;
+
+  const supabase = createClient();
+  const router = useRouter();
 
   const validateFirstName = (value: string) => {
     if (!value || !nameRegex.test(value)) {
@@ -117,7 +121,7 @@ export default function SignupModal({
     }
   }, [isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitAttempted(true);
     // Validate all fields
@@ -134,28 +138,53 @@ export default function SignupModal({
       !validConfirm
     ) {
       return;
+
     }
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (data?.user) {
+      const userId = data.user.id;
+      console.log("userId", userId);
+      const { error: insertError } = await supabase.from("Users").insert([
+        {
+          id: userId,
+          email: email,
+          first_name: firstName,
+          last_name: lastName, // assuming you collect this in your form
+          // generate your own custom ID here if you're not using Supabase's UID
+        },
+      ]);
+
+      if (insertError) {
+        console.error("Failed to insert user to custom table:", insertError);
+      }
+
+      onClose();
+      router.push(`/onboarding?userId=${userId}`);
+    }
+
+
     // Here you would typically handle form validation and API submission
     console.log("Account creation submitted");
 
     // Close the modal and redirect to onboarding
-    onClose();
-    window.location.href = "/onboarding";
+
   };
 
   if (!visible) return null;
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-200 px-4 ${
-        animate ? "opacity-100" : "opacity-0"
-      } bg-black/50`}
+      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-200 px-4 ${animate ? "opacity-100" : "opacity-0"
+        } bg-black/50`}
       onClick={onClose}
     >
       <div
-        className={`relative w-full max-w-4xl bg-white rounded-lg shadow-2xl overflow-hidden flex transition-all duration-200 mx-auto ${
-          animate ? "scale-100 opacity-100" : "scale-95 opacity-0"
-        }`}
+        className={`relative w-full max-w-4xl bg-white rounded-lg shadow-2xl overflow-hidden flex transition-all duration-200 mx-auto ${animate ? "scale-100 opacity-100" : "scale-95 opacity-0"
+          }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left side - Image with text overlay */}
@@ -209,11 +238,10 @@ export default function SignupModal({
                   type="text"
                   id="firstName"
                   placeholder="Juan"
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
-                    firstNameError && (firstNameTouched || submitAttempted)
-                      ? "border-red-400"
-                      : ""
-                  }`}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${firstNameError && (firstNameTouched || submitAttempted)
+                    ? "border-red-400"
+                    : ""
+                    }`}
                   value={firstName}
                   onChange={(e) => {
                     setFirstName(e.target.value);
@@ -240,11 +268,10 @@ export default function SignupModal({
                   type="text"
                   id="lastName"
                   placeholder="Dela Cruz"
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
-                    lastNameError && (lastNameTouched || submitAttempted)
-                      ? "border-red-400"
-                      : ""
-                  }`}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${lastNameError && (lastNameTouched || submitAttempted)
+                    ? "border-red-400"
+                    : ""
+                    }`}
                   value={lastName}
                   onChange={(e) => {
                     setLastName(e.target.value);
@@ -272,11 +299,10 @@ export default function SignupModal({
                 type="email"
                 id="email"
                 placeholder="example@gmail.com"
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
-                  emailError && (emailTouched || submitAttempted)
-                    ? "border-red-400"
-                    : ""
-                }`}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${emailError && (emailTouched || submitAttempted)
+                  ? "border-red-400"
+                  : ""
+                  }`}
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -304,11 +330,10 @@ export default function SignupModal({
                   type={showPassword ? "text" : "password"}
                   id="password"
                   placeholder="••••••••"
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
-                    passwordError && (passwordTouched || submitAttempted)
-                      ? "border-red-400"
-                      : ""
-                  }`}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${passwordError && (passwordTouched || submitAttempted)
+                    ? "border-red-400"
+                    : ""
+                    }`}
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
@@ -344,12 +369,11 @@ export default function SignupModal({
                   type={showConfirmPassword ? "text" : "password"}
                   id="confirmPassword"
                   placeholder="••••••••"
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
-                    confirmPasswordError &&
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${confirmPasswordError &&
                     (confirmPasswordTouched || submitAttempted)
-                      ? "border-red-400"
-                      : ""
-                  }`}
+                    ? "border-red-400"
+                    : ""
+                    }`}
                   value={confirmPassword}
                   onChange={(e) => {
                     setConfirmPassword(e.target.value);

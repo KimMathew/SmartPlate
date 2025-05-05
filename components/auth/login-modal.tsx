@@ -1,5 +1,5 @@
 "use client";
-
+import { createClient } from "../../lib/supabase"
 import { useState, useEffect } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
@@ -18,6 +18,10 @@ export default function LoginModal({
   const [showPassword, setShowPassword] = useState(false);
   const [visible, setVisible] = useState(isOpen);
   const [animate, setAnimate] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -30,6 +34,46 @@ export default function LoginModal({
     }
   }, [isOpen]);
 
+  const supabase = createClient();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(false);
+
+    // Use Supabase authentication to log the user in
+
+    if (!email || !password) {
+      setError("Please enter email and password.");
+      setLoading(false);
+      return;
+    }
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
+
+    if (error) {
+      setError(`Login failed: ${error.message}`);
+      setLoading(false);
+      return;
+    }
+
+    if (error) {
+      setError("Invalid Credentials, Please try again.");
+      setLoading(false);
+      return;
+    }
+    const user = data.user;
+    if (!user) {
+      setError("Authentication Failed.");
+      setLoading(false);
+      return;
+    }
+
+    window.location.href = "/meal-plans";
+  }
+
   if (!visible) return null;
 
   return (
@@ -38,9 +82,8 @@ export default function LoginModal({
       onClick={onClose}
     >
       <div
-        className={`relative w-full max-w-4xl bg-white rounded-lg shadow-2xl overflow-hidden flex transition-all duration-200 mx-auto ${
-          animate ? "scale-100 opacity-100" : "scale-95 opacity-0"
-        }`}
+        className={`relative w-full max-w-4xl bg-white rounded-lg shadow-2xl overflow-hidden flex transition-all duration-200 mx-auto ${animate ? "scale-100 opacity-100" : "scale-95 opacity-0"
+          }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left side - Image with text overlay */}
@@ -80,7 +123,7 @@ export default function LoginModal({
           <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
             <h3 className="text-2xl font-bold text-gray-900 mb-8">Login</h3>
 
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <label
                   htmlFor="email"
@@ -93,6 +136,8 @@ export default function LoginModal({
                   id="email"
                   placeholder="example@gmail.com"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
 
@@ -109,6 +154,8 @@ export default function LoginModal({
                     id="password"
                     placeholder="••••••••"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
                   />
                   <button
                     type="button"
@@ -122,6 +169,7 @@ export default function LoginModal({
 
               <button
                 type="submit"
+                disabled={loading}
                 className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-md transition-colors"
               >
                 Login

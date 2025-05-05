@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import OnboardingLayout from "@/components/onboarding/onboarding-layout";
 import BasicInformation from "@/components/onboarding/steps/basic-information";
@@ -8,11 +8,16 @@ import PhysicalData from "@/components/onboarding/steps/physical-data";
 import HealthGoals from "@/components/onboarding/steps/health-goals";
 import DietaryPreferences from "@/components/onboarding/steps/dietary-preferences";
 import CompletionStep from "@/components/onboarding/steps/completion-step";
+import { createClient } from "@/lib/supabase"
+import { useSearchParams } from 'next/navigation';
 
 type OnboardingStep = 1 | 2 | 3 | 4 | 5;
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const supabase = createClient();
+  const searchParams = useSearchParams();
+  const userId = searchParams.get('userId');
   const [formData, setFormData] = useState({
     // Basic Information
     dateOfBirth: "",
@@ -43,6 +48,7 @@ export default function OnboardingPage() {
   });
 
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(1);
+
 
   const handleInputChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({
@@ -75,7 +81,45 @@ export default function OnboardingPage() {
     nextStep();
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
+
+    const { data, error } = await supabase
+      .from('Users')
+      .update({
+        'birth-date': formData.dateOfBirth,
+        'gender': formData.gender,
+        'height': formData.height,
+        'weight': formData.weight,
+        'activity_level': formData.activityLevel,
+        'goal_type': formData.goalType,
+        'target_weight': formData.targetWeight,
+        'diet_type': formData.dietType,
+        'allergens': formData.allergens,
+        'disliked_ingredients': formData.dislikedIngredients,
+        'preferred_cuisines': formData.preferredCuisines,
+        'meals_per_day': formData.mealsPerDay,
+        'prep_time_limit': formData.mealPrepTimeLimit,
+
+      })
+      .eq('id', userId)
+
+    const { data: userData, error: fetchError } = await supabase
+      .from('Users')
+      .select("*")
+      .eq('id', userId)
+      .single()
+
+    console.log("alldata: ", userData);
+
+    console.log("id: ", userId);
+    console.log("data: ", data);
+    console.log("dbay:", formData.dateOfBirth);
+    console.log("error:", error);
+
+    if (!data || error) {
+    }
+
+
     // Here you would typically send the data to your backend
     console.log("Onboarding completed with data:", formData);
     setCurrentStep(5);
