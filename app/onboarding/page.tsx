@@ -126,7 +126,7 @@ export default function OnboardingPage() {
   };
 
   const goToDashboard = () => {
-    router.push("/meal-plans");
+    router.push("/");
   };
 
   // Render different step components based on currentStep
