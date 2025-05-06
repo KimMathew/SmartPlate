@@ -16,8 +16,30 @@ type OnboardingStep = 1 | 2 | 3 | 4 | 5;
 export default function OnboardingPage() {
   const router = useRouter();
   const supabase = createClient();
-  const searchParams = useSearchParams();
-  const userId = searchParams.get('userId');
+
+  const [fetchData, setFetchData] = useState(null);
+
+  useEffect(() => {
+    // 1. Check sessionStorage for signup data
+    const storedData = sessionStorage.getItem('tempSignupData')
+
+    // 2. If no data exists, redirect back to signup
+    if (!storedData) {
+      router.push('/signup')
+      return
+    }
+
+    // 3. Parse and set the user data
+    setUserData(JSON.parse(storedData))
+  }, [router])
+
+  const [userData, setUserData] = useState<{
+    email: string
+    password: string
+    firstName: string
+    lastName: string
+  } | null>(null)
+
   const [formData, setFormData] = useState({
     // Basic Information
     dateOfBirth: "",
@@ -46,6 +68,29 @@ export default function OnboardingPage() {
     lastName: "",
     email: "",
   });
+
+  const retrieveTempSignupData = () => {
+    // Check if window is defined (client-side)
+    console.log('GETTING:', sessionStorage.getItem('tempSignupData'));
+    if (typeof window !== 'undefined') {
+      const storedData = sessionStorage.getItem('tempSignupData');
+      return storedData ? JSON.parse(storedData) : null;
+    }
+    else {
+      console.log("undefined");
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    const data = retrieveTempSignupData();
+    console.log("data: ", data);
+    if (data) {
+      setFetchData(data);
+    }
+
+    console.log(fetchData);
+  }, [])
 
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(1);
 
@@ -82,10 +127,25 @@ export default function OnboardingPage() {
   };
 
   const handleFinish = async () => {
+    const email = fetchData.email;
+    const password = fetchData.password;
+    const firstName = fetchData.firstName;
+    const lastname = fetchData.lastName;
 
+    console.log('firstname is: ', firstName);
+    console.log('lastname is: ', lastname);
+    const { data: userData, error: userError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    console.log('User id is:', userData.user.id);
     const { data, error } = await supabase
       .from('Users')
-      .update({
+      .insert({
+        'id': userData.user?.id,
+        'first_name': firstName,
+        'last_name': lastname,
+        'email': email,
         'birth-date': formData.dateOfBirth,
         'gender': formData.gender,
         'height': formData.height,
@@ -101,23 +161,16 @@ export default function OnboardingPage() {
         'prep_time_limit': formData.mealPrepTimeLimit,
 
       })
-      .eq('id', userId)
+      .eq('id', userData.user?.id)
 
-    const { data: userData, error: fetchError } = await supabase
-      .from('Users')
-      .select("*")
-      .eq('id', userId)
-      .single()
 
-    console.log("alldata: ", userData);
 
-    console.log("id: ", userId);
+
+
+
     console.log("data: ", data);
     console.log("dbay:", formData.dateOfBirth);
     console.log("error:", error);
-
-    if (!data || error) {
-    }
 
 
     // Here you would typically send the data to your backend

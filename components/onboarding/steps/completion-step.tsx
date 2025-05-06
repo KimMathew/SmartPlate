@@ -64,7 +64,7 @@ export default function CompletionStep({
           onClick={onContinue}
           className="px-8 py-6 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium text-lg transition-all duration-200"
         >
-          Go to Meal Plan
+          Finish
         </Button>
       </motion.div>
     </div>

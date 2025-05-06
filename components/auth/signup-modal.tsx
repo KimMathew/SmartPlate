@@ -50,6 +50,7 @@ export default function SignupModal({
   const supabase = createClient();
   const router = useRouter();
 
+
   const validateFirstName = (value: string) => {
     if (!value || !nameRegex.test(value)) {
       setFirstNameError("Please enter a valid name (letters only).");
@@ -93,7 +94,9 @@ export default function SignupModal({
     return true;
   };
 
+
   useEffect(() => {
+
     if (isOpen) {
       setVisible(true);
       setTimeout(() => setAnimate(true), 10);
@@ -124,54 +127,39 @@ export default function SignupModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitAttempted(true);
-    // Validate all fields
-    const validFirst = validateFirstName(firstName);
-    const validLast = validateLastName(lastName);
-    const validEmail = validateEmail(email);
-    const validPass = validatePassword(password);
-    const validConfirm = validateConfirmPassword(confirmPassword);
-    if (
-      !validFirst ||
-      !validLast ||
-      !validEmail ||
-      !validPass ||
-      !validConfirm
-    ) {
-      return;
 
+
+    const validation = {
+      firstName: validateFirstName(firstName),
+      lastName: validateLastName(lastName),
+      email: validateEmail(email),
+      password: validatePassword(password),
+    };
+
+
+
+    try {
+      const signupData = {
+        email: email.trim().toLowerCase(),
+        password,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        signupMethod: 'email',
+        userAgent: navigator.userAgent
+      };
+
+
+
+      console.log('BEFORE setting:', sessionStorage.getItem('tempSignupData'));
+      sessionStorage.setItem('tempSignupData', JSON.stringify(signupData));
+      console.log('AFTER setting:', sessionStorage.getItem('tempSignupData'));
+
+      window.location.href = '/onboarding';
+
+    } catch (err) {
+
+      console.error("Signup error:", err);
     }
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (data?.user) {
-      const userId = data.user.id;
-      console.log("userId", userId);
-      const { error: insertError } = await supabase.from("Users").insert([
-        {
-          id: userId,
-          email: email,
-          first_name: firstName,
-          last_name: lastName, // assuming you collect this in your form
-          // generate your own custom ID here if you're not using Supabase's UID
-        },
-      ]);
-
-      if (insertError) {
-        console.error("Failed to insert user to custom table:", insertError);
-      }
-
-      onClose();
-      router.push(`/onboarding?userId=${userId}`);
-    }
-
-
-    // Here you would typically handle form validation and API submission
-    console.log("Account creation submitted");
-
-    // Close the modal and redirect to onboarding
-
   };
 
   if (!visible) return null;
