@@ -6,11 +6,13 @@ import { motion } from "framer-motion";
 
 interface CompletionStepProps {
   firstName: string;
+  email: string;
   onContinue: () => void;
 }
 
 export default function CompletionStep({
   firstName,
+  email,
   onContinue,
 }: CompletionStepProps) {
   return (
@@ -37,22 +39,26 @@ export default function CompletionStep({
       </motion.div>
 
       <motion.h2
-        className="text-4xl font-bold text-gray-900 mb-4"
+        className="text-3xl font-bold text-gray-900 mb-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
       >
-        Welcome, {firstName}!
+        Welcome, {firstName}!<br />
+        Your Account is Almost Ready!
       </motion.h2>
 
       <motion.p
-        className="text-xl text-gray-600 mb-8 max-w-[580px]"
+        className="text-md text-gray-600 mb-8 max-w-[580px]"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
       >
-        Your profile has been created successfully. Your personalized meal plan
-        is ready for you!
+        Your profile and personalized meal plan have been created successfully!
+        Please confirm your email by checking your inbox (and spam folder) at
+        <span className="font-semibold text-gray-900"> {email} </span>. Click
+        the confirmation link in the email to proceed. Once confirmed, you can
+        log in manually to start using your meal plan.
       </motion.p>
 
       <motion.div
@@ -61,10 +67,13 @@ export default function CompletionStep({
         transition={{ delay: 0.9 }}
       >
         <Button
-          onClick={onContinue}
+          onClick={() => {
+            window.open("https://mail.google.com", "_blank");
+            onContinue();
+          }}
           className="px-8 py-6 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium text-lg transition-all duration-200"
         >
-          Finish
+          Open Gmail to Confirm
         </Button>
       </motion.div>
     </div>
