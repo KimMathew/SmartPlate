@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { createClient } from "../../lib/supabase"
+import { createClient } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
@@ -50,7 +50,6 @@ export default function SignupModal({
   const supabase = createClient();
   const router = useRouter();
 
-
   const validateFirstName = (value: string) => {
     if (!value || !nameRegex.test(value)) {
       setFirstNameError("Please enter a valid name (letters only).");
@@ -94,9 +93,7 @@ export default function SignupModal({
     return true;
   };
 
-
   useEffect(() => {
-
     if (isOpen) {
       setVisible(true);
       setTimeout(() => setAnimate(true), 10);
@@ -128,15 +125,24 @@ export default function SignupModal({
     e.preventDefault();
     setSubmitAttempted(true);
 
-
     const validation = {
       firstName: validateFirstName(firstName),
       lastName: validateLastName(lastName),
       email: validateEmail(email),
       password: validatePassword(password),
+      confirmPassword: validateConfirmPassword(confirmPassword),
     };
 
-
+    // Only proceed if all fields are valid
+    if (
+      !validation.firstName ||
+      !validation.lastName ||
+      !validation.email ||
+      !validation.password ||
+      !validation.confirmPassword
+    ) {
+      return;
+    }
 
     try {
       const signupData = {
@@ -144,20 +150,16 @@ export default function SignupModal({
         password,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        signupMethod: 'email',
-        userAgent: navigator.userAgent
+        signupMethod: "email",
+        userAgent: navigator.userAgent,
       };
 
+      console.log("BEFORE setting:", sessionStorage.getItem("tempSignupData"));
+      sessionStorage.setItem("tempSignupData", JSON.stringify(signupData));
+      console.log("AFTER setting:", sessionStorage.getItem("tempSignupData"));
 
-
-      console.log('BEFORE setting:', sessionStorage.getItem('tempSignupData'));
-      sessionStorage.setItem('tempSignupData', JSON.stringify(signupData));
-      console.log('AFTER setting:', sessionStorage.getItem('tempSignupData'));
-
-      window.location.href = '/onboarding';
-
+      window.location.href = "/onboarding";
     } catch (err) {
-
       console.error("Signup error:", err);
     }
   };
@@ -166,13 +168,15 @@ export default function SignupModal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-200 px-4 ${animate ? "opacity-100" : "opacity-0"
-        } bg-black/50`}
+      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-200 px-4 ${
+        animate ? "opacity-100" : "opacity-0"
+      } bg-black/50`}
       onClick={onClose}
     >
       <div
-        className={`relative w-full max-w-4xl bg-white rounded-lg shadow-2xl overflow-hidden flex transition-all duration-200 mx-auto ${animate ? "scale-100 opacity-100" : "scale-95 opacity-0"
-          }`}
+        className={`relative w-full max-w-4xl bg-white rounded-lg shadow-2xl overflow-hidden flex transition-all duration-200 mx-auto ${
+          animate ? "scale-100 opacity-100" : "scale-95 opacity-0"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left side - Image with text overlay */}
@@ -198,7 +202,7 @@ export default function SignupModal({
         </div>
 
         {/* Right side - Form */}
-        <div className="w-full md:w-7/12 p-8 min-h-[600px]">
+        <div className="w-full md:w-7/12 p-8 h-[650px] overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-emerald-600">SmartPlate</h2>
             <button
@@ -226,10 +230,11 @@ export default function SignupModal({
                   type="text"
                   id="firstName"
                   placeholder="Juan"
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${firstNameError && (firstNameTouched || submitAttempted)
-                    ? "border-red-400"
-                    : ""
-                    }`}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    firstNameError && (firstNameTouched || submitAttempted)
+                      ? "border-red-400"
+                      : ""
+                  }`}
                   value={firstName}
                   onChange={(e) => {
                     setFirstName(e.target.value);
@@ -256,10 +261,11 @@ export default function SignupModal({
                   type="text"
                   id="lastName"
                   placeholder="Dela Cruz"
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${lastNameError && (lastNameTouched || submitAttempted)
-                    ? "border-red-400"
-                    : ""
-                    }`}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    lastNameError && (lastNameTouched || submitAttempted)
+                      ? "border-red-400"
+                      : ""
+                  }`}
                   value={lastName}
                   onChange={(e) => {
                     setLastName(e.target.value);
@@ -287,10 +293,11 @@ export default function SignupModal({
                 type="email"
                 id="email"
                 placeholder="example@gmail.com"
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${emailError && (emailTouched || submitAttempted)
-                  ? "border-red-400"
-                  : ""
-                  }`}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                  emailError && (emailTouched || submitAttempted)
+                    ? "border-red-400"
+                    : ""
+                }`}
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -318,10 +325,11 @@ export default function SignupModal({
                   type={showPassword ? "text" : "password"}
                   id="password"
                   placeholder="••••••••"
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${passwordError && (passwordTouched || submitAttempted)
-                    ? "border-red-400"
-                    : ""
-                    }`}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    passwordError && (passwordTouched || submitAttempted)
+                      ? "border-red-400"
+                      : ""
+                  }`}
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
@@ -357,11 +365,12 @@ export default function SignupModal({
                   type={showConfirmPassword ? "text" : "password"}
                   id="confirmPassword"
                   placeholder="••••••••"
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${confirmPasswordError &&
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    confirmPasswordError &&
                     (confirmPasswordTouched || submitAttempted)
-                    ? "border-red-400"
-                    : ""
-                    }`}
+                      ? "border-red-400"
+                      : ""
+                  }`}
                   value={confirmPassword}
                   onChange={(e) => {
                     setConfirmPassword(e.target.value);
