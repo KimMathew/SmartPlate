@@ -72,6 +72,15 @@ export default function DietaryPreferences({
     { value: "other", label: "Other", icon: "❓" },
   ];
 
+  const cuisineOptions = [
+    { value: "italian", label: "Italian", icon: "🍝" },
+    { value: "mexican", label: "Mexican", icon: "🌮" },
+    { value: "asian", label: "Asian", icon: "🍜" },
+    { value: "indian", label: "Indian", icon: "🍛" },
+    { value: "any", label: "Any", icon: "🌍" },
+    { value: "other", label: "Other", icon: "❓" },
+  ];
+
   useEffect(() => {
     setCurrentStep(3); // step 4
     setSegmentProgress([100, 100, 100, 0]);
@@ -100,18 +109,6 @@ export default function DietaryPreferences({
       onChange("dietTypeOther", "");
     }
     setDietError("");
-  };
-
-  const handleAllergenChange = (value: string) => {
-    if (value === "other") {
-      onChange("allergens", ["other"]);
-      setOtherAllergen("");
-    } else {
-      onChange("allergens", [value]);
-      setOtherAllergen("");
-      onChange("allergenOther", "");
-    }
-    setAllergenError("");
   };
 
   const handleOtherDietInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -368,17 +365,19 @@ export default function DietaryPreferences({
               </Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {allergenOptions.map((allergen) => {
-                  const isSelected =
-                    formData.allergens.length === 1 &&
-                    formData.allergens[0] === allergen.value;
+                  const isSelected = formData.allergens.includes(
+                    allergen.value
+                  );
                   return (
                     <div
                       key={allergen.value}
-                      onClick={() => handleAllergenChange(allergen.value)}
+                      onClick={() =>
+                        handleMultiSelect("allergens", allergen.value)
+                      }
                       tabIndex={0}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
-                          handleAllergenChange(allergen.value);
+                          handleMultiSelect("allergens", allergen.value);
                         }
                       }}
                       className={`relative px-2 py-4 rounded-lg border cursor-pointer transition-all duration-200 text-center text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400
@@ -519,14 +518,7 @@ export default function DietaryPreferences({
                 Preferred Cuisines
               </Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {[
-                  { value: "italian", label: "Italian", icon: "🍝" },
-                  { value: "mexican", label: "Mexican", icon: "🌮" },
-                  { value: "asian", label: "Asian", icon: "🍜" },
-                  { value: "indian", label: "Indian", icon: "🍛" },
-                  { value: "any", label: "Any", icon: "🌍" },
-                  { value: "other", label: "Other", icon: "❓" },
-                ].map((cuisine) => {
+                {cuisineOptions.map((cuisine) => {
                   const isSelected = formData.preferredCuisines.includes(
                     cuisine.value
                   );

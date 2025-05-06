@@ -1,33 +1,22 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import LoginModal from "@/components/auth/login-modal"
-import SignupModal from "@/components/auth/signup-modal"
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
-export default function Navbar() {
-  const [loginModalOpen, setLoginModalOpen] = useState(false)
-  const [signupModalOpen, setSignupModalOpen] = useState(false)
-
-  const router = useRouter()
-
-  const openLoginModal = () => {
-    setSignupModalOpen(false)
-    setLoginModalOpen(true)
-  }
-
-  const openSignupModal = () => {
-    setLoginModalOpen(false)
-    setSignupModalOpen(true)
-  }
+export default function Navbar({
+  openLoginModal,
+  openSignupModal,
+}: {
+  openLoginModal: () => void;
+  openSignupModal: () => void;
+}) {
+  const router = useRouter();
 
   const handleSignup = (userData: any) => {
-    setSignupModalOpen(false)
     // Here you would typically store user data in context or state
-    router.push("/onboarding")
-  }
+    router.push("/onboarding");
+  };
 
   return (
     <>
@@ -38,19 +27,22 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" className="text-gray-700 hover:text-gray-900" onClick={openLoginModal}>
+            <Button
+              variant="ghost"
+              className="text-gray-700 hover:text-gray-900"
+              onClick={openLoginModal}
+            >
               Login
             </Button>
-            <Button className="bg-emerald-500 hover:bg-emerald-600 text-white" onClick={openSignupModal}>
+            <Button
+              className="bg-emerald-500 hover:bg-emerald-600 text-white"
+              onClick={openSignupModal}
+            >
               Sign Up
             </Button>
           </div>
         </div>
       </header>
-
-      <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} onSignupClick={openSignupModal} />
-
-      <SignupModal isOpen={signupModalOpen} onClose={() => setSignupModalOpen(false)} onLoginClick={openLoginModal} />
     </>
-  )
+  );
 }
