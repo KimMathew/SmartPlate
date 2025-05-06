@@ -202,7 +202,7 @@ export default function SignupModal({
         </div>
 
         {/* Right side - Form */}
-        <div className="w-full md:w-7/12 p-8 min-h-[600px]">
+        <div className="w-full md:w-7/12 p-8 h-[650px] overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-emerald-600">SmartPlate</h2>
             <button
