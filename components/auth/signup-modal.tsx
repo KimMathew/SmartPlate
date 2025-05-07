@@ -51,8 +51,11 @@ export default function SignupModal({
   const supabase = createClient();
   const router = useRouter();
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> da4154a782d8f49677c6b33cfbc3e49a5988ae35
   const validateFirstName = (value: string) => {
     if (!value || !nameRegex.test(value)) {
       setFirstNameError("Please enter a valid name (letters only).");
@@ -126,6 +129,7 @@ export default function SignupModal({
 
   const checkAuthEmailExists = async (email: string): Promise<boolean> => {
     const { data, error } = await supabase
+<<<<<<< HEAD
       .rpc('check_email_exists', { email_to_check: email });
 
     if (error) {
@@ -134,7 +138,15 @@ export default function SignupModal({
     }
     return data;
   };
+=======
+      .from("Users")
+      .select("email")
+      .eq("email", email)
+      .maybeSingle();
+>>>>>>> da4154a782d8f49677c6b33cfbc3e49a5988ae35
 
+    return !!data;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,8 +177,13 @@ export default function SignupModal({
       return;
     }
 
-
     try {
+      if (await checkEmailExists(email)) {
+        setEmailError("Email already exist, Please login.");
+        console.log("this email is already registered:", email);
+        return;
+      }
+
       const signupData = {
         email: email.trim().toLowerCase(),
         password,
@@ -180,6 +197,7 @@ export default function SignupModal({
       sessionStorage.setItem("tempSignupData", JSON.stringify(signupData));
       console.log("AFTER setting:", sessionStorage.getItem("tempSignupData"));
 
+<<<<<<< HEAD
 
       console.log('BEFORE setting:', sessionStorage.getItem('tempSignupData'));
       sessionStorage.setItem('tempSignupData', JSON.stringify(signupData));
@@ -188,6 +206,9 @@ export default function SignupModal({
 
       window.location.href = '/onboarding';
 
+=======
+      window.location.href = "/onboarding";
+>>>>>>> da4154a782d8f49677c6b33cfbc3e49a5988ae35
     } catch (err) {
       console.error("Signup error:", err);
     }
