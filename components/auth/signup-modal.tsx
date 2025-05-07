@@ -51,6 +51,7 @@ export default function SignupModal({
   const router = useRouter();
 
 
+
   const validateFirstName = (value: string) => {
     if (!value || !nameRegex.test(value)) {
       setFirstNameError("Please enter a valid name (letters only).");
@@ -124,6 +125,17 @@ export default function SignupModal({
     }
   }, [isOpen]);
 
+  const checkEmailExists = async (email: string): Promise<boolean> => {
+    const { data, error } = await supabase
+      .from('Users')
+      .select('email')
+      .eq('email', email)
+      .maybeSingle()
+
+    return !!data
+  }
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitAttempted(true);
@@ -135,6 +147,7 @@ export default function SignupModal({
       email: validateEmail(email),
       password: validatePassword(password),
     };
+
 
 
 
@@ -153,6 +166,12 @@ export default function SignupModal({
       console.log('BEFORE setting:', sessionStorage.getItem('tempSignupData'));
       sessionStorage.setItem('tempSignupData', JSON.stringify(signupData));
       console.log('AFTER setting:', sessionStorage.getItem('tempSignupData'));
+
+      if (await checkEmailExists(email)) {
+        setEmailError('Email already exist, Please login.');
+        console.log('this email is already registered:', email);
+        return;
+      }
 
       window.location.href = '/onboarding';
 
