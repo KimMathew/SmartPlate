@@ -58,7 +58,7 @@ export default function OnboardingPage() {
   const [formData, setFormData] = useState({
     // Basic Information
     dateOfBirth: "",
-    gender: "",
+    gender: null,
 
     // Physical Data
     height: "",
@@ -68,7 +68,7 @@ export default function OnboardingPage() {
     // Health Goals
     goalType: "",
     weeklyGoal: "",
-    targetWeight: "",
+    targetWeight: null,
 
     // Dietary Preferences
     dietType: "",
