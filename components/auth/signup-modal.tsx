@@ -155,6 +155,12 @@ export default function SignupModal({
     }
 
     try {
+      if (await checkEmailExists(email)) {
+        setEmailError("Email already exist, Please login.");
+        console.log("this email is already registered:", email);
+        return;
+      }
+
       const signupData = {
         email: email.trim().toLowerCase(),
         password,
@@ -167,16 +173,6 @@ export default function SignupModal({
       console.log("BEFORE setting:", sessionStorage.getItem("tempSignupData"));
       sessionStorage.setItem("tempSignupData", JSON.stringify(signupData));
       console.log("AFTER setting:", sessionStorage.getItem("tempSignupData"));
-
-      console.log("BEFORE setting:", sessionStorage.getItem("tempSignupData"));
-      sessionStorage.setItem("tempSignupData", JSON.stringify(signupData));
-      console.log("AFTER setting:", sessionStorage.getItem("tempSignupData"));
-
-      if (await checkEmailExists(email)) {
-        setEmailError("Email already exist, Please login.");
-        console.log("this email is already registered:", email);
-        return;
-      }
 
       window.location.href = "/onboarding";
     } catch (err) {
