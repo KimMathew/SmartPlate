@@ -10,6 +10,7 @@ import DietaryPreferences from "@/components/onboarding/steps/dietary-preference
 import CompletionStep from "@/components/onboarding/steps/completion-step";
 import { createClient } from "@/lib/supabase";
 import { useSearchParams } from "next/navigation";
+import Forbidden from "@/components/ui/forbidden";
 
 type OnboardingStep = 1 | 2 | 3 | 4 | 5;
 
@@ -23,14 +24,15 @@ export default function OnboardingPage() {
     firstName: string;
     lastName: string;
   } | null>(null);
+  const [forbidden, setForbidden] = useState(false);
 
   useEffect(() => {
     // 1. Check sessionStorage for signup data
     const storedData = sessionStorage.getItem("tempSignupData");
 
-    // 2. If no data exists, redirect back to signup
+    // 2. If no data exists, show forbidden
     if (!storedData) {
-      router.push("/signup");
+      setForbidden(true);
       return;
     }
 
@@ -198,6 +200,16 @@ export default function OnboardingPage() {
   const goToDashboard = () => {
     router.push("/");
   };
+
+  if (forbidden) {
+    return (
+      <Forbidden
+        message="Access Forbidden: Please sign up first to access onboarding."
+        actionHref="/"
+        actionText="Go to Signup"
+      />
+    );
+  }
 
   // Render different step components based on currentStep
   const renderStep = () => {
