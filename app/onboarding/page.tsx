@@ -150,6 +150,7 @@ export default function OnboardingPage() {
 
     console.log("firstname is: ", firstName);
     console.log("lastname is: ", lastname);
+
     const { data: userData, error: userError } = await supabase.auth.signUp({
       email,
       password,
@@ -166,23 +167,23 @@ export default function OnboardingPage() {
     const { data, error } = await supabase
       .from("Users")
       .insert({
-        id: userData.user?.id,
-        first_name: firstName,
-        last_name: lastname,
-        email: email,
+        'id': userData.user?.id,
+        'first_name': firstName,
+        'last_name': lastname,
+        'email': email,
         "birth-date": formData.dateOfBirth,
-        gender: formData.gender,
-        height: formData.height,
-        weight: formData.weight,
-        activity_level: formData.activityLevel,
-        goal_type: formData.goalType,
-        target_weight: formData.targetWeight,
-        diet_type: formData.dietType,
-        allergens: formData.allergens,
-        disliked_ingredients: formData.dislikedIngredients,
-        preferred_cuisines: formData.preferredCuisines,
-        meals_per_day: formData.mealsPerDay,
-        prep_time_limit: formData.mealPrepTimeLimit,
+        'gender': formData.gender,
+        'height': formData.height,
+        'weight': formData.weight,
+        'activity_level': formData.activityLevel,
+        'goal_type': formData.goalType,
+        'target_weight': formData.targetWeight,
+        'diet_type': formData.dietType,
+        'allergens': formData.allergens,
+        'disliked_ingredients': formData.dislikedIngredients,
+        'preferred_cuisines': formData.preferredCuisines,
+        'meals_per_day': formData.mealsPerDay,
+        'prep_time_limit': formData.mealPrepTimeLimit,
       })
       .eq("id", userData.user?.id);
 
