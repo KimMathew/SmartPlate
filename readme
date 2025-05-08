@@ -1,0 +1,1 @@
+npm install @supabase/auth-helpers-react --legacy-peer-deps

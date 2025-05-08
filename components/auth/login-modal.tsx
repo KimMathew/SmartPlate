@@ -1,5 +1,5 @@
 "use client";
-import { createClient } from "../../lib/supabase"
+import { createClient } from "../../lib/supabase";
 import { useState, useEffect } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
@@ -20,8 +20,27 @@ export default function LoginModal({
   const [animate, setAnimate] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("")
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
+  // Reset all state fields
+  const resetState = () => {
+    setEmail("");
+    setPassword("");
+    setError("");
+    setEmailError("");
+    setPasswordError("");
+    setLoading(false);
+    setShowPassword(false);
+  };
+
+  // Wrap onClose to reset state
+  const handleClose = () => {
+    resetState();
+    onClose();
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -38,32 +57,58 @@ export default function LoginModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setEmailError("");
+    setPasswordError("");
     setError("");
-    setLoading(false);
+    setLoading(true);
 
-    // Use Supabase authentication to log the user in
-
-    if (!email || !password) {
-      setError("Please enter email and password.");
+    let hasError = false;
+    if (!email) {
+      setEmailError("Please enter email.");
+      hasError = true;
+    }
+    if (!password) {
+      setPasswordError("Please enter password.");
+      hasError = true;
+    }
+    if (hasError) {
       setLoading(false);
       return;
     }
-    const { data, error } = await supabase.auth.signInWithPassword({
+
+    // Check if email exists before login
+    const { data: userData, error: userQueryError } = await supabase
+      .from("Users")
+      .select("email")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (!userData) {
+      setEmailError("Account does not exist.");
+      setLoading(false);
+      return;
+    }
+
+    const { data, error: loginError } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
     });
 
-    if (error) {
-      setError(`Login failed: ${error.message}`);
+    if (loginError) {
+      if (
+        loginError.message
+          .toLowerCase()
+          .includes("invalid login credentials") ||
+        loginError.message.toLowerCase().includes("invalid email or password")
+      ) {
+        setPasswordError("Incorrect password.");
+      } else {
+        setError(loginError.message);
+      }
       setLoading(false);
       return;
     }
 
-    if (error) {
-      setError("Invalid Credentials, Please try again.");
-      setLoading(false);
-      return;
-    }
     const user = data.user;
     if (!user) {
       setError("Authentication Failed.");
@@ -72,18 +117,19 @@ export default function LoginModal({
     }
 
     window.location.href = "/meal-plans";
-  }
+  };
 
   if (!visible) return null;
 
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-200 bg-black/50 px-4`}
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
-        className={`relative w-full max-w-4xl bg-white rounded-lg shadow-2xl overflow-hidden flex transition-all duration-200 mx-auto ${animate ? "scale-100 opacity-100" : "scale-95 opacity-0"
-          }`}
+        className={`relative w-full max-w-4xl bg-white rounded-lg shadow-2xl overflow-hidden flex transition-all duration-200 mx-auto ${
+          animate ? "scale-100 opacity-100" : "scale-95 opacity-0"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left side - Image with text overlay */}
@@ -113,7 +159,7 @@ export default function LoginModal({
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-emerald-600">SmartPlate</h2>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="text-gray-400 hover:text-gray-600"
             >
               <X size={24} />
@@ -137,8 +183,10 @@ export default function LoginModal({
                   placeholder="example@gmail.com"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   onChange={(e) => setEmail(e.target.value)}
-                  required
                 />
+                {emailError && (
+                  <p className="text-xs text-red-500 mt-1">{emailError}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -155,7 +203,6 @@ export default function LoginModal({
                     placeholder="••••••••"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     onChange={(e) => setPassword(e.target.value)}
-                    required
                   />
                   <button
                     type="button"
@@ -165,6 +212,10 @@ export default function LoginModal({
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+                {passwordError && (
+                  <p className="text-xs text-red-500 mt-1">{passwordError}</p>
+                )}
+                {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
               </div>
 
               <button
