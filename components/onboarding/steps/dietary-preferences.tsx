@@ -175,7 +175,6 @@ export default function DietaryPreferences({
       const value = dislikedIngredientInput.trim().replace(/,$/, "");
       if (value && !dislikedIngredientList.includes(value)) {
         const updated = [...dislikedIngredientList, value];
-        setDislikedIngredientList(updated);
         setDislikedIngredientInput("");
         onChange("dislikedIngredients", updated);
       }
@@ -236,14 +235,7 @@ export default function DietaryPreferences({
     } else {
       setAllergenError("");
     }
-    if (!dislikedIngredientList || dislikedIngredientList.length === 0) {
-      setDislikedIngredientsError(
-        "Please enter at least one disliked ingredient."
-      );
-      hasError = true;
-    } else {
-      setDislikedIngredientsError("");
-    }
+    setDislikedIngredientsError("");
     if (
       !formData.preferredCuisines ||
       formData.preferredCuisines.length === 0
@@ -488,7 +480,7 @@ export default function DietaryPreferences({
                 htmlFor="dislikedIngredients"
                 className="text-gray-900 text-base"
               >
-                Disliked Ingredients
+                Disliked Ingredients (if any)
               </Label>
               <div className="w-full flex flex-wrap items-center min-h-[48px] px-2 py-1 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent bg-white shadow-sm transition-all duration-200 relative">
                 {dislikedIngredientList.map((item) => (
@@ -521,11 +513,6 @@ export default function DietaryPreferences({
                   className="flex-1 min-w-[120px] px-2 py-2 border-none outline-none bg-transparent text-gray-900 text-base"
                 />
               </div>
-              {dislikedIngredientsError && (
-                <p className="text-red-500 text-xs mt-1">
-                  {dislikedIngredientsError}
-                </p>
-              )}
             </div>
 
             <div className="space-y-3">
