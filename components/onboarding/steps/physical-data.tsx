@@ -101,7 +101,7 @@ export default function PhysicalData({
           <ProgressIndicator currentStep={1} />
         </div>
         <div className="flex-1 min-h-min ">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 max-sm:text-xl">
             Tell Us About Your Body
           </h2>
           <p className="text-gray-600 mb-6">
@@ -163,7 +163,7 @@ export default function PhysicalData({
               <label className="block text-sm font-medium text-gray-700">
                 Activity <span className="text-red-500">*</span>
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
                 {activityLevels.map((level) => {
                   const isSelected = formData.activityLevel === level.value;
                   return (
