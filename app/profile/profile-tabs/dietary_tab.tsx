@@ -11,7 +11,7 @@ import {
   SelectItem
 } from "@/components/ui/select";
 import { BadgeInput } from "@/components/ui/badge-input";
-import { EditButton } from "@/components/ui/edit-button";
+import { EditButton } from "@/components/edit-button";
 
 interface DietaryPreferencesForm {
   dietType: string;
@@ -99,7 +99,7 @@ export default function DietaryPreferencesTab() {
       <div className="flex items-start justify-between w-full mb-6">
         <div>
           <div className="text-2xl font-bold text-gray-900 mb-1 max-sm:text-xl">Dietary Preferences</div>
-          <div className="text-gray-500 text-base max-sm:text-sm">Update your dietary preferences here.</div>
+          <div className="text-gray-500 text-base max-sm:text-sm">Customize your dietary preferences here.</div>
         </div>
         {!editMode && (
           <EditButton onClick={handleEdit} />

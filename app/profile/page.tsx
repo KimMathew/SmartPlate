@@ -89,11 +89,11 @@ export default function ProfilePage() {
             {/* Removed Edit Profile Button */}
           </CardContent>
         </Card>
-        <div className="w-full flex bg-[#f3f6fa] rounded-lg p-1 shadow-sm overflow-x-auto scrollbar-hide">
+        <div className="w-full flex bg-[#f3f6fa] rounded-lg p-1 shadow-sm overflow-x-auto scrollbar-hide max-sm:flex-col">
           {TABS.map((tab, i) => (
             <button
               key={tab.label}
-              className={`flex-1 flex flex-row items-center justify-center px-3 py-2 text-sm max-sm:p-1 max-sm:text-xs font-semibold rounded-md transition-colors duration-150 focus:outline-none min-w-[100px] max-w-full whitespace-normal break-words text-center ${
+              className={`flex-1 flex flex-row items-center justify-center px-3 py-2 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none min-w-[100px] max-w-full whitespace-normal break-words text-center ${
                 activeTab === i
                   ? "bg-white text-gray-900 shadow font-bold"
                   : "bg-transparent text-gray-500"
