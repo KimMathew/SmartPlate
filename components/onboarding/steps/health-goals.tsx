@@ -58,7 +58,7 @@ export default function HealthGoals({
           <div className="space-y-6">
             <div className="space-y-3">
               <Label htmlFor="goalType" className="text-gray-900 text-base">
-                Goal Type
+                Goal Type <span className="text-red-500">*</span>
               </Label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {[

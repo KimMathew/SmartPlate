@@ -175,7 +175,6 @@ export default function DietaryPreferences({
       const value = dislikedIngredientInput.trim().replace(/,$/, "");
       if (value && !dislikedIngredientList.includes(value)) {
         const updated = [...dislikedIngredientList, value];
-        setDislikedIngredientList(updated);
         setDislikedIngredientInput("");
         onChange("dislikedIngredients", updated);
       }
@@ -236,14 +235,7 @@ export default function DietaryPreferences({
     } else {
       setAllergenError("");
     }
-    if (!dislikedIngredientList || dislikedIngredientList.length === 0) {
-      setDislikedIngredientsError(
-        "Please enter at least one disliked ingredient."
-      );
-      hasError = true;
-    } else {
-      setDislikedIngredientsError("");
-    }
+    setDislikedIngredientsError("");
     if (
       !formData.preferredCuisines ||
       formData.preferredCuisines.length === 0
@@ -294,7 +286,7 @@ export default function DietaryPreferences({
           <div className="space-y-6">
             <div className="space-y-3">
               <Label htmlFor="dietType" className="text-gray-900 text-base">
-                Diet Type
+                Diet Type <span className="text-red-500">*</span>
               </Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {dietOptions.map((option) => {
@@ -376,7 +368,7 @@ export default function DietaryPreferences({
 
             <div className="space-y-3">
               <Label className="text-gray-900 text-base">
-                Allergens to Avoid
+                Allergens to Avoid <span className="text-red-500">*</span>
               </Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {allergenOptions.map((allergen) => {
@@ -488,7 +480,7 @@ export default function DietaryPreferences({
                 htmlFor="dislikedIngredients"
                 className="text-gray-900 text-base"
               >
-                Disliked Ingredients
+                Disliked Ingredients (if any)
               </Label>
               <div className="w-full flex flex-wrap items-center min-h-[48px] px-2 py-1 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent bg-white shadow-sm transition-all duration-200 relative">
                 {dislikedIngredientList.map((item) => (
@@ -521,16 +513,11 @@ export default function DietaryPreferences({
                   className="flex-1 min-w-[120px] px-2 py-2 border-none outline-none bg-transparent text-gray-900 text-base"
                 />
               </div>
-              {dislikedIngredientsError && (
-                <p className="text-red-500 text-xs mt-1">
-                  {dislikedIngredientsError}
-                </p>
-              )}
             </div>
 
             <div className="space-y-3">
               <Label className="text-gray-900 text-base">
-                Preferred Cuisines
+                Preferred Cuisines <span className="text-red-500">*</span>
               </Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {cuisineOptions.map((cuisine) => {
@@ -645,7 +632,7 @@ export default function DietaryPreferences({
                   htmlFor="mealsPerDay"
                   className="text-gray-900 text-base"
                 >
-                  Meals per Day
+                  Meals per Day <span className="text-red-500">*</span>
                 </Label>
                 <div className="relative">
                   <button
@@ -687,7 +674,7 @@ export default function DietaryPreferences({
                   htmlFor="mealPrepTimeLimit"
                   className="text-gray-900 text-base"
                 >
-                  Meal Prep Time Limit
+                  Meal Prep Time Limit <span className="text-red-500">*</span>
                 </Label>
                 <div className="relative">
                   <button

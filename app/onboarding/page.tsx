@@ -220,7 +220,7 @@ export default function OnboardingPage() {
       <Forbidden
         message="Access Forbidden: Please sign up first to access onboarding."
         actionHref="/"
-        actionText="Go to Signup"
+        actionText="Go to Landing Page"
       />
     );
   }
