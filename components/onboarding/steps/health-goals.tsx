@@ -160,7 +160,7 @@ export default function HealthGoals({
                   id="targetWeight"
                   min="0"
                   placeholder="e.g., 65"
-                  value={formData.targetWeight}
+                  value={formData.targetWeight ?? ""}
                   onChange={(e) => {
                     const value = e.target.value;
                     onChange("targetWeight", value);
