@@ -13,6 +13,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { useState } from "react";
 import { User, Apple, Target, Settings, Pencil } from "lucide-react";
 import PersonalInfoTab from "./profile-tabs/personal_info_tab";
+import DietaryPreferencesTab from "./profile-tabs/dietary_tab";
 
 const TABS = [
   { label: "Personal Info", icon: <User className="w-4 h-4 mr-2" /> },
@@ -114,6 +115,9 @@ export default function ProfilePage() {
                 handleSave={handleSave}
                 handleCancel={handleCancel}
               />
+            )}
+            {activeTab === 1 && (
+              <DietaryPreferencesTab />
             )}
             {/* ...existing code for other tabs... */}
           </CardContent>
