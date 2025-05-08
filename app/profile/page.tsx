@@ -56,10 +56,9 @@ export default function ProfilePage() {
     setEditMode(false);
   }
 
-  function handleSave(e: React.FormEvent) {
-    e.preventDefault();
+  function handleSave(updatedForm: typeof form) {
+    setForm(updatedForm);
     setEditMode(false);
-    // TODO: Save logic
   }
 
   return (
