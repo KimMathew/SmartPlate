@@ -10,6 +10,7 @@ import {
   SelectContent,
   SelectItem
 } from "@/components/ui/select";
+import { BadgeInput } from "@/components/ui/badge-input";
 
 interface DietaryPreferencesForm {
   dietType: string;
@@ -39,6 +40,10 @@ export default function DietaryPreferencesTab() {
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<DietaryPreferencesForm>(defaultForm);
   const [formBackup, setFormBackup] = useState<DietaryPreferencesForm>(defaultForm);
+  const [dietTypeDropdownOpen, setDietTypeDropdownOpen] = useState(false);
+  const [mealsPerDayDropdownOpen, setMealsPerDayDropdownOpen] = useState(false);
+  const [mealPrepTimeDropdownOpen, setMealPrepTimeDropdownOpen] = useState(false);
+  const [allergenInput, setAllergenInput] = useState("");
 
   useEffect(() => {
     // TODO: Fetch user's dietary preferences from backend and setForm
@@ -61,6 +66,31 @@ export default function DietaryPreferencesTab() {
   const handleSave = () => {
     // TODO: Save form to backend
     setEditMode(false);
+  };
+
+  const handleRemoveAllergen = (item: string) => {
+    setForm((prev) => ({
+      ...prev,
+      allergens: prev.allergens.filter((allergen) => allergen !== item),
+    }));
+  };
+
+  const handleAllergenInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAllergenInput(e.target.value);
+  };
+
+  const handleAllergenKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const newAllergen = allergenInput.trim();
+      if (newAllergen && !form.allergens.includes(newAllergen)) {
+        setForm((prev) => ({
+          ...prev,
+          allergens: [...prev.allergens, newAllergen],
+        }));
+      }
+      setAllergenInput("");
+    }
   };
 
   return (
@@ -88,27 +118,58 @@ export default function DietaryPreferencesTab() {
           <label className="block text-sm font-medium text-gray-700 mb-2">Diet Type</label>
           {editMode ? (
             <>
-              <Select value={form.dietType} onValueChange={v => handleChange("dietType", v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="vegan">Vegan</SelectItem>
-                  <SelectItem value="keto">Keto</SelectItem>
-                  <SelectItem value="mediterranean">Mediterranean</SelectItem>
-                  <SelectItem value="gluten-free">Gluten-Free</SelectItem>
-                  <SelectItem value="none">No Restrictions</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <button
+                  type="button"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-900 text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  onClick={() => setDietTypeDropdownOpen((v) => !v)}
+                  style={{ fontWeight: 400 }}
+                >
+                  <span className={form.dietType ? "text-gray-900" : "text-gray-400"}>
+                    {form.dietType === "vegan"
+                      ? "Vegan"
+                      : form.dietType === "keto"
+                      ? "Keto"
+                      : form.dietType === "mediterranean"
+                      ? "Mediterranean"
+                      : form.dietType === "gluten-free"
+                      ? "Gluten-Free"
+                      : form.dietType === "none"
+                      ? "No Restrictions"
+                      : form.dietType === "other"
+                      ? form.dietTypeOther || "Other"
+                      : "Select diet type"}
+                  </span>
+                  <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {dietTypeDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
+                    {[{ value: "vegan", label: "Vegan" }, { value: "keto", label: "Keto" }, { value: "mediterranean", label: "Mediterranean" }, { value: "gluten-free", label: "Gluten-Free" }, { value: "none", label: "No Restrictions" }, { value: "other", label: "Other" }].map(option => (
+                      <div
+                        key={option.value}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 text-sm"
+                        onClick={() => {
+                          handleChange("dietType", option.value);
+                          setDietTypeDropdownOpen(false);
+                        }}
+                      >
+                        {option.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               {form.dietType === "other" && (
-                <input
-                  className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-                  placeholder="Specify your diet"
-                  value={form.dietTypeOther}
-                  onChange={e => handleChange("dietTypeOther", e.target.value)}
-                  disabled={!editMode}
-                />
+                <div className="mt-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Specify Your Diet</label>
+                  <input
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
+                    placeholder="e.g., Paleo"
+                    value={form.dietTypeOther}
+                    onChange={e => handleChange("dietTypeOther", e.target.value)}
+                    disabled={!editMode}
+                  />
+                </div>
               )}
             </>
           ) : (
@@ -128,110 +189,136 @@ export default function DietaryPreferencesTab() {
           )}
         </div>
         {/* Allergens */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Allergens to Avoid</label>
-          {editMode ? (
-            <input
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-              placeholder="e.g., Gluten, Dairy, Nuts"
-              value={form.allergens.join(", ")}
-              onChange={e => handleChange("allergens", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
-            />
-          ) : (
-            <input
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-              value={form.allergens.join(", ")}
-              disabled
-            />
-          )}
-        </div>
+        <BadgeInput
+          label="Allergens to Avoid"
+          items={form.allergens}
+          onChange={items => handleChange("allergens", items)}
+          editMode={editMode}
+          placeholder="Type allergen and press Enter or comma"
+        />
         {/* Disliked Ingredients */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Disliked Ingredients</label>
-          {editMode ? (
-            <input
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-              placeholder="e.g., Broccoli, Mushrooms"
-              value={form.dislikedIngredients.join(", ")}
-              onChange={e => handleChange("dislikedIngredients", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
-            />
-          ) : (
-            <input
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-              value={form.dislikedIngredients.join(", ")}
-              disabled
-            />
-          )}
-        </div>
+        <BadgeInput
+          label="Disliked Ingredients"
+          items={form.dislikedIngredients}
+          onChange={items => handleChange("dislikedIngredients", items)}
+          editMode={editMode}
+          placeholder="Type ingredient and press Enter or comma"
+        />
         {/* Preferred Cuisines */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Cuisines</label>
-          {editMode ? (
-            <input
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-              placeholder="e.g., Italian, Asian, Other"
-              value={form.preferredCuisines.join(", ")}
-              onChange={e => handleChange("preferredCuisines", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
-            />
-          ) : (
-            <input
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-              value={form.preferredCuisines.join(", ")}
-              disabled
-            />
-          )}
-        </div>
-        {/* Meals per Day */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Meals per Day</label>
-          {editMode ? (
-            <Select value={form.mealsPerDay} onValueChange={v => handleChange("mealsPerDay", v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="2">2</SelectItem>
-                <SelectItem value="3">3</SelectItem>
-                <SelectItem value="4">4</SelectItem>
-                <SelectItem value="5">5</SelectItem>
-              </SelectContent>
-            </Select>
-          ) : (
-            <input
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-              value={form.mealsPerDay}
-              disabled
-            />
-          )}
-        </div>
-        {/* Meal Prep Time Limit */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Meal Prep Time Limit</label>
-          {editMode ? (
-            <Select value={form.mealPrepTimeLimit} onValueChange={v => handleChange("mealPrepTimeLimit", v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="15">{"<15 mins"}</SelectItem>
-                <SelectItem value="30">{"<30 mins"}</SelectItem>
-                <SelectItem value="60">{"<1 hour"}</SelectItem>
-                <SelectItem value="no-limit">No Limit</SelectItem>
-              </SelectContent>
-            </Select>
-          ) : (
-            <input
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-              value={
-                form.mealPrepTimeLimit === "15" ? "<15 mins" :
-                form.mealPrepTimeLimit === "30" ? "<30 mins" :
-                form.mealPrepTimeLimit === "60" ? "<1 hour" :
-                form.mealPrepTimeLimit === "no-limit" ? "No Limit" :
-                ""
-              }
-              disabled
-            />
-          )}
+        <BadgeInput
+          label="Preferred Cuisines"
+          items={form.preferredCuisines}
+          onChange={items => handleChange("preferredCuisines", items)}
+          editMode={editMode}
+          placeholder="Type cuisine and press Enter or comma"
+        />
+        {/* Meals per Day & Meal Prep Time Limit side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Meals per Day */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Meals per Day</label>
+            {editMode ? (
+              <>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-900 text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    onClick={() => setMealsPerDayDropdownOpen((v) => !v)}
+                    style={{ fontWeight: 400 }}
+                  >
+                    <span className={form.mealsPerDay ? "text-gray-900" : "text-gray-400"}>
+                      {form.mealsPerDay || "Select number of meals"}
+                    </span>
+                    <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                  {mealsPerDayDropdownOpen && (
+                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
+                      {["2", "3", "4", "5"].map(option => (
+                        <div
+                          key={option}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 text-sm"
+                          onClick={() => {
+                            handleChange("mealsPerDay", option);
+                            setMealsPerDayDropdownOpen(false);
+                          }}
+                        >
+                          {option}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <input
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
+                value={form.mealsPerDay}
+                disabled
+              />
+            )}
+          </div>
+          {/* Meal Prep Time Limit */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Meal Prep Time Limit</label>
+            {editMode ? (
+              <>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-900 text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    onClick={() => setMealPrepTimeDropdownOpen((v) => !v)}
+                    style={{ fontWeight: 400 }}
+                  >
+                    <span className={form.mealPrepTimeLimit ? "text-gray-900" : "text-gray-400"}>
+                      {form.mealPrepTimeLimit === "15"
+                        ? "<15 mins"
+                        : form.mealPrepTimeLimit === "30"
+                        ? "<30 mins"
+                        : form.mealPrepTimeLimit === "60"
+                        ? "<1 hour"
+                        : form.mealPrepTimeLimit === "no-limit"
+                        ? "No Limit"
+                        : "Select time limit"}
+                    </span>
+                    <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                  {mealPrepTimeDropdownOpen && (
+                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
+                      {[
+                        { value: "15", label: "<15 mins" },
+                        { value: "30", label: "<30 mins" },
+                        { value: "60", label: "<1 hour" },
+                        { value: "no-limit", label: "No Limit" },
+                      ].map(option => (
+                        <div
+                          key={option.value}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 text-sm"
+                          onClick={() => {
+                            handleChange("mealPrepTimeLimit", option.value);
+                            setMealPrepTimeDropdownOpen(false);
+                          }}
+                        >
+                          {option.label}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <input
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
+                value={
+                  form.mealPrepTimeLimit === "15" ? "<15 mins" :
+                  form.mealPrepTimeLimit === "30" ? "<30 mins" :
+                  form.mealPrepTimeLimit === "60" ? "<1 hour" :
+                  form.mealPrepTimeLimit === "no-limit" ? "No Limit" :
+                  ""
+                }
+                disabled
+              />
+            )}
+          </div>
         </div>
       </div>
       {editMode && (
