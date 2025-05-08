@@ -27,7 +27,7 @@ export default function OnboardingPage() {
   const [forbidden, setForbidden] = useState(false);
 
   useEffect(() => {
-    // 1. Check sessionStorage for signup data
+    //1. Check sessionStorage for signup data
     const storedData = sessionStorage.getItem("tempSignupData");
 
     // 2. If no data exists, show forbidden
@@ -45,6 +45,19 @@ export default function OnboardingPage() {
       firstName: parsed.firstName || "User",
       lastName: parsed.lastName || "",
       email: parsed.email || "",
+
+    //BYPASS ONBOARDING FOR DEBUGGING
+    // setUserData({
+    //   firstName: "Debug",
+    //   lastName: "User",
+    //   email: "debug@example.com",
+    //   password: "password123"
+    // });
+    // setFormData((prev) => ({
+    //   ...prev,
+    //   firstName: "Debug",
+    //   lastName: "User",
+    //   email: "debug@example.com"
     }));
   }, [router]);
 
