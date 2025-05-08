@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { useSession } from "@/lib/session-context";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -25,6 +26,8 @@ export default function LoginModal({
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+
+  const { user, isLoading } = useSession();
 
   // Reset all state fields
   const resetState = () => {
@@ -53,6 +56,12 @@ export default function LoginModal({
       return () => clearTimeout(timeout);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (user && !isLoading) {
+      window.location.href = "/meal-plans";
+    }
+  }, [user, isLoading]);
 
   const supabase = createClient();
 

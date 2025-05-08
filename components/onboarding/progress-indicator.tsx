@@ -36,7 +36,7 @@ export default function ProgressIndicator({
         .map((_, step) => (
           <div
             key={step}
-            className="h-1.5 w-20 rounded-full bg-gray-200 overflow-hidden"
+            className="h-1.5 w-20 max-sm:w-16 rounded-full bg-gray-200 overflow-hidden"
             style={{ position: "relative" }}
           >
             <div

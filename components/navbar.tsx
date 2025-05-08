@@ -21,21 +21,23 @@ export default function Navbar({
   return (
     <>
       <header className="w-full py-4">
-        <div className="container max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-gray-900">
+        <div className="container max-w-screen-2xl mx-auto px-6 lg:px-8 flex items-center justify-between">
+          <Link href="/" className="text-2xl max-sm:text-lg font-bold text-gray-900 ">
             SmartPlate
           </Link>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 max-sm:space-x-3">
             <Button
               variant="ghost"
-              className="text-gray-700 hover:text-gray-900"
+              className="text-gray-700 hover:text-gray-900 max-sm:text-xs max-sm:px-3"
               onClick={openLoginModal}
             >
               Login
             </Button>
             <Button
+
               onClick={openSignupModal}
+              className="max-sm:text-xs max-sm:px-3"
             >
               Sign Up
             </Button>

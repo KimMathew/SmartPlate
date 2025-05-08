@@ -35,6 +35,9 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "./ui/button";
+import { createClient } from "@/lib/supabase";
+import { useSession } from "@/lib/session-context";
+import { useEffect, useState } from "react";
 
 // Menu items.
 const items = [
@@ -70,6 +73,38 @@ const accountItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const supabase = createClient();
+  const { user } = useSession();
+  const [profile, setProfile] = useState<{ fullName: string; email: string } | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from("Users")
+          .select("first_name, last_name, email")
+          .eq("id", user.id)
+          .single();
+        if (data) {
+          setProfile({
+            fullName: `${data.first_name || ""} ${data.last_name || ""}`.trim(),
+            email: data.email || user.email || "",
+          });
+        } else {
+          setProfile({ fullName: "", email: user.email || "" });
+        }
+      } else {
+        setProfile(null);
+      }
+    };
+    fetchProfile();
+  }, [user]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  };
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -135,24 +170,30 @@ export function AppSidebar() {
             <Button variant="ghost" className="w-full justify-start px-1 gap-2">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-gray-200 text-gray-700">
-                  CN
+                  {profile?.fullName
+                    ? profile.fullName
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                    : "?"}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex flex-col items-start text-sm">
-                <span className="font-medium">shadcn</span>
+              <div className="flex flex-col items-start text-sm min-w-0">
+                <span className="font-medium truncate max-w-[150px]">
+                  {profile?.fullName || "-"}
+                </span>
                 <span className="text-xs text-muted-foreground truncate max-w-[150px]">
-                  m@example.com
+                  {profile?.email || "-"}
                 </span>
               </div>
               <ChevronsUpDown className="h-4 w-4 ml-auto" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" className="w-[256px]">
-            <DropdownMenuItem asChild>
-              <a href="/" className="flex items-center gap-2 py-2">
-                <LogOut className="h-4 w-4" />
-                <span>Log out</span>
-              </a>
+            <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 py-2 cursor-pointer">
+              <LogOut className="h-4 w-4" />
+              <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

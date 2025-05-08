@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
-import { EditButton } from "@/components/ui/edit-button";
+import { EditButton } from "@/components/edit-button";
 
 const healthGoalOptions = [
   { value: "lose-weight", label: "Lose Weight" },
@@ -53,7 +53,7 @@ export default function HealthGoalsTab() {
       <div className="flex items-start justify-between w-full mb-6">
         <div>
           <div className="text-2xl font-bold text-gray-900 mb-1 max-sm:text-xl">Health Goals</div>
-          <div className="text-gray-500 text-base max-sm:text-sm">Set your health and nutrition targets.</div>
+          <div className="text-gray-500 text-base max-sm:text-sm">Define your health and nutrition goals.</div>
         </div>
         {!editMode && (
           <EditButton onClick={handleEdit} />
