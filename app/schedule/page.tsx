@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Share, Printer } from "lucide-react";
@@ -94,8 +94,8 @@ export default function SchedulePage() {
 
         <div className="grid grid-cols-8">
           {mealTypes.map((mealType) => (
-            <>
-              <div key={`${mealType}-label`} className="p-4 border-r border-b flex items-center">
+            <React.Fragment key={mealType}>
+              <div className="p-4 border-r border-b flex items-center">
                 <span className="capitalize text-sm text-gray-600">{mealType}</span>
               </div>
               {weekDays.map((_, dayIndex) => (
@@ -111,7 +111,7 @@ export default function SchedulePage() {
                   </Button>
                 </div>
               ))}
-            </>
+            </React.Fragment>
           ))}
         </div>
       </div>
