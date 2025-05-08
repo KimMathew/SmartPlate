@@ -21,8 +21,8 @@ const Forbidden: React.FC<ForbiddenProps> = ({
   actionText = "Go Home",
 }) => {
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-muted/50 z-50">
-      <Card className="w-full max-w-md mx-auto">
+    <div className="fixed inset-0 flex items-center justify-center bg-muted/50 z-50 p-6">
+      <Card className="w-full max-w-md mx-auto p-6">
         <CardHeader className="flex flex-col items-center gap-2">
           <div className="bg-emerald-100 rounded-full p-3 mb-2">
             <Lock className="text-emerald-500 w-8 h-8" />
