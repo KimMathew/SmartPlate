@@ -52,7 +52,7 @@ function WhyChooseImage() {
     >
       <Image
         src="/images/plate.png"
-        alt="NutriPlan App Interface"
+        alt="Healthy food on a plate"
         width={500}
         height={500}
         className="w-full h-auto"
