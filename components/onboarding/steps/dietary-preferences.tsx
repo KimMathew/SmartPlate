@@ -286,7 +286,7 @@ export default function DietaryPreferences({
           <div className="space-y-6">
             <div className="space-y-3">
               <Label htmlFor="dietType" className="text-gray-900 text-base">
-                Diet Type
+                Diet Type <span className="text-red-500">*</span>
               </Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {dietOptions.map((option) => {
@@ -368,7 +368,7 @@ export default function DietaryPreferences({
 
             <div className="space-y-3">
               <Label className="text-gray-900 text-base">
-                Allergens to Avoid
+                Allergens to Avoid <span className="text-red-500">*</span>
               </Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {allergenOptions.map((allergen) => {
@@ -517,7 +517,7 @@ export default function DietaryPreferences({
 
             <div className="space-y-3">
               <Label className="text-gray-900 text-base">
-                Preferred Cuisines
+                Preferred Cuisines <span className="text-red-500">*</span>
               </Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {cuisineOptions.map((cuisine) => {
@@ -632,7 +632,7 @@ export default function DietaryPreferences({
                   htmlFor="mealsPerDay"
                   className="text-gray-900 text-base"
                 >
-                  Meals per Day
+                  Meals per Day <span className="text-red-500">*</span>
                 </Label>
                 <div className="relative">
                   <button
@@ -674,7 +674,7 @@ export default function DietaryPreferences({
                   htmlFor="mealPrepTimeLimit"
                   className="text-gray-900 text-base"
                 >
-                  Meal Prep Time Limit
+                  Meal Prep Time Limit <span className="text-red-500">*</span>
                 </Label>
                 <div className="relative">
                   <button
