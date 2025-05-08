@@ -1,11 +1,12 @@
 "use client";
 
 import type React from "react";
-import { createClient } from "../../lib/supabase"
+import { createClient } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export default function SignupModal({
   const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
+
   // Validation helpers
   const nameRegex = /^[A-Za-z\s'-]+$/;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -49,6 +51,8 @@ export default function SignupModal({
 
   const supabase = createClient();
   const router = useRouter();
+
+
 
   const validateFirstName = (value: string) => {
     if (!value || !nameRegex.test(value)) {
@@ -121,57 +125,71 @@ export default function SignupModal({
     }
   }, [isOpen]);
 
+  const checkAuthEmailExists = async (email: string): Promise<boolean> => {
+    const { data, error } = await supabase
+      .rpc('check_email_exists', { email_to_check: email });
+
+    if (error) {
+      console.error('Email check error:', error);
+      return false;
+    }
+    return data;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitAttempted(true);
-    // Validate all fields
-    const validFirst = validateFirstName(firstName);
-    const validLast = validateLastName(lastName);
-    const validEmail = validateEmail(email);
-    const validPass = validatePassword(password);
-    const validConfirm = validateConfirmPassword(confirmPassword);
+
+
+    const emailExists = await checkAuthEmailExists(email);
+    if (emailExists) {
+      setEmailError('Email already registered');
+      return;
+    }
+    const validation = {
+      firstName: validateFirstName(firstName),
+      lastName: validateLastName(lastName),
+      email: validateEmail(email),
+      password: validatePassword(password),
+      confirmPassword: validateConfirmPassword(confirmPassword),
+    };
+
+    // Only proceed if all fields are valid
     if (
-      !validFirst ||
-      !validLast ||
-      !validEmail ||
-      !validPass ||
-      !validConfirm
+      !validation.firstName ||
+      !validation.lastName ||
+      !validation.email ||
+      !validation.password ||
+      !validation.confirmPassword
     ) {
       return;
-
     }
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
 
-    if (data?.user) {
-      const userId = data.user.id;
-      console.log("userId", userId);
-      const { error: insertError } = await supabase.from("Users").insert([
-        {
-          id: userId,
-          email: email,
-          first_name: firstName,
-          last_name: lastName, // assuming you collect this in your form
-          // generate your own custom ID here if you're not using Supabase's UID
-        },
-      ]);
-
-      if (insertError) {
-        console.error("Failed to insert user to custom table:", insertError);
+    try {
+      if (await checkAuthEmailExists(email)) {
+        setEmailError("Email already exist, Please login.");
+        console.log("this email is already registered:", email);
+        return;
       }
 
-      onClose();
-      router.push(`/onboarding?userId=${userId}`);
+      const signupData = {
+        email: email.trim().toLowerCase(),
+        password,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        signupMethod: "email",
+        userAgent: navigator.userAgent,
+      };
+
+      console.log("BEFORE setting:", sessionStorage.getItem("tempSignupData"));
+      sessionStorage.setItem("tempSignupData", JSON.stringify(signupData));
+      console.log("AFTER setting:", sessionStorage.getItem("tempSignupData"));
+      window.location.href = '/onboarding';
+
+
+    } catch (err) {
+      console.error("Signup error:", err);
     }
-
-
-    // Here you would typically handle form validation and API submission
-    console.log("Account creation submitted");
-
-    // Close the modal and redirect to onboarding
-
   };
 
   if (!visible) return null;
@@ -210,7 +228,7 @@ export default function SignupModal({
         </div>
 
         {/* Right side - Form */}
-        <div className="w-full md:w-7/12 p-8 min-h-[600px]">
+        <div className="w-full md:w-7/12 p-8 h-[650px] overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-emerald-600">SmartPlate</h2>
             <button
@@ -407,12 +425,13 @@ export default function SignupModal({
                 )}
             </div>
 
-            <button
+            <Button
               type="submit"
-              className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-md transition-colors"
+              size="lg"
+              className="w-full py-3 font-medium"
             >
               Create Account
-            </button>
+            </Button>
 
             <div className="text-center">
               <p className="text-gray-700">

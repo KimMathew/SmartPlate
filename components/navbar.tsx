@@ -35,7 +35,6 @@ export default function Navbar({
               Login
             </Button>
             <Button
-              className="bg-emerald-500 hover:bg-emerald-600 text-white"
               onClick={openSignupModal}
             >
               Sign Up

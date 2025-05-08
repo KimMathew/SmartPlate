@@ -1,7 +1,7 @@
 "use client";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, X } from "lucide-react";
+import { ArrowLeft, Check, X, ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import ProgressIndicator from "../progress-indicator";
@@ -53,6 +53,8 @@ export default function DietaryPreferences({
   const [mealsPerDayError, setMealsPerDayError] = useState("");
   const [mealPrepTimeLimitError, setMealPrepTimeLimitError] = useState("");
   const [imageVisible, setImageVisible] = useState(false);
+  const [mealsPerDayOpen, setMealsPerDayOpen] = useState(false);
+  const [mealPrepTimeOpen, setMealPrepTimeOpen] = useState(false);
 
   const dietOptions = [
     { value: "vegan", label: "Vegan", icon: "🌱" },
@@ -79,6 +81,19 @@ export default function DietaryPreferences({
     { value: "indian", label: "Indian", icon: "🍛" },
     { value: "any", label: "Any", icon: "🌍" },
     { value: "other", label: "Other", icon: "❓" },
+  ];
+
+  const mealsPerDayOptions = [
+    { value: "2", label: "2" },
+    { value: "3", label: "3" },
+    { value: "4", label: "4" },
+    { value: "5", label: "5" },
+  ];
+  const mealPrepTimeOptions = [
+    { value: "15", label: "<15 mins" },
+    { value: "30", label: "<30 mins" },
+    { value: "60", label: "<1 hour" },
+    { value: "no-limit", label: "No Limit" },
   ];
 
   useEffect(() => {
@@ -160,7 +175,6 @@ export default function DietaryPreferences({
       const value = dislikedIngredientInput.trim().replace(/,$/, "");
       if (value && !dislikedIngredientList.includes(value)) {
         const updated = [...dislikedIngredientList, value];
-        setDislikedIngredientList(updated);
         setDislikedIngredientInput("");
         onChange("dislikedIngredients", updated);
       }
@@ -213,7 +227,7 @@ export default function DietaryPreferences({
       setAllergenError("Please select an allergen to avoid.");
       hasError = true;
     } else if (
-      formData.allergens[0] === "other" &&
+      formData.allergens.includes("other") &&
       otherAllergenList.length === 0
     ) {
       setAllergenError("Please specify at least one allergen.");
@@ -221,14 +235,7 @@ export default function DietaryPreferences({
     } else {
       setAllergenError("");
     }
-    if (!dislikedIngredientList || dislikedIngredientList.length === 0) {
-      setDislikedIngredientsError(
-        "Please enter at least one disliked ingredient."
-      );
-      hasError = true;
-    } else {
-      setDislikedIngredientsError("");
-    }
+    setDislikedIngredientsError("");
     if (
       !formData.preferredCuisines ||
       formData.preferredCuisines.length === 0
@@ -279,7 +286,7 @@ export default function DietaryPreferences({
           <div className="space-y-6">
             <div className="space-y-3">
               <Label htmlFor="dietType" className="text-gray-900 text-base">
-                Diet Type
+                Diet Type <span className="text-red-500">*</span>
               </Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {dietOptions.map((option) => {
@@ -361,7 +368,7 @@ export default function DietaryPreferences({
 
             <div className="space-y-3">
               <Label className="text-gray-900 text-base">
-                Allergens to Avoid
+                Allergens to Avoid <span className="text-red-500">*</span>
               </Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {allergenOptions.map((allergen) => {
@@ -422,7 +429,7 @@ export default function DietaryPreferences({
                   );
                 })}
               </div>
-              {formData.allergens && formData.allergens[0] === "other" && (
+              {formData.allergens && formData.allergens.includes("other") && (
                 <div className="mt-4">
                   <Label
                     htmlFor="allergenOther"
@@ -473,7 +480,7 @@ export default function DietaryPreferences({
                 htmlFor="dislikedIngredients"
                 className="text-gray-900 text-base"
               >
-                Disliked Ingredients
+                Disliked Ingredients (if any)
               </Label>
               <div className="w-full flex flex-wrap items-center min-h-[48px] px-2 py-1 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent bg-white shadow-sm transition-all duration-200 relative">
                 {dislikedIngredientList.map((item) => (
@@ -506,16 +513,11 @@ export default function DietaryPreferences({
                   className="flex-1 min-w-[120px] px-2 py-2 border-none outline-none bg-transparent text-gray-900 text-base"
                 />
               </div>
-              {dislikedIngredientsError && (
-                <p className="text-red-500 text-xs mt-1">
-                  {dislikedIngredientsError}
-                </p>
-              )}
             </div>
 
             <div className="space-y-3">
               <Label className="text-gray-900 text-base">
-                Preferred Cuisines
+                Preferred Cuisines <span className="text-red-500">*</span>
               </Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {cuisineOptions.map((cuisine) => {
@@ -630,20 +632,36 @@ export default function DietaryPreferences({
                   htmlFor="mealsPerDay"
                   className="text-gray-900 text-base"
                 >
-                  Meals per Day
+                  Meals per Day <span className="text-red-500">*</span>
                 </Label>
-                <select
-                  id="mealsPerDay"
-                  value={formData.mealsPerDay}
-                  onChange={(e) => onChange("mealsPerDay", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 bg-white shadow-sm transition-all duration-200"
-                >
-                  <option value="">Select</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                </select>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    onClick={() => setMealsPerDayOpen((v) => !v)}
+                  >
+                    <span className={formData.mealsPerDay ? "text-gray-900" : "text-gray-400"}>
+                      {formData.mealsPerDay || "Select"}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  </button>
+                  {mealsPerDayOpen && (
+                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
+                      {mealsPerDayOptions.map((option) => (
+                        <div
+                          key={option.value}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700"
+                          onClick={() => {
+                            onChange("mealsPerDay", option.value);
+                            setMealsPerDayOpen(false);
+                          }}
+                        >
+                          {option.label}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 {mealsPerDayError && (
                   <p className="text-red-500 text-xs mt-1">
                     {mealsPerDayError}
@@ -656,22 +674,36 @@ export default function DietaryPreferences({
                   htmlFor="mealPrepTimeLimit"
                   className="text-gray-900 text-base"
                 >
-                  Meal Prep Time Limit
+                  Meal Prep Time Limit <span className="text-red-500">*</span>
                 </Label>
-                <select
-                  id="mealPrepTimeLimit"
-                  value={formData.mealPrepTimeLimit}
-                  onChange={(e) =>
-                    onChange("mealPrepTimeLimit", e.target.value)
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 bg-white shadow-sm transition-all duration-200"
-                >
-                  <option value="">Select</option>
-                  <option value="15">{"<15 mins"}</option>
-                  <option value="30">{"<30 mins"}</option>
-                  <option value="60">{"<1 hour"}</option>
-                  <option value="no-limit">No Limit</option>
-                </select>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    onClick={() => setMealPrepTimeOpen((v) => !v)}
+                  >
+                    <span className={formData.mealPrepTimeLimit ? "text-gray-900" : "text-gray-400"}>
+                      {mealPrepTimeOptions.find(opt => opt.value === formData.mealPrepTimeLimit)?.label || "Select"}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  </button>
+                  {mealPrepTimeOpen && (
+                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
+                      {mealPrepTimeOptions.map((option) => (
+                        <div
+                          key={option.value}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700"
+                          onClick={() => {
+                            onChange("mealPrepTimeLimit", option.value);
+                            setMealPrepTimeOpen(false);
+                          }}
+                        >
+                          {option.label}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 {mealPrepTimeLimitError && (
                   <p className="text-red-500 text-xs mt-1">
                     {mealPrepTimeLimitError}
@@ -682,18 +714,20 @@ export default function DietaryPreferences({
           </div>
         </div>
         <div className="flex justify-between mt-8 pt-4 bg-white">
-          <button
+          <Button
             onClick={onBack}
-            className="text-gray-700 hover:text-gray-900 font-medium"
+            variant="ghost"
+            className="font-medium"
           >
             Back
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleFinish}
-            className="px-6 py-2 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors"
+            size="lg"
+            className="px-6 py-2"
           >
             Finish
-          </button>
+          </Button>
         </div>
       </div>
       {/* Right side - Green panel, hidden on small screens */}

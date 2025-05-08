@@ -3,6 +3,7 @@ import { createClient } from "../../lib/supabase";
 import { useState, useEffect } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -218,13 +219,14 @@ export default function LoginModal({
                 {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
               </div>
 
-              <button
+              <Button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-md transition-colors"
+                size="lg"
+                className="w-full py-3 font-medium"
               >
                 Login
-              </button>
+              </Button>
             </form>
 
             <div className="mt-6 text-center">
