@@ -1,10 +1,11 @@
 "use client";
 import { createClient } from "../../lib/supabase";
 import { useState, useEffect } from "react";
-import { X, Eye, EyeOff } from "lucide-react";
+import { X, Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/session-context";
+import { Loader } from "../ui/loader";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -177,7 +178,7 @@ export default function LoginModal({
           </div>
 
           <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
-            <h3 className="text-2xl font-bold text-gray-900 mb-8">Login</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">Login</h3>
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-2">
@@ -230,15 +231,19 @@ export default function LoginModal({
 
               <Button
                 type="submit"
-                disabled={loading}
                 size="lg"
-                className="w-full py-3 font-medium"
+                className="w-full py-[10px] font-medium text-base"
+                disabled={loading}
               >
-                Login
+                {loading ? (
+                  <Loader className="mx-auto animate-spin" size={24} />
+                ) : (
+                  "Login"
+                )}
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="mt-4 text-center">
               <p className="text-gray-700">
                 Don't have an account?{" "}
                 <button
