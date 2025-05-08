@@ -2,6 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
+
+
 // Use server-side environment variables for API credentials
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,9 +37,11 @@ interface Meal {
 }
 
 export async function POST(req: Request) {
+  let parsedResponse: any = null; // Declare parsedResponse at the function scope
+  let mealPlanData: any = null;
+  let formattedMealPlan: any = null;
   try {
     const { userId, days } = await req.json();
-    let mealPlanData: any = null; // Declare at function scope level so it's available everywhere
 
     console.log("API request received for userId:", userId, "days:", days);
 
@@ -126,7 +130,7 @@ export async function POST(req: Request) {
       generationConfig: {
         temperature: 0.7,
         topP: 0.9,
-        maxOutputTokens: 4000
+        maxOutputTokens: 1000000
       }
     });
 
@@ -184,156 +188,152 @@ export async function POST(req: Request) {
         Object.keys(parsedResponse)
       );
 
-      // Adding detailed logging to debug the AI response parsing issue
+    } catch (parseError) {
+      console.error("Failed to parse or store Gemini response:", parseError);
+      console.error("Error details:", parseError instanceof Error ? parseError.stack : String(parseError));
 
-      // Log the raw AI response for debugging
-      console.log("Raw AI response:", response);
+      // Instead of throwing, return a more user-friendly error
+      return NextResponse.json({
+        success: false,
+        error: "We couldn't generate a proper meal plan format. Please try again.",
+        details: process.env.NODE_ENV === 'development' ? parsedResponse : undefined
+      }, { status: 500 });
+    }
 
-      // Log the cleaned response before parsing
-      console.log("Cleaned AI response:", cleanedResponse);
+    // Log the parsed structure to understand the format
+    console.log("Parsed response structure:",
+      Object.keys(parsedResponse).length + " top-level keys:",
+      Object.keys(parsedResponse)
+    );
 
-      // Log the parsed response structure if parsing succeeds
-      if (parsedResponse) {
-        console.log("Parsed AI response structure:", JSON.stringify(parsedResponse, null, 2));
-      } else {
-        console.warn("Parsed response is null or undefined.");
-      }
+    // Adding detailed logging to debug the AI response parsing issue
 
-      // Insert meal plan data into database using relational structure
-      const now = new Date().toISOString();
+    // Log the raw AI response for debugging
+    console.log("Raw AI response:", response);
 
-      // Log the userId to ensure it is being passed correctly
-      console.log("User ID for meal plan insertion:", userId);
+    // Log the cleaned response before parsing
+    const cleanedResponse = response.replace(/```json|```/g, '').trim();
+    console.log("Cleaned AI response:", cleanedResponse);
 
-      // Ensure the Supabase client is authenticated
-      const { data: session, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session || !session.session?.user) {
-        console.error("Supabase authentication error:", sessionError);
-        return NextResponse.json({
-          success: false,
-          error: "Authentication error. Please log in again.",
-          details: sessionError?.message || "No active session found."
-        }, { status: 401 });
-      }
+    // Log the parsed response structure if parsing succeeds
+    if (parsedResponse) {
+      console.log("Parsed AI response structure:", JSON.stringify(parsedResponse, null, 2));
+    } else {
+      console.warn("Parsed response is null or undefined.");
+    }
 
-      console.log("Authenticated user ID:", session.session.user.id);
+    // Insert meal plan data into database using relational structure
+    const now = new Date().toISOString();
 
-      // 1. Create master meal plan record
-      const { data, error: mealPlanError } = await supabase
-        .from('meal_plan')
-        .insert({
-          user_id: userId,
-          plan_name: `${days}-Day Meal Plan`,
-          created_at: now,
-          plan_type: user.diet_type || "balanced",
-          days_covered: days
-        })
-        .select()
-        .single();
+    // Log the userId to ensure it is being passed correctly
+    console.log("User ID for meal plan insertion:", userId);
 
-      // Enhanced error logging for database operations
-      if (mealPlanError) {
-        console.error("Failed to create meal plan:", mealPlanError);
-        return NextResponse.json({
-          success: false,
-          error: "Database error: Failed to store meal plan",
-          details: {
-            message: mealPlanError.message || "Unknown error",
-            hint: mealPlanError.hint || "No hint provided",
-            code: mealPlanError.code || "No code provided",
-            details: mealPlanError.details || "No additional details"
-          }
-        }, { status: 500 });
-      }
+    // Ensure the Supabase client is authenticated
+    const session = await supabase.auth.getSession();
+    const token = session?.data?.session?.access_token;
+    if (session?.data?.session) {
+      console.log("Authenticated user ID:", session.data.session.user.id);
+    } else {
+      console.warn("No authenticated session found.");
+    }
 
-      // Store the meal plan data in our function scope variable
-      mealPlanData = data;
-      const mealPlanId = mealPlanData?.plan_id;
+    // 1. Create master meal plan record
+    const { data, error: mealPlanError } = await supabase
+      .from('meal_plan')
+      .insert({
+        user_id: userId,
+        plan_name: `${days}-Day Meal Plan`,
+        created_at: now,
+        plan_type: user.diet_type || "balanced",
+        days_covered: days
+      })
+      .select()
+      .single();
 
-      if (!mealPlanId) {
-        throw new Error("Failed to get meal plan ID after database insert");
-      }
-
-      console.log("Created meal plan with ID:", mealPlanId);
-
-      // Process each day's meals and create a frontend-friendly format simultaneously
-      formattedMealPlan = Object.entries(parsedResponse).map(([dayIndex, dayData]) => {
-        if (!dayData) {
-          console.warn(`Day data is null or undefined for ${dayIndex}`);
-          return {
-            day: `Day ${dayIndex.replace('day', '')}`,
-            meals: []
-          };
+    // Enhanced error logging for database operations
+    if (mealPlanError) {
+      console.error("Failed to create meal plan:", mealPlanError);
+      return NextResponse.json({
+        success: false,
+        error: "Database error: Failed to store meal plan",
+        details: {
+          message: mealPlanError.message || "Unknown error",
+          hint: mealPlanError.hint || "No hint provided",
+          code: mealPlanError.code || "No code provided",
+          details: mealPlanError.details || "No additional details"
         }
+      }, { status: 500 });
+    }
 
-        console.log(`Processing day: ${dayIndex}, data type: ${typeof dayData}`);
+    // Store the meal plan data in our function scope variable
+    mealPlanData = data;
+    const mealPlanId = mealPlanData?.plan_id;
 
-        let dayNumber = 1;
-        try {
-          dayNumber = parseInt(dayIndex.replace(/\D/g, '')) || 1;
-        } catch (e) {
-          console.warn(`Couldn't parse day number from ${dayIndex}, using 1`);
-        }
+    if (!mealPlanId) {
+      throw new Error("Failed to get meal plan ID after database insert");
+    }
 
-        // Check if dayData has the expected structure
-        if (!(dayData as any).meals) {
-          console.warn(`No meals array found for ${dayIndex}, data:`, dayData);
+    console.log("Created meal plan with ID:", mealPlanId);
 
-          // Try to adapt to different possible AI response formats
-          let dailyMeals = [];
+    // Process each day's meals and create a frontend-friendly format simultaneously
+    formattedMealPlan = Object.entries(parsedResponse).map(([dayIndex, dayData]) => {
+      if (!dayData) {
+        console.warn(`Day data is null or undefined for ${dayIndex}`);
+        return {
+          day: `Day ${dayIndex.replace('day', '')}`,
+          meals: []
+        };
+      }
 
-          if (Array.isArray(dayData)) {
-            // If the day itself is an array of meals
-            dailyMeals = dayData;
-            console.log(`Adapted: day data is directly an array of ${dailyMeals.length} meals`);
-          } else if (typeof dayData === 'object') {
-            // If meals are using a different property name or structure
-            const possibleMealsProps = ['breakfast', 'lunch', 'dinner', 'snacks', 'food', 'items'];
+      console.log(`Processing day: ${dayIndex}, data type: ${typeof dayData}`);
 
-            for (const prop of possibleMealsProps) {
-              if ((dayData as any)[prop]) {
-                const propValue = (dayData as any)[prop];
-                if (Array.isArray(propValue)) {
-                  dailyMeals = propValue.map(item => ({
-                    ...item,
-                    type: prop // Use the property name as the meal type
-                  }));
-                  console.log(`Adapted: found meals in "${prop}" property`);
-                  break;
-                } else if (typeof propValue === 'object') {
-                  // Single meal object
-                  dailyMeals = [{ ...propValue, type: prop }];
-                  console.log(`Adapted: found single meal in "${prop}"`);
-                  break;
-                }
+      let dayNumber = 1;
+      try {
+        dayNumber = parseInt(dayIndex.replace(/\D/g, '')) || 1;
+      } catch (e) {
+        console.warn(`Couldn't parse day number from ${dayIndex}, using 1`);
+      }
+
+      // Check if dayData has the expected structure
+      if (!(dayData as any).meals) {
+        console.warn(`No meals array found for ${dayIndex}, data:`, dayData);
+
+        // Try to adapt to different possible AI response formats
+        let dailyMeals = [];
+
+        if (Array.isArray(dayData)) {
+          // If the day itself is an array of meals
+          dailyMeals = dayData;
+          console.log(`Adapted: day data is directly an array of ${dailyMeals.length} meals`);
+        } else if (typeof dayData === 'object') {
+          // If meals are using a different property name or structure
+          const possibleMealsProps = ['breakfast', 'lunch', 'dinner', 'snacks', 'food', 'items'];
+
+          for (const prop of possibleMealsProps) {
+            if ((dayData as any)[prop]) {
+              const propValue = (dayData as any)[prop];
+              if (Array.isArray(propValue)) {
+                dailyMeals = propValue.map(item => ({
+                  ...item,
+                  type: prop // Use the property name as the meal type
+                }));
+                console.log(`Adapted: found meals in "${prop}" property`);
+                break;
+              } else if (typeof propValue === 'object') {
+                // Single meal object
+                dailyMeals = [{ ...propValue, type: prop }];
+                console.log(`Adapted: found single meal in "${prop}"`);
+                break;
               }
             }
-
-            if (dailyMeals.length === 0) {
-              // As last resort, assume the object itself represents one meal
-              dailyMeals = [{ ...dayData, type: "meal" }];
-              console.log("Adapted: treating object as single meal");
-            }
           }
 
-          // Format day data for frontend
-          const dayPlan = {
-            day: `Day ${dayNumber}`,
-            meals: dailyMeals.map((meal: Meal) => ({
-              type: meal.type || 'meal',
-              name: meal.name || 'Unnamed meal',
-              description: meal.description || '',
-              calories: meal.nutrition?.calories || 0,
-              protein: meal.nutrition?.protein || 0
-            }))
-          };
-
-          // Skip database storage for now in this error recovery path
-          return dayPlan;
+          if (dailyMeals.length === 0) {
+            // As last resort, assume the object itself represents one meal
+            dailyMeals = [{ ...dayData, type: "meal" }];
+            console.log("Adapted: treating object as single meal");
+          }
         }
-
-        const dailyMeals = Array.isArray((dayData as any).meals) ? (dayData as any).meals : [];
-        console.log(`Day ${dayNumber} has ${dailyMeals.length} meals`);
 
         // Format day data for frontend
         const dayPlan = {
@@ -347,116 +347,137 @@ export async function POST(req: Request) {
           }))
         };
 
-        // Process each meal for database storage
-        dailyMeals.forEach(async (meal: Meal) => {
-          try {
-            // Validate required fields
-            if (!meal.name) {
-              console.warn("Meal missing name, skipping database insert");
-              return;
-            }
-
-            // Create recipe record for each meal
-            const { data: recipeData, error: recipeError } = await supabase
-              .from('recipe')
-              .insert({
-                recipe_id: undefined, // Let the database generate the ID
-                plan_id: mealPlanId,
-                recipe_name: meal.name,
-                description: meal.description || '',
-                ingredients: meal.ingredients || [],
-                instructions: Array.isArray(meal.instructions) ? meal.instructions : [],
-                cuisine_type: meal.cuisine_type || null,
-                prep_time: meal.prepTime || meal.prep_time || null,
-                difficulty: meal.difficulty || 'medium',
-                image_url: meal.image_url || null,
-                source_url: meal.source_url || null,
-                created_at: now,
-                day_number: dayNumber,
-                meal_type: meal.type || 'meal'
-              })
-              .select()
-              .single();
-
-            if (recipeError) {
-              console.error(`Failed to create recipe for ${meal.name}:`, recipeError);
-              return;
-            }
-
-            // Create nutrition record for this recipe
-            if (meal.nutrition) {
-              const { error: nutritionError } = await supabase
-                .from('nutrition_info')
-                .insert({
-                  nutrition_id: undefined, // Let the database generate the ID
-                  recipe_id: recipeData.recipe_id,
-                  calories: meal.nutrition.calories || 0,
-                  protein_g: meal.nutrition.protein || 0,
-                  carbs_g: meal.nutrition.carbs || 0,
-                  fats_g: meal.nutrition.fats || 0,
-                  fiber_g: meal.nutrition.fiber || 0,
-                  vitamins: meal.nutrition.vitamins || null
-                });
-
-              if (nutritionError) {
-                console.error(`Failed to create nutrition info for ${meal.name}:`, nutritionError);
-              }
-            }
-          } catch (err) {
-            console.error(`Error processing meal ${meal?.name || 'unknown'}:`, err);
-          }
-        });
-
+        // Skip database storage for now in this error recovery path
         return dayPlan;
+      }
+
+      const dailyMeals = Array.isArray((dayData as any).meals) ? (dayData as any).meals : [];
+      console.log(`Day ${dayNumber} has ${dailyMeals.length} meals`);
+
+      // Format day data for frontend
+      const dayPlan = {
+        day: `Day ${dayNumber}`,
+        meals: dailyMeals.map((meal: Meal) => ({
+          type: meal.type || 'meal',
+          name: meal.name || 'Unnamed meal',
+          description: meal.description || '',
+          calories: meal.nutrition?.calories || 0,
+          protein: meal.nutrition?.protein || 0
+        }))
+      };
+
+      // Process each meal for database storage
+      dailyMeals.forEach(async (meal: Meal) => {
+        try {
+          // Validate required fields
+          if (!meal.name) {
+            console.warn("Meal missing name, skipping database insert");
+            return;
+          }
+
+          // Create recipe record for each meal
+          const { data: recipeData, error: recipeError } = await supabase
+            .from('recipe')
+            .insert({
+              recipe_id: undefined, // Let the database generate the ID
+              plan_id: mealPlanId,
+              recipe_name: meal.name,
+              description: meal.description || '',
+              ingredients: meal.ingredients || [],
+              instructions: Array.isArray(meal.instructions) ? meal.instructions : [],
+              cuisine_type: meal.cuisine_type || null,
+              prep_time: meal.prepTime || meal.prep_time || null,
+              difficulty: meal.difficulty || 'medium',
+              image_url: meal.image_url || null,
+              source_url: meal.source_url || null,
+              created_at: now,
+              day_number: dayNumber,
+              meal_type: meal.type || 'meal'
+            })
+            .select()
+            .single();
+
+          if (recipeError) {
+            console.error(`Failed to create recipe for ${meal.name}:`, recipeError);
+            return;
+          }
+
+          // Create nutrition record for this recipe
+          if (meal.nutrition) {
+            const { error: nutritionError } = await supabase
+              .from('nutrition_info')
+              .insert({
+                nutrition_id: undefined, // Let the database generate the ID
+                recipe_id: recipeData.recipe_id,
+                calories: meal.nutrition.calories || 0,
+                protein_g: meal.nutrition.protein || 0,
+                carbs_g: meal.nutrition.carbs || 0,
+                fats_g: meal.nutrition.fats || 0,
+                fiber_g: meal.nutrition.fiber || 0,
+                vitamins: meal.nutrition.vitamins || null
+              });
+
+            if (nutritionError) {
+              console.error(`Failed to create nutrition info for ${meal.name}:`, nutritionError);
+            }
+          }
+        } catch (err) {
+          console.error(`Error processing meal ${meal?.name || 'unknown'}:`, err);
+        }
       });
 
-      // Log the formatted meal plan for frontend
-      if (formattedMealPlan.length > 0) {
-        console.log("Formatted meal plan for frontend:", JSON.stringify(formattedMealPlan, null, 2));
-      } else {
-        console.warn("Formatted meal plan is empty.");
-      }
-
-      console.log(`Formatted ${formattedMealPlan.length} days for frontend`);
-
-    } catch (parseError) {
-      console.error("Failed to parse or store Gemini response:", parseError);
-      console.error("Error details:", parseError instanceof Error ? parseError.stack : String(parseError));
-
-      // Instead of throwing, return a more user-friendly error
-      return NextResponse.json({
-        success: false,
-        error: "We couldn't generate a proper meal plan format. Please try again.",
-        details: process.env.NODE_ENV === 'development' ? String(parseError) : undefined
-      }, { status: 500 });
-    }
-
-    if (!parsedResponse) {
-      console.error("Parsed response is null or undefined.");
-      return NextResponse.json({
-        success: false,
-        error: "AI response could not be parsed into a valid meal plan format.",
-        details: process.env.NODE_ENV === 'development' ? response : undefined
-      }, { status: 500 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        message: "Meal plan created successfully",
-        plan_id: mealPlanData?.plan_id || null,
-        meal_plan: {
-          days: formattedMealPlan
-        }
-      }
+      return dayPlan;
     });
 
+    // Log the formatted meal plan for frontend
+    if (formattedMealPlan.length > 0) {
+      console.log("Formatted meal plan for frontend:", JSON.stringify(formattedMealPlan, null, 2));
+    } else {
+      console.warn("Formatted meal plan is empty.");
+    }
+
+    console.log(`Formatted ${formattedMealPlan.length} days for frontend`);
+
+  } catch (parseError) {
+    console.error("Failed to parse or store Gemini response:", parseError);
+    console.error("Error details:", parseError instanceof Error ? parseError.stack : String(parseError));
+
+    // Instead of throwing, return a more user-friendly error
+    return NextResponse.json({
+      success: false,
+      error: "We couldn't generate a proper meal plan format. Please try again.",
+      details: process.env.NODE_ENV === 'development' ? Response : undefined
+    }, { status: 500 });
+  }
+
+  if (!parsedResponse) {
+    console.error("Parsed response is null or undefined.");
+    return NextResponse.json({
+      success: false,
+      error: "AI response could not be parsed into a valid meal plan format.",
+      details: process.env.NODE_ENV === 'development' ? Response : undefined
+    }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      message: "Meal plan created successfully",
+      plan_id: mealPlanData ? mealPlanData.plan_id : null,
+      meal_plan: {
+        days: formattedMealPlan
+      }
+    }
+  });
+
+  try {
+    // Your preceding code here
   } catch (error) {
     console.error("API error:", error);
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : "Failed to generate meal plan",
-      details: process.env.NODE_ENV === 'development' ? error : undefined
+      error: (error as Error).message || "Failed to generate meal plan",
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
     }, {
       status: 500
     });

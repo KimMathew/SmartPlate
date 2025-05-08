@@ -81,9 +81,8 @@ export default function SchedulePage() {
               <div className="text-sm text-gray-500">
                 {day.toLocaleDateString('en-US', { weekday: 'short' })}
               </div>
-              <div className={`text-lg font-semibold ${
-                day.toDateString() === new Date().toDateString() ? 'text-emerald-500' : ''
-              }`}>
+              <div className={`text-lg font-semibold ${day.toDateString() === new Date().toDateString() ? 'text-emerald-500' : ''
+                }`}>
                 {day.getDate()}
               </div>
               <div className="text-sm text-gray-500">

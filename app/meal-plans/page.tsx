@@ -1,6 +1,5 @@
 "use client";
 
-import { useSession } from '@supabase/auth-helpers-react';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useUserChoice } from "@/lib/user-choice-context";
@@ -9,6 +8,8 @@ import { createClient } from "@/lib/supabase";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
+import { useSession } from "@/lib/session-context";
+import { useRouter } from "next/navigation";
 
 // Types
 type Meal = {
@@ -49,6 +50,8 @@ const MealPlanDayCard = ({ dayPlan }: { dayPlan: DayPlan }) => (
 
 // Main component
 export default function MealPlansPage() {
+  const router = useRouter();
+  const { session, user, isLoading: sessionLoading } = useSession();
   // State
   const [localSelectedDays, setLocalSelectedDays] = useState<number>(3);
   const [viewGeneratedPlan, setViewGeneratedPlan] = useState(false);
@@ -71,19 +74,15 @@ export default function MealPlansPage() {
 
   // Check authentication on component mount
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          title: "Authentication required",
-          description: "Please log in to generate meal plans.",
-          variant: "destructive"
-        });
-      }
-    };
-
-    checkAuth();
-  }, []);
+    if (!sessionLoading && !session) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to generate meal plans.",
+        variant: "destructive"
+      });
+      router.push('/'); // Redirect to home/login page
+    }
+  }, [session, sessionLoading, toast, router]);
 
   // Event handlers
   const handleDaySelection = (days: number) => {
@@ -96,11 +95,7 @@ export default function MealPlansPage() {
     setIsLoading(true);
 
     try {
-      // Get current user with better error handling
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-      if (userError || !user?.id) {
-        console.error("Auth error:", userError);
+      if (!user?.id) {
         setError("Authentication error. Please log in again.");
         toast({
           title: "Authentication required",
@@ -109,6 +104,20 @@ export default function MealPlansPage() {
         });
         return;
       }
+
+      // Get the session token
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData?.session?.access_token) {
+        setError("Failed to retrieve session token. Please log in again.");
+        toast({
+          title: "Session error",
+          description: "Please log in to continue.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const token = sessionData.session.access_token;
 
       // Check if user exists in Users table
       const { data: userProfile, error: profileError } = await supabase
@@ -139,10 +148,13 @@ export default function MealPlansPage() {
         }
       }
 
-      // Send request to generate meal plan with improved error handling
+      // Send request to generate meal plan with session token
       const response = await fetch("/api/gemini_meal_recommender", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify({
           userId: user.id,
           days: selectedDays
