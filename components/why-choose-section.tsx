@@ -29,10 +29,10 @@ function WhyChooseHeader() {
       <div className="inline-block px-4 py-2 bg-emerald-100 rounded-full text-emerald-700 text-sm font-medium">
         Why Choose SmartPlate
       </div>
-      <h2 className="text-4xl lg:text-5xl font-bold text-gray-900">
+      <h2 className="text-5xl max-sm:text-3xl font-bold text-gray-900">
         Designed for Everyone
       </h2>
-      <p className="text-lg text-gray-600">
+      <p className="text-lg text-gray-600 max-sm:text-base">
         SmartPlate adapts to your unique needs, whether you're managing a health
         condition, following a specific diet, or simply wanting to eat
         healthier.
@@ -83,7 +83,7 @@ export default function WhyChooseSection() {
                   <ChevronRight className="text-emerald-600 h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-xl text-gray-900">
+                  <h3 className="font-bold text-xl text-gray-900 max-sm:text-lg">
                     Personalized Experience
                   </h3>
                   <p className="text-gray-600 mt-1">
@@ -99,7 +99,7 @@ export default function WhyChooseSection() {
                   <ChevronRight className="text-emerald-600 h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-xl text-gray-900">
+                  <h3 className="font-bold text-xl text-gray-900 max-sm:text-lg">
                     Time-Saving Solutions
                   </h3>
                   <p className="text-gray-600 mt-1">
@@ -115,7 +115,7 @@ export default function WhyChooseSection() {
                   <ChevronRight className="text-emerald-600 h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-xl text-gray-900">
+                  <h3 className="font-bold text-xl text-gray-900 max-sm:text-lg">
                     Evidence-Based Nutrition
                   </h3>
                   <p className="text-gray-600 mt-1">

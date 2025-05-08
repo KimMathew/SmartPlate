@@ -38,10 +38,10 @@ function FeaturesHeader() {
       <div className="inline-block px-4 py-1.5 bg-emerald-100 rounded-full text-emerald-700 text-sm font-medium mb-6">
         Key Features
       </div>
-      <h2 className="text-4xl lg:text-5xl font-bold text-[#1a2942] mb-6">
+      <h2 className="text-5xl font-bold text-[#1a2942] mb-6 max-sm:text-3xl">
         Intelligent Solutions for Your Dietary Needs
       </h2>
-      <p className="text-gray-600 text-lg max-w-3xl mx-auto">
+      <p className="text-gray-600 text-lg max-w-3xl mx-auto max-sm:text-base">
         SmartPlate combines cutting-edge technology with nutritional expertise
         to deliver a comprehensive meal planning system.
       </p>

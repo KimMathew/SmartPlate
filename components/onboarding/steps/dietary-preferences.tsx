@@ -277,7 +277,7 @@ export default function DietaryPreferences({
           <ProgressIndicator currentStep={3} />
         </div>
         <div className="flex-1 flex flex-col justify-center min-h-min">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 max-sm:text-xl">
             Your Food Preferences
           </h2>
           <p className="text-gray-600 mb-8">
