@@ -682,18 +682,20 @@ export default function DietaryPreferences({
           </div>
         </div>
         <div className="flex justify-between mt-8 pt-4 bg-white">
-          <button
+          <Button
             onClick={onBack}
-            className="text-gray-700 hover:text-gray-900 font-medium"
+            variant="ghost"
+            className="font-medium"
           >
             Back
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleFinish}
-            className="px-6 py-2 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors"
+            size="lg"
+            className="px-6 py-2"
           >
             Finish
-          </button>
+          </Button>
         </div>
       </div>
       {/* Right side - Green panel, hidden on small screens */}

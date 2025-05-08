@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -424,12 +425,13 @@ export default function SignupModal({
                 )}
             </div>
 
-            <button
+            <Button
               type="submit"
-              className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-md transition-colors"
+              size="lg"
+              className="w-full py-3 font-medium"
             >
               Create Account
-            </button>
+            </Button>
 
             <div className="text-center">
               <p className="text-gray-700">

@@ -28,23 +28,36 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     // 1. Check sessionStorage for signup data
-    const storedData = sessionStorage.getItem("tempSignupData");
+    // const storedData = sessionStorage.getItem("tempSignupData");
 
-    // 2. If no data exists, show forbidden
-    if (!storedData) {
-      setForbidden(true);
-      return;
-    }
+    // // 2. If no data exists, show forbidden
+    // if (!storedData) {
+    //   setForbidden(true);
+    //   return;
+    // }
 
-    // 3. Parse and set the user data
-    const parsed = JSON.parse(storedData);
-    setUserData(parsed);
-    // Update formData with firstName, lastName, email from signup
+    // // 3. Parse and set the user data
+    // const parsed = JSON.parse(storedData);
+    // setUserData(parsed);
+    // // Update formData with firstName, lastName, email from signup
+    // setFormData((prev) => ({
+    //   ...prev,
+    //   firstName: parsed.firstName || "User",
+    //   lastName: parsed.lastName || "",
+    //   email: parsed.email || "",
+
+    // BYPASS ONBOARDING FOR DEBUGGING
+    setUserData({
+      firstName: "Debug",
+      lastName: "User",
+      email: "debug@example.com",
+      password: "password123"
+    });
     setFormData((prev) => ({
       ...prev,
-      firstName: parsed.firstName || "User",
-      lastName: parsed.lastName || "",
-      email: parsed.email || "",
+      firstName: "Debug",
+      lastName: "User",
+      email: "debug@example.com"
     }));
   }, [router]);
 

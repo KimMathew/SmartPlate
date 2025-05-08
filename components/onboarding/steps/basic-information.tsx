@@ -9,6 +9,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 interface BasicInformationProps {
   formData: any;
@@ -264,12 +265,13 @@ export default function BasicInformation({
         </div>
 
         <div className="flex justify-end mt-8 pt-4 bg-white">
-          <button
+          <Button
             onClick={handleNext}
-            className="px-6 py-2 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors"
+            size="lg"
+            className="px-6 py-2"
           >
             Next
-          </button>
+          </Button>
         </div>
       </div>
 
