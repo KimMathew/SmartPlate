@@ -16,7 +16,7 @@ export default function Hero({
   const { ref: imgRef, inView: imgInView } = useInView({ threshold: 0.15 });
 
   return (
-    <section className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center pt-16 pb-16 relative">
+    <section className="container mx-auto px-6 sm:px-6 lg:px-8 flex flex-col items-center text-center pt-16 pb-16 relative">
       {/* Hero content */}
       <div
         ref={contentRef}
@@ -26,21 +26,20 @@ export default function Hero({
             : "opacity-0 translate-y-8"
         }`}
       >
-        <h1 className="text-5xl sm:text-6xl lg:text-6xl font-bold tracking-tight text-[#1a2942] mb-4">
+        <h1 className="text-6xl max-sm:text-4xl font-bold tracking-tight text-[#1a2942] mb-4">
           Smart Meal Planning
           <br />
           <span className="text-emerald-500">Made Simple</span>
         </h1>
 
-        <p className="mx-auto max-w-[42rem] text-lg text-gray-600 mb-8">
+        <p className="mx-auto max-w-[42rem] text-lg text-gray-600 mb-8 max-sm:text-base">
           Personalized meal plans, automated grocery lists, and nutritional
-          <br />
           insights tailored to your dietary needs and preferences.
         </p>
 
         <Button
           size="lg"
-          className="px-8 py-6 text-lg"
+          className="px-8 py-6 text-lg max-sm:text-base"
           onClick={openLoginModal}
         >
           Plan Your First Meal
