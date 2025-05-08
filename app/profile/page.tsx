@@ -14,6 +14,7 @@ import { useState } from "react";
 import { User, Apple, Target, Settings, Pencil } from "lucide-react";
 import PersonalInfoTab from "./profile-tabs/personal_info_tab";
 import DietaryPreferencesTab from "./profile-tabs/dietary_tab";
+import HealthGoalsTab from "./profile-tabs/health_goals_tab";
 
 const TABS = [
   { label: "Personal Info", icon: <User className="w-4 h-4 mr-2" /> },
@@ -118,6 +119,10 @@ export default function ProfilePage() {
             )}
             {activeTab === 1 && (
               <DietaryPreferencesTab />
+            )}
+            {activeTab === 2 && (
+              // Render HealthGoalsTab for the Health Goals tab
+              <HealthGoalsTab />
             )}
             {/* ...existing code for other tabs... */}
           </CardContent>
