@@ -4,9 +4,10 @@ import type React from "react";
 import { createClient } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { X, Eye, EyeOff } from "lucide-react";
+import { X, Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Loader } from "../ui/loader";
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export default function SignupModal({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [visible, setVisible] = useState(isOpen);
   const [animate, setAnimate] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -43,7 +45,6 @@ export default function SignupModal({
   const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
-
   // Validation helpers
   const nameRegex = /^[A-Za-z\s'-]+$/;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -51,8 +52,6 @@ export default function SignupModal({
 
   const supabase = createClient();
   const router = useRouter();
-
-
 
   const validateFirstName = (value: string) => {
     if (!value || !nameRegex.test(value)) {
@@ -139,11 +138,12 @@ export default function SignupModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitAttempted(true);
-
+    setLoading(true);
 
     const emailExists = await checkAuthEmailExists(email);
     if (emailExists) {
       setEmailError('Email already registered');
+      setLoading(false);
       return;
     }
     const validation = {
@@ -162,12 +162,14 @@ export default function SignupModal({
       !validation.password ||
       !validation.confirmPassword
     ) {
+      setLoading(false);
       return;
     }
 
     try {
       if (await checkAuthEmailExists(email)) {
         setEmailError("Email already exist, Please login.");
+        setLoading(false);
         console.log("this email is already registered:", email);
         return;
       }
@@ -186,9 +188,10 @@ export default function SignupModal({
       console.log("AFTER setting:", sessionStorage.getItem("tempSignupData"));
       window.location.href = '/onboarding';
 
-
     } catch (err) {
       console.error("Signup error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -428,24 +431,29 @@ export default function SignupModal({
             <Button
               type="submit"
               size="lg"
-              className="w-full py-3 font-medium"
+              className="w-full py-[10px] font-medium text-base"
+              disabled={loading}
             >
-              Create Account
+              {loading ? (
+                <Loader className="mx-auto animate-spin" size={24} />
+              ) : (
+                "Sign Up"
+              )}
             </Button>
-
-            <div className="text-center">
-              <p className="text-gray-700">
-                Already have an account?{" "}
-                <button
-                  type="button"
-                  className="text-emerald-600 font-medium hover:text-emerald-700"
-                  onClick={onLoginClick}
-                >
-                  Login
-                </button>
-              </p>
-            </div>
           </form>
+
+          <div className="mt-4 text-center">
+            <p className="text-gray-700">
+              Already have an account?{" "}
+              <button
+                type="button"
+                className="text-emerald-600 font-medium hover:text-emerald-700"
+                onClick={onLoginClick}
+              >
+                Login
+              </button>
+            </p>
+          </div>
         </div>
       </div>
     </div>
