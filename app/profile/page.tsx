@@ -72,27 +72,28 @@ export default function ProfilePage() {
       </div>
       <div className="grid grid-cols-1 gap-6 w-full">
         <Card>
-          <CardContent className="flex items-center gap-8 pt-8 pb-8 pl-8 pr-8">
-            <Avatar className="h-24 w-24">
+          <CardContent className="flex items-center gap-8 pt-8 pb-8 pl-8 pr-8 flex-row
+            max-sm:gap-6 max-sm:pt-6 max-sm:pb-6 max-sm:pl-6 max-sm:pr-6 max-sm:flex-row">
+            <Avatar className="h-24 w-24 max-sm:h-16 max-sm:w-16">
               <AvatarImage src="/placeholder-user.jpg" alt={form.name} />
-              <AvatarFallback className="bg-gray-200 text-gray-700 text-3xl">
+              <AvatarFallback className="bg-gray-200 text-gray-700 text-3xl max-sm:text-xl">
                 {form.name.split(" ").map((n) => n[0]).join("")}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex flex-col justify-center">
-                <div className="text-2xl font-bold text-gray-900">{form.name}</div>
-                <div className="text-gray-500 text-base mt-1">jane.smith@example.com</div>
+                <div className="text-2xl font-bold text-gray-900 max-sm:text-xl">{form.name}</div>
+                <div className="text-gray-500 text-base mt-1 max-sm:text-sm">jane.smith@example.com</div>
               </div>
             </div>
             {/* Removed Edit Profile Button */}
           </CardContent>
         </Card>
-        <div className="w-full flex bg-[#f3f6fa] rounded-lg p-1 shadow-sm">
+        <div className="w-full flex bg-[#f3f6fa] rounded-lg p-1 shadow-sm overflow-x-auto scrollbar-hide">
           {TABS.map((tab, i) => (
             <button
               key={tab.label}
-              className={`flex-1 flex items-center justify-center px-5 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none ${
+              className={`flex-1 flex flex-row items-center justify-center px-3 py-2 text-sm max-sm:p-1 max-sm:text-xs font-semibold rounded-md transition-colors duration-150 focus:outline-none min-w-[100px] max-w-full whitespace-normal break-words text-center ${
                 activeTab === i
                   ? "bg-white text-gray-900 shadow font-bold"
                   : "bg-transparent text-gray-500"
@@ -101,8 +102,8 @@ export default function ProfilePage() {
               type="button"
               style={{ minWidth: 0 }}
             >
-              {tab.icon}
-              {tab.label}
+              <span className="block leading-tight max-sm:hidden">{tab.icon}</span>
+              <span className="block leading-tight ml-2">{tab.label}</span>
             </button>
           ))}
         </div>

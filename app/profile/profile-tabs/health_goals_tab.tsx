@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
+import { EditButton } from "@/components/ui/edit-button";
 
 const healthGoalOptions = [
   { value: "lose-weight", label: "Lose Weight" },
@@ -51,19 +52,11 @@ export default function HealthGoalsTab() {
     <form className="space-y-8" onSubmit={e => { e.preventDefault(); handleSave(); }} autoComplete="off">
       <div className="flex items-start justify-between w-full mb-6">
         <div>
-          <div className="text-2xl font-bold text-gray-900 mb-1">Health Goals</div>
-          <div className="text-gray-500 text-base">Set your health and nutrition targets.</div>
+          <div className="text-2xl font-bold text-gray-900 mb-1 max-sm:text-xl">Health Goals</div>
+          <div className="text-gray-500 text-base max-sm:text-sm">Set your health and nutrition targets.</div>
         </div>
         {!editMode && (
-          <Button
-            type="button"
-            variant="default"
-            className="ml-4 mt-1"
-            onClick={handleEdit}
-          >
-            <Pencil className="w-4 h-4 mr-2" />
-            Edit
-          </Button>
+          <EditButton onClick={handleEdit} />
         )}
       </div>
       <div className="space-y-6">

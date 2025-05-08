@@ -6,6 +6,7 @@ import { CardContent } from "@/components/ui/card";
 import { Pencil, ChevronDown } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { EditButton } from "@/components/ui/edit-button";
 
 interface PersonalInfoTabProps {
   form: {
@@ -75,19 +76,11 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
     <form className="space-y-8" onSubmit={handleLocalSave} autoComplete="off">
       <div className="flex items-start justify-between w-full mb-6">
         <div>
-          <div className="text-2xl font-bold text-gray-900 mb-1">Personal Information</div>
-          <div className="text-gray-500 text-base">Update your personal details here.</div>
+          <div className="text-2xl font-bold text-gray-900 mb-1 max-sm:text-xl">Personal Information</div>
+          <div className="text-gray-500 text-base max-sm:text-sm">Update your personal details here.</div>
         </div>
         {!localEditMode && (
-          <Button
-            type="button"
-            variant="default"
-            className="ml-4 mt-1"
-            onClick={handleEdit}
-          >
-            <Pencil className="w-4 h-4 mr-2" />
-            Edit
-          </Button>
+          <EditButton onClick={handleEdit} />
         )}
       </div>
       <div className="space-y-6">
