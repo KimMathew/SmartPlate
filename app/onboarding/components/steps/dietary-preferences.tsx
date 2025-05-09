@@ -137,6 +137,7 @@ export default function DietaryPreferences({
   const handleOtherDietInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOtherDiet(e.target.value);
     onChange("dietTypeOther", e.target.value);
+    // Do NOT update dietType here!
     setDietError("");
   };
 
