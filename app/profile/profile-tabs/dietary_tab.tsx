@@ -13,8 +13,6 @@ import {
 import { BadgeInput } from "@/components/ui/badge-input";
 import { EditButton } from "@/components/ui/edit-button";
 import { SaveCancelActions } from "@/components/ui/save-cancel-actions";
-import { useSession } from "@/lib/session-context";
-import { createClient } from "@/lib/supabase";
 
 interface DietaryPreferencesForm {
   dietType: string;
@@ -31,9 +29,10 @@ interface DietaryPreferencesForm {
 interface DietaryPreferencesTabProps {
   form: DietaryPreferencesForm;
   setForm: (form: DietaryPreferencesForm) => void;
+  onSave: (form: DietaryPreferencesForm) => Promise<void>;
 }
 
-export default function DietaryPreferencesTab({ form, setForm }: DietaryPreferencesTabProps) {
+export default function DietaryPreferencesTab({ form, setForm, onSave }: DietaryPreferencesTabProps) {
   const [editMode, setEditMode] = useState(false);
   const [formBackup, setFormBackup] = useState<DietaryPreferencesForm>(form);
   const [localForm, setLocalForm] = useState<DietaryPreferencesForm>(form);
@@ -41,7 +40,6 @@ export default function DietaryPreferencesTab({ form, setForm }: DietaryPreferen
   const [mealsPerDayDropdownOpen, setMealsPerDayDropdownOpen] = useState(false);
   const [mealPrepTimeDropdownOpen, setMealPrepTimeDropdownOpen] = useState(false);
   const [allergenInput, setAllergenInput] = useState("");
-  const { user } = useSession();
 
   useEffect(() => {
     setFormBackup(form);
@@ -70,28 +68,10 @@ export default function DietaryPreferencesTab({ form, setForm }: DietaryPreferen
   };
 
   const handleSave = async () => {
-    if (!user) return;
-    const supabase = createClient();
-    const updateData: any = {
-      diet_type: localForm.dietType,
-      allergens: localForm.allergens,
-      disliked_ingredients: localForm.dislikedIngredients,
-      preferred_cuisines: localForm.preferredCuisines,
-      meals_per_day: localForm.mealsPerDay,
-      prep_time_limit: localForm.mealPrepTimeLimit,
-    };
-    const { error } = await supabase
-      .from("Users")
-      .update(updateData)
-      .eq("id", user.id);
-    if (!error) {
-      setForm(localForm); // update parent state
-      setFormBackup(localForm); // update backup to latest
-      setEditMode(false);
-    } else {
-      console.error("Supabase error updating dietary preferences:", error);
-      alert("Failed to update dietary preferences. Please try again.\n" + (error?.message || ""));
-    }
+    await onSave(localForm);
+    setForm(localForm); // update parent state
+    setFormBackup(localForm); // update backup to latest
+    setEditMode(false);
   };
 
   const handleRemoveAllergen = (item: string) => {

@@ -170,6 +170,31 @@ export default function ProfilePage() {
     }
   }
 
+  // Handler to update dietary preferences in Supabase
+  async function handleSaveDietaryPreferences(updatedDietaryForm: typeof dietaryForm) {
+    if (!user) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("Users")
+      .update({
+        diet_type: updatedDietaryForm.dietType,
+        // Optionally: diet_type_other: updatedDietaryForm.dietTypeOther,
+        allergens: updatedDietaryForm.allergens,
+        // Optionally: allergen_other: updatedDietaryForm.allergenOther,
+        disliked_ingredients: updatedDietaryForm.dislikedIngredients,
+        preferred_cuisines: updatedDietaryForm.preferredCuisines,
+        // Optionally: cuisine_other: updatedDietaryForm.cuisineOther,
+        meals_per_day: updatedDietaryForm.mealsPerDay,
+        prep_time_limit: updatedDietaryForm.mealPrepTimeLimit,
+      })
+      .eq("id", user.id);
+    if (!error) {
+      setDietaryForm(updatedDietaryForm);
+    } else {
+      alert("Failed to update dietary preferences. Please try again.");
+    }
+  }
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
@@ -245,7 +270,11 @@ export default function ProfilePage() {
               />
             )}
             {activeTab === 1 && (
-              <DietaryPreferencesTab form={dietaryForm} setForm={setDietaryForm} />
+              <DietaryPreferencesTab
+                form={dietaryForm}
+                setForm={setDietaryForm}
+                onSave={handleSaveDietaryPreferences}
+              />
             )}
             {activeTab === 2 && (
               // Render HealthGoalsTab for the Health Goals tab
