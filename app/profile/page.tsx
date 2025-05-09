@@ -43,7 +43,7 @@ export default function ProfilePage() {
     firstName: "Jane",
     lastName: "Smith",
     dob: "1990-01-01",
-    gender: "Female",
+    gender: "Female" as string | null,
     height: "165",
     weight: "65",
   });
@@ -106,7 +106,7 @@ export default function ProfilePage() {
         first_name: updatedForm.firstName,
         last_name: updatedForm.lastName,
         "birth-date": updatedForm.dob,
-        gender: updatedForm.gender,
+        gender: updatedForm.gender === "" ? null : updatedForm.gender,
         height: updatedForm.height ? Number(updatedForm.height) : null,
         weight: updatedForm.weight ? Number(updatedForm.weight) : null,
       })

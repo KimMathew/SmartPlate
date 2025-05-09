@@ -13,13 +13,13 @@ interface PersonalInfoTabProps {
     firstName: string;
     lastName: string;
     dob: string;
-    gender: string;
+    gender: string | null;
     height: string;
     weight: string;
   };
   editMode: boolean;
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleSave: (form: { firstName: string; lastName: string; dob: string; gender: string; height: string; weight: string; }) => void;
+  handleSave: (form: { firstName: string; lastName: string; dob: string; gender: string | null; height: string; weight: string; }) => void;
   handleCancel: () => void;
   handleEdit: () => void;
 }
@@ -169,7 +169,12 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
     const validHeight = validateHeight(form.height);
     const validWeight = validateWeight(form.weight);
     if (!validFirst || !validLast || !validDob || !validHeight || !validWeight) return;
-    handleSave(form);
+    // Ensure gender is null if empty string
+    const formToSave = {
+      ...form,
+      gender: form.gender === "" ? null : form.gender,
+    };
+    handleSave(formToSave);
   }
 
   // Clear all error states when exiting edit mode (e.g., on cancel)
@@ -316,7 +321,7 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
               id="gender"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
               placeholder="e.g., Female"
-              value={form.gender}
+              value={form.gender ?? ""}
               readOnly
               disabled
             />
