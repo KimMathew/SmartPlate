@@ -1,5 +1,5 @@
 "use client";
-import { FeatureIcons } from "./feature-icons";
+import { FeatureIcons } from "@/app/landing/components/feature-icons";
 import { useInView } from "@/hooks/use-in-view";
 
 function FeatureCard({

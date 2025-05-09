@@ -6,6 +6,7 @@ import { Pencil, ChevronDown } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { EditButton } from "@/components/edit-button";
+import { SaveCancelActions } from "@/components/save-cancel-actions";
 
 interface PersonalInfoTabProps {
   form: {
@@ -359,10 +360,7 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
         </div>
       </div>
       {editMode && (
-        <div className="flex gap-4 pt-2">
-          <Button type="submit" className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-8 py-3 rounded-md">Save Changes</Button>
-          <Button type="button" variant="outline" onClick={handleCancel}>Cancel</Button>
-        </div>
+        <SaveCancelActions onSave={onSubmit} onCancel={handleCancel} />
       )}
     </form>
   );
