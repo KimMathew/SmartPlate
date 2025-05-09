@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import ProgressIndicator from "@/app/onboarding/components/progress-indicator";
 import CardSelect from "@/components/ui/card-select";
+import MultiSelectCardGroup from "@/components/ui/multi-select-card-group";
 
 interface DietaryPreferencesProps {
   formData: any;
@@ -82,6 +83,12 @@ export default function DietaryPreferences({
     { value: "indian", label: "Indian", icon: "🍛" },
     { value: "any", label: "Any", icon: "🌍" },
     { value: "other", label: "Other", icon: "❓" },
+  ];
+
+  const mealsPerDayOptions2 = [
+    { value: "breakfast", label: "Breakfast", icon: "🥐" },
+    { value: "lunch", label: "Lunch", icon: "🥗" },
+    { value: "dinner", label: "Dinner", icon: "🍝" },
   ];
 
   const mealsPerDayOptions = [
@@ -325,65 +332,13 @@ export default function DietaryPreferences({
               <Label className="text-gray-900 text-base">
                 Allergens to Avoid <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {allergenOptions.map((allergen) => {
-                  const isSelected = formData.allergens.includes(
-                    allergen.value
-                  );
-                  return (
-                    <div
-                      key={allergen.value}
-                      onClick={() =>
-                        handleMultiSelect("allergens", allergen.value)
-                      }
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          handleMultiSelect("allergens", allergen.value);
-                        }
-                      }}
-                      className={`relative px-2 py-4 rounded-lg border cursor-pointer transition-all duration-200 text-center text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400
-                        ${
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-50 scale-102 shadow-lg"
-                            : "border-gray-300 hover:border-emerald-300 hover:bg-emerald-50"
-                        }
-                      `}
-                      aria-pressed={isSelected}
-                      style={{ minWidth: 0 }}
-                    >
-                      {/* Checkmark icon */}
-                      {isSelected && (
-                        <span className="absolute top-2 right-2 text-emerald-500">
-                          <svg
-                            width="20"
-                            height="20"
-                            fill="none"
-                            viewBox="0 0 20 20"
-                          >
-                            <circle cx="10" cy="10" r="10" fill="#10B981" />
-                            <path
-                              d="M6 10.5l2.5 2.5 5-5"
-                              stroke="#fff"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </span>
-                      )}
-                      <div className="text-xl mb-1">{allergen.icon}</div>
-                      <div
-                        className={`font-medium ${
-                          isSelected ? "text-emerald-700" : "text-gray-700"
-                        }`}
-                      >
-                        {allergen.label}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <MultiSelectCardGroup
+                options={allergenOptions}
+                selected={formData.allergens}
+                onChange={(vals) => onChange("allergens", vals)}
+                columns={3}
+                error={allergenError}
+              />
               {formData.allergens && formData.allergens.includes("other") && (
                 <div className="mt-4">
                   <Label
@@ -424,9 +379,6 @@ export default function DietaryPreferences({
                     />
                   </div>
                 </div>
-              )}
-              {allergenError && (
-                <p className="text-red-500 text-xs mt-1">{allergenError}</p>
               )}
             </div>
 
@@ -474,65 +426,13 @@ export default function DietaryPreferences({
               <Label className="text-gray-900 text-base">
                 Preferred Cuisines <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {cuisineOptions.map((cuisine) => {
-                  const isSelected = formData.preferredCuisines.includes(
-                    cuisine.value
-                  );
-                  return (
-                    <div
-                      key={cuisine.value}
-                      onClick={() =>
-                        handleMultiSelect("preferredCuisines", cuisine.value)
-                      }
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          handleMultiSelect("preferredCuisines", cuisine.value);
-                        }
-                      }}
-                      className={`relative px-2 py-4 rounded-lg border cursor-pointer transition-all duration-200 text-center text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400
-                        ${
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-50 scale-102 shadow-lg"
-                            : "border-gray-300 hover:border-emerald-300 hover:bg-emerald-50"
-                        }
-                      `}
-                      aria-pressed={isSelected}
-                      style={{ minWidth: 0 }}
-                    >
-                      {/* Checkmark icon */}
-                      {isSelected && (
-                        <span className="absolute top-2 right-2 text-emerald-500">
-                          <svg
-                            width="20"
-                            height="20"
-                            fill="none"
-                            viewBox="0 0 20 20"
-                          >
-                            <circle cx="10" cy="10" r="10" fill="#10B981" />
-                            <path
-                              d="M6 10.5l2.5 2.5 5-5"
-                              stroke="#fff"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </span>
-                      )}
-                      <div className="text-xl mb-1">{cuisine.icon}</div>
-                      <div
-                        className={`font-medium ${
-                          isSelected ? "text-emerald-700" : "text-gray-700"
-                        }`}
-                      >
-                        {cuisine.label}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <MultiSelectCardGroup
+                options={cuisineOptions}
+                selected={formData.preferredCuisines}
+                onChange={(vals) => onChange("preferredCuisines", vals)}
+                columns={3}
+                error={preferredCuisinesError}
+              />
               {formData.preferredCuisines.includes("other") && (
                 <div className="mt-4">
                   <Label
@@ -574,98 +474,72 @@ export default function DietaryPreferences({
                   </div>
                 </div>
               )}
-              {preferredCuisinesError && (
+              
+            </div>
+
+            <div className="space-y-3">
+              <Label
+                htmlFor="mealsPerDay"
+                className="text-gray-900 text-base"
+              >
+                Meals per Day <span className="text-red-500">*</span>
+              </Label>
+              <MultiSelectCardGroup
+                options={mealsPerDayOptions2}
+                selected={formData.mealsPerDay}
+                onChange={(vals) => onChange("mealsPerDay", vals)}
+                columns={3}
+                error={mealsPerDayError}
+              />
+              {mealsPerDayError && (
                 <p className="text-red-500 text-xs mt-1">
-                  {preferredCuisinesError}
+                  {mealsPerDayError}
                 </p>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <Label
-                  htmlFor="mealsPerDay"
-                  className="text-gray-900 text-base"
+            <div className="space-y-3">
+              <Label
+                htmlFor="mealPrepTimeLimit"
+                className="text-gray-900 text-base"
+              >
+                Meal Prep Time Limit <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <button
+                  type="button"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  onClick={() => setMealPrepTimeOpen((v) => !v)}
                 >
-                  Meals per Day <span className="text-red-500">*</span>
-                </Label>
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    onClick={() => setMealsPerDayOpen((v) => !v)}
-                  >
-                    <span className={formData.mealsPerDay ? "text-gray-900" : "text-gray-400"}>
-                      {formData.mealsPerDay || "Select"}
-                    </span>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
-                  </button>
-                  {mealsPerDayOpen && (
-                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                      {mealsPerDayOptions.map((option) => (
-                        <div
-                          key={option.value}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700"
-                          onClick={() => {
-                            onChange("mealsPerDay", option.value);
-                            setMealsPerDayOpen(false);
-                          }}
-                        >
-                          {option.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {mealsPerDayError && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {mealsPerDayError}
-                  </p>
+                  <span className={formData.mealPrepTimeLimit ? "text-gray-900" : "text-gray-400"}>
+                    {mealPrepTimeOptions.find(opt => opt.value === formData.mealPrepTimeLimit)?.label || "Select"}
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                </button>
+                {mealPrepTimeOpen && (
+                  <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
+                    {mealPrepTimeOptions.map((option) => (
+                      <div
+                        key={option.value}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700"
+                        onClick={() => {
+                          onChange("mealPrepTimeLimit", option.value);
+                          setMealPrepTimeOpen(false);
+                        }}
+                      >
+                        {option.label}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-
-              <div className="space-y-3">
-                <Label
-                  htmlFor="mealPrepTimeLimit"
-                  className="text-gray-900 text-base"
-                >
-                  Meal Prep Time Limit <span className="text-red-500">*</span>
-                </Label>
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    onClick={() => setMealPrepTimeOpen((v) => !v)}
-                  >
-                    <span className={formData.mealPrepTimeLimit ? "text-gray-900" : "text-gray-400"}>
-                      {mealPrepTimeOptions.find(opt => opt.value === formData.mealPrepTimeLimit)?.label || "Select"}
-                    </span>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
-                  </button>
-                  {mealPrepTimeOpen && (
-                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                      {mealPrepTimeOptions.map((option) => (
-                        <div
-                          key={option.value}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700"
-                          onClick={() => {
-                            onChange("mealPrepTimeLimit", option.value);
-                            setMealPrepTimeOpen(false);
-                          }}
-                        >
-                          {option.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {mealPrepTimeLimitError && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {mealPrepTimeLimitError}
-                  </p>
-                )}
-              </div>
+              {mealPrepTimeLimitError && (
+                <p className="text-red-500 text-xs mt-1">
+                  {mealPrepTimeLimitError}
+                </p>
+              )}
             </div>
+            
           </div>
         </div>
         <div className="flex justify-between mt-8 pt-4 bg-white">
