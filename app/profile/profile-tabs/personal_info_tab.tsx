@@ -35,11 +35,13 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
   const [heightError, setHeightError] = useState("");
   const [weightError, setWeightError] = useState("");
   const [localForm, setLocalForm] = useState(form);
+  const [formBackup, setFormBackup] = useState(form);
 
   const nameRegex = /^[A-Za-z\s'-]+$/;
 
   useEffect(() => {
     setLocalForm(form);
+    setFormBackup(form);
   }, [form]);
 
   function validateFirstName(value: string) {
@@ -186,12 +188,13 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
   }
 
   function handleEditLocal() {
+    setFormBackup(form);
     setLocalForm(form);
     handleEdit();
   }
 
   function handleCancelLocal() {
-    setLocalForm(form);
+    setLocalForm(formBackup);
     handleCancel();
   }
 

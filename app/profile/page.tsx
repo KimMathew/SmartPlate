@@ -279,6 +279,9 @@ export default function ProfilePage() {
                 form={dietaryForm}
                 setForm={setDietaryForm}
                 onSave={handleSaveDietaryPreferences}
+                editMode={editMode}
+                handleEdit={handleEdit}
+                handleCancel={handleCancel}
               />
             )}
             {activeTab === 2 && (

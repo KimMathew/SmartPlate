@@ -30,10 +30,12 @@ interface DietaryPreferencesTabProps {
   form: DietaryPreferencesForm;
   setForm: (form: DietaryPreferencesForm) => void;
   onSave: (form: DietaryPreferencesForm) => Promise<void>;
+  editMode: boolean;
+  handleEdit: () => void;
+  handleCancel: () => void;
 }
 
-export default function DietaryPreferencesTab({ form, setForm, onSave }: DietaryPreferencesTabProps) {
-  const [editMode, setEditMode] = useState(false);
+export default function DietaryPreferencesTab({ form, setForm, onSave, editMode, handleEdit, handleCancel }: DietaryPreferencesTabProps) {
   const [formBackup, setFormBackup] = useState<DietaryPreferencesForm>(form);
   const [localForm, setLocalForm] = useState<DietaryPreferencesForm>(form);
   const [dietTypeDropdownOpen, setDietTypeDropdownOpen] = useState(false);
@@ -56,22 +58,21 @@ export default function DietaryPreferencesTab({ form, setForm, onSave }: Dietary
     setLocalForm({ ...localForm, [field]: value });
   };
 
-  const handleEdit = () => {
+  const handleEditLocal = () => {
     setFormBackup(form);
     setLocalForm(form);
-    setEditMode(true);
+    handleEdit();
   };
 
-  const handleCancel = () => {
+  const handleCancelLocal = () => {
     setLocalForm(formBackup);
-    setEditMode(false);
+    handleCancel();
   };
 
   const handleSave = async () => {
     await onSave(localForm);
     setForm(localForm); // update parent state
     setFormBackup(localForm); // update backup to latest
-    setEditMode(false);
   };
 
   const handleRemoveAllergen = (item: string) => {
@@ -128,7 +129,7 @@ export default function DietaryPreferencesTab({ form, setForm, onSave }: Dietary
           <div className="text-2xl font-bold text-gray-900 mb-1 max-sm:text-xl">Dietary Preferences</div>
           <div className="text-gray-500 text-base max-sm:text-sm">Customize your dietary preferences here.</div>
         </div>
-        {!editMode && <EditButton onClick={handleEdit} />}
+        {!editMode && <EditButton onClick={handleEditLocal} />}
       </div>
       <div className="space-y-6">
         {/* Diet Type */}
@@ -297,7 +298,7 @@ export default function DietaryPreferencesTab({ form, setForm, onSave }: Dietary
         </div>
       </div>
       {editMode && (
-        <SaveCancelActions onSave={e => { e.preventDefault(); handleSave(); }} onCancel={handleCancel} />
+        <SaveCancelActions onSave={e => { e.preventDefault(); handleSave(); }} onCancel={handleCancelLocal} />
       )}
     </form>
   );
