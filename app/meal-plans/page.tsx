@@ -149,16 +149,17 @@ export default function MealPlansPage() {
       }
 
       // Send request to generate meal plan with session token
-      const response = await fetch("/api/gemini_meal_recommender", {
-        method: "POST",
+      // In your frontend when making the request
+      const { data: { session: sessionObj } } = await supabase.auth.getSession();
+      const days = selectedDays; // Use the correct days value
+
+      const response = await fetch('/api/gemini_meal_recommender', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionObj?.access_token}`
         },
-        body: JSON.stringify({
-          userId: user.id,
-          days: selectedDays
-        }),
+        body: JSON.stringify({ userId: user.id, days })
       });
 
       if (!response.ok) {

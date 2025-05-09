@@ -15,12 +15,27 @@ export async function middleware(request: NextRequest) {
     const isProtected = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
     if (!isProtected) return NextResponse.next();
 
+    // Create a response object to modify cookies
+    let response = NextResponse.next();
+
+    // Create a Supabase client with proper cookie methods
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
             cookies: {
-                get: (key) => request.cookies.get(key)?.value,
+                // Use the recommended getAll and setAll methods
+                getAll: () => {
+                    return request.cookies.getAll().map(cookie => ({
+                        name: cookie.name,
+                        value: cookie.value,
+                    }));
+                },
+                setAll: (cookies) => {
+                    cookies.forEach(cookie => {
+                        response.cookies.set(cookie);
+                    });
+                },
             },
         }
     );
@@ -35,7 +50,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
     }
 
-    return NextResponse.next();
+    return response;
 }
 
 export const config = {

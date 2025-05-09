@@ -357,57 +357,32 @@ export async function POST(req: Request) {
 
     // 5. Insert meal plan, nutrition, and recipe for each meal in each day
     const today = new Date();
-    const startDate = today.toISOString().slice(0, 10);
     const daysCovered = Object.keys(parsedResponse).length;
-    const endDateObj = new Date(today);
-    endDateObj.setDate(today.getDate() + daysCovered - 1);
-    const endDate = endDateObj.toISOString().slice(0, 10);
 
     // Create a separate client with service role key to bypass RLS
     const supabaseAdmin = createSupabaseClient(undefined, true);
 
     let mealPlanIds: any[] = [];
     let failedMeals: any[] = [];
+
     for (const [dayKey, dayData] of Object.entries(parsedResponse)) {
-      // Insert nutrition_info for the day
-      let nutrition_id = null;
-      if ((dayData as { totals?: { calories?: number } }).totals) {
-        const nutritionPayload = {
-          calories: (dayData as { totals?: { calories?: number } }).totals?.calories ?? 0,
-          protein_g: (dayData as { totals?: { protein?: number } }).totals?.protein ?? 0,
-          carbs_g: (dayData as { totals?: { carbs?: number } }).totals?.carbs ?? 0,
-          fats_g: (dayData as { totals?: { fats?: number } }).totals?.fats ?? 0,
-          vitamins: null // Not in JSON
-        };
+      // Extract day number from the key (e.g., "day1" becomes 1)
+      const dayNumber = parseInt(dayKey.replace(/\D/g, '')) || 1;
 
-        // Use service role client to bypass RLS for nutrition_info
-        const { data: nutrition, error: nutritionError } = await supabaseAdmin
-          .from('nutrition_info')
-          .insert(nutritionPayload)
-          .select('nutrition_id')
-          .single();
+      // Calculate date for this specific day (day1 = today, day2 = tomorrow, etc.)
+      const dayDate = new Date(today);
+      dayDate.setDate(today.getDate() + dayNumber - 1); // -1 because day1 is today (0 days from now)
+      const formattedDate = dayDate.toISOString().slice(0, 10);
 
-        if (nutritionError) {
-          console.error('Error inserting nutrition_info:', nutritionError);
-          return NextResponse.json({
-            success: false,
-            error: 'Failed to insert nutrition_info',
-            details: nutritionError
-          }, { status: 500 });
-        } else {
-          nutrition_id = nutrition?.nutrition_id;
-          console.log('Inserted nutrition_info:', nutrition);
-        }
-      }
-
-      // Insert each meal as a recipe and then meal_plan
+      // Insert each meal as a recipe, nutrition_info, and then meal_plan
       for (const meal of (dayData as { meals?: Meal[] }).meals || []) {
         // Skip if required fields are missing
         if (!meal.name || !meal.type) {
           failedMeals.push({ day: dayKey, reason: 'Missing name or type', meal });
           continue;
         }
-        // Insert recipe
+
+        // 1. Insert recipe first with day column
         const recipePayload = {
           title: meal.name,
           ingredients: meal.ingredients ? JSON.stringify(meal.ingredients) : '[]',
@@ -415,26 +390,56 @@ export async function POST(req: Request) {
           cuisine_type: meal.cuisine_type || null,
           prep_time: meal.prepTime || meal.prep_time || null,
           image_url: null,
-          source_url: null
+          source_url: null,
+          day: dayNumber // Add day number to recipe
         };
-        const supabaseServiceRole = createSupabaseClient(undefined, true);
-        const { data: recipe, error: recipeError } = await supabaseServiceRole
+
+        const { data: recipe, error: recipeError } = await supabaseAdmin
           .from('recipe')
           .insert(recipePayload)
           .select('recipe_id')
           .single();
+
         if (recipeError || !recipe?.recipe_id) {
           console.error('Error inserting recipe:', recipeError);
-          return NextResponse.json({
-            success: false,
-            error: 'Failed to insert recipe',
-            details: recipeError
-          }, { status: 500 });
+          failedMeals.push({ day: dayKey, reason: 'Recipe insert failed', meal, recipeError });
+          continue;
         }
+
         const recipe_id = recipe.recipe_id;
         console.log('Inserted recipe:', recipe);
 
-        // Insert meal_plan row
+        // 2. Insert nutrition_info linked to the recipe with day column
+        let nutrition_id = null;
+        if (meal.nutrition) {
+          const nutritionPayload = {
+            created_at: new Date().toISOString(),
+            recipe_id: recipe_id,
+            calories: meal.nutrition.calories || 0,
+            protein_g: meal.nutrition.protein || 0,
+            carbs_g: meal.nutrition.carbs || 0,
+            fats_g: meal.nutrition.fats || 0,
+            vitamins: null,
+            day: dayNumber // Add day number to nutrition info
+          };
+
+          const { data: nutrition, error: nutritionError } = await supabaseAdmin
+            .from('nutrition_info')
+            .insert(nutritionPayload)
+            .select('nutrition_id')
+            .single();
+
+          if (nutritionError) {
+            console.error('Error inserting nutrition_info:', nutritionError);
+            failedMeals.push({ day: dayKey, reason: 'Nutrition insert failed', meal, nutritionError });
+            continue;
+          }
+
+          nutrition_id = nutrition?.nutrition_id;
+          console.log('Inserted nutrition_info:', nutrition);
+        }
+
+        // 3. Insert meal_plan row with day-specific dates
         const mealPlanPayload = {
           user_id: userId,
           nutrition_id,
@@ -442,12 +447,12 @@ export async function POST(req: Request) {
           plan_type: meal.type,
           plan_name: meal.name,
           description: meal.description || '',
-          start_date: startDate,
-          end_date: endDate,
-          days_covered: daysCovered
+          start_date: formattedDate, // Use day-specific date
+          end_date: formattedDate,   // Same as start_date
+          days_covered: daysCovered,
+          day: dayNumber             // Add day number to meal plan
         };
 
-        // Use service role client to bypass RLS for meal_plan table too
         const { data: mealPlanData, error: mealPlanError } = await supabaseAdmin
           .from(mealPlanTable)
           .insert(mealPlanPayload)
@@ -456,11 +461,8 @@ export async function POST(req: Request) {
 
         if (mealPlanError) {
           console.error('Error inserting meal_plan:', mealPlanError);
-          return NextResponse.json({
-            success: false,
-            error: 'Failed to insert meal_plan',
-            details: mealPlanError
-          }, { status: 500 });
+          failedMeals.push({ day: dayKey, reason: 'Meal plan insert failed', meal, mealPlanError });
+          continue;
         } else {
           mealPlanIds.push(mealPlanData?.plan_id);
           console.log('Inserted meal_plan:', mealPlanData);
