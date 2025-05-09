@@ -82,11 +82,12 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
   }
 
   function validateHeight(value: string) {
-    const num = parseFloat(value);
-    if (!value || isNaN(num)) {
+    const numberRegex = /^\d+(\.\d+)?$/;
+    if (!value || !numberRegex.test(value)) {
       setHeightError("Height is required and must be a valid number.");
       return false;
     }
+    const num = parseFloat(value);
     if (num < 50 || num > 250) {
       setHeightError("Height should be between 50 and 250 cm.");
       return false;
@@ -96,11 +97,12 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
   }
 
   function validateWeight(value: string) {
-    const num = parseFloat(value);
-    if (!value || isNaN(num)) {
+    const numberRegex = /^\d+(\.\d+)?$/;
+    if (!value || !numberRegex.test(value)) {
       setWeightError("Weight is required and must be a valid number.");
       return false;
     }
+    const num = parseFloat(value);
     if (num < 20 || num > 300) {
       setWeightError("Weight should be between 20 and 300 kg.");
       return false;
