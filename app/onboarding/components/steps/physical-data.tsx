@@ -68,17 +68,22 @@ export default function PhysicalData({
       weight?: string;
       activityLevel?: string;
     } = {};
-    const height = parseFloat(formData.height);
-    const weight = parseFloat(formData.weight);
-    if (!formData.height || isNaN(height)) {
+    const numberRegex = /^\d+(\.\d+)?$/;
+    if (!formData.height || !numberRegex.test(formData.height)) {
       newErrors.height = "Height is required and must be a valid number.";
-    } else if (height < 50 || height > 250) {
-      newErrors.height = "Height should be between 50 and 250 cm.";
+    } else {
+      const height = parseFloat(formData.height);
+      if (height < 50 || height > 250) {
+        newErrors.height = "Height should be between 50 and 250 cm.";
+      }
     }
-    if (!formData.weight || isNaN(weight)) {
+    if (!formData.weight || !numberRegex.test(formData.weight)) {
       newErrors.weight = "Weight is required and must be a valid number.";
-    } else if (weight < 20 || weight > 300) {
-      newErrors.weight = "Weight should be between 20 and 300 kg.";
+    } else {
+      const weight = parseFloat(formData.weight);
+      if (weight < 20 || weight > 300) {
+        newErrors.weight = "Weight should be between 20 and 300 kg.";
+      }
     }
     if (!formData.activityLevel) {
       newErrors.activityLevel = "Please select your activity level.";
