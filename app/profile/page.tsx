@@ -92,7 +92,7 @@ export default function ProfilePage() {
             dislikedIngredients: Array.isArray(data.disliked_ingredients) ? data.disliked_ingredients : (data.disliked_ingredients ? data.disliked_ingredients.split(",") : []),
             preferredCuisines: Array.isArray(data.preferred_cuisines) ? data.preferred_cuisines : (data.preferred_cuisines ? data.preferred_cuisines.split(",") : []),
             cuisineOther: [], // You may want to add this field to your DB if needed
-            mealsPerDay: data.meals_per_day ?? "",
+            mealsPerDay: data.meals_per_day !== undefined && data.meals_per_day !== null ? String(data.meals_per_day) : "",
             mealPrepTimeLimit: data.prep_time_limit ?? "",
           });
         } else {
