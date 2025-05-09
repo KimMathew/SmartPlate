@@ -16,10 +16,11 @@ interface PersonalInfoTabProps {
     gender: string | null;
     height: string;
     weight: string;
+    activityLevel: string;
   };
   editMode: boolean;
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleSave: (form: { firstName: string; lastName: string; dob: string; gender: string | null; height: string; weight: string; }) => void;
+  handleSave: (form: { firstName: string; lastName: string; dob: string; gender: string | null; height: string; weight: string; activityLevel: string; }) => void;
   handleCancel: () => void;
   handleEdit: () => void;
 }
@@ -27,6 +28,7 @@ interface PersonalInfoTabProps {
 export default function PersonalInfoTab({ form, editMode, handleChange, handleSave, handleCancel, handleEdit }: PersonalInfoTabProps) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [genderDropdownOpen, setGenderDropdownOpen] = useState(false);
+  const [activityLevelDropdownOpen, setActivityLevelDropdownOpen] = useState(false);
   const [firstNameError, setFirstNameError] = useState("");
   const [lastNameError, setLastNameError] = useState("");
   const [dobError, setDobError] = useState("");
@@ -162,6 +164,11 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
     setCalendarOpen(false);
   }
 
+  function onActivityLevelSelect(option: string) {
+    setLocalForm({ ...localForm, activityLevel: option });
+    setActivityLevelDropdownOpen(false);
+  }
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const validFirst = validateFirstName(localForm.firstName);
@@ -198,6 +205,14 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
       setWeightError("");
     }
   }, [editMode]);
+
+  const activityLevels = [
+    { value: "sedentary", label: "Sedentary", description: "Little or no exercise" },
+    { value: "lightly_active", label: "Lightly Active", description: "Light exercise/sports 1-3 days/week" },
+    { value: "moderately_active", label: "Moderately Active", description: "Moderate exercise/sports 3-5 days/week" },
+    { value: "very_active", label: "Very Active", description: "Hard exercise/sports 6-7 days a week" },
+    { value: "super_active", label: "Super Active", description: "Very hard exercise/sports & physical job" },
+  ];
 
   return (
     <form className="space-y-8" onSubmit={onSubmit} autoComplete="off">
@@ -376,6 +391,51 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
             <p className="text-xs text-red-500 mt-1">{weightError}</p>
           )}
         </div>
+      </div>
+      {/* Activity Level Dropdown */}
+      <div className="mt-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="activityLevel">Activity Level</label>
+        {editMode ? (
+          <div className="relative">
+            <button
+              type="button"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-900 text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              onClick={() => setActivityLevelDropdownOpen((v) => !v)}
+              style={{ fontWeight: 400 }}
+            >
+              <span className={localForm.activityLevel ? "text-gray-900" : "text-gray-400"}>
+                {activityLevels.find(a => a.value === localForm.activityLevel)?.label || "Select activity level"}
+              </span>
+              <ChevronDown className="h-4 w-4 text-gray-500" />
+            </button>
+            {activityLevelDropdownOpen && (
+              <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
+                {activityLevels.map(option => (
+                  <div
+                    key={option.value}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 text-sm"
+                    onClick={() => onActivityLevelSelect(option.value)}
+                  >
+                    <div className="font-medium">{option.label}</div>
+                    <div className="text-xs text-gray-500">{option.description}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <input
+            type="text"
+            name="activityLevel"
+            id="activityLevel"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
+            placeholder="e.g., Moderately Active"
+            value={activityLevels.find(a => a.value === localForm.activityLevel)?.label || ""}
+            readOnly
+            disabled
+          />
+        )}
+        <div className="text-gray-500 text-xs mt-2">This helps us calculate your calorie needs for better meal plans.</div>
       </div>
       {editMode && (
         <SaveCancelActions onSave={onSubmit} onCancel={handleCancelLocal} />

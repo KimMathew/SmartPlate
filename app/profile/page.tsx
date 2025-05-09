@@ -46,6 +46,7 @@ export default function ProfilePage() {
     gender: "Female" as string | null,
     height: "165",
     weight: "65",
+    activityLevel: "", // Added activityLevel
   });
   const [formBackup, setFormBackup] = useState(form);
 
@@ -68,7 +69,7 @@ export default function ProfilePage() {
       if (user) {
         const { data, error } = await supabase
           .from("Users")
-          .select(`first_name, last_name, email, "birth-date", gender, height, weight, diet_type, allergens, disliked_ingredients, preferred_cuisines, meals_per_day, prep_time_limit`)
+          .select(`first_name, last_name, email, "birth-date", gender, height, weight, diet_type, allergens, disliked_ingredients, preferred_cuisines, meals_per_day, prep_time_limit, activity_level`)
           .eq("id", user.id)
           .single();
         if (data) {
@@ -83,6 +84,7 @@ export default function ProfilePage() {
             gender: data.gender ?? "",
             height: data.height !== undefined && data.height !== null ? String(data.height) : "",
             weight: data.weight !== undefined && data.weight !== null ? String(data.weight) : "",
+            activityLevel: data.activity_level ?? "", // Fetch from DB
           });
           setDietaryForm({
             dietType: data.diet_type ?? "",
@@ -104,6 +106,7 @@ export default function ProfilePage() {
             gender: "",
             height: "",
             weight: "",
+            activityLevel: "", // Reset
           });
           setDietaryForm({
             dietType: "",
@@ -126,6 +129,7 @@ export default function ProfilePage() {
           gender: "",
           height: "",
           weight: "",
+          activityLevel: "", // Reset
         });
         setDietaryForm({
           dietType: "",
@@ -155,6 +159,7 @@ export default function ProfilePage() {
         gender: updatedForm.gender === "" ? null : updatedForm.gender,
         height: updatedForm.height ? Number(updatedForm.height) : null,
         weight: updatedForm.weight ? Number(updatedForm.weight) : null,
+        activity_level: updatedForm.activityLevel ?? null, // Save activityLevel
       })
       .eq("id", user.id);
     if (!error) {
@@ -195,7 +200,7 @@ export default function ProfilePage() {
     }
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
