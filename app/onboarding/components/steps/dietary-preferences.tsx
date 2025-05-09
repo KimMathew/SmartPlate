@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import ProgressIndicator from "@/app/onboarding/components/progress-indicator";
 import CardSelect from "@/components/ui/card-select";
 import MultiSelectCardGroup from "@/components/ui/multi-select-card-group";
+import { Loader } from "@/components/ui/loader";
 
 interface DietaryPreferencesProps {
   formData: any;
@@ -57,6 +58,7 @@ export default function DietaryPreferences({
   const [imageVisible, setImageVisible] = useState(false);
   const [mealsPerDayOpen, setMealsPerDayOpen] = useState(false);
   const [mealPrepTimeOpen, setMealPrepTimeOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const dietOptions = [
     { value: "vegan", label: "Vegan", icon: "🌱" },
@@ -276,7 +278,8 @@ export default function DietaryPreferences({
       setMealPrepTimeLimitError("");
     }
     if (hasError) return;
-    onFinish();
+    setLoading(true);
+    Promise.resolve(onFinish()).finally(() => setLoading(false));
   };
 
   return (
@@ -515,6 +518,7 @@ export default function DietaryPreferences({
             onClick={onBack}
             variant="ghost"
             className="px-6 py-2 text-base"
+            disabled={loading}
           >
             Back
           </Button>
@@ -522,8 +526,9 @@ export default function DietaryPreferences({
             onClick={handleFinish}
             size="lg"
             className="px-6 py-2 text-base"
+            disabled={loading}
           >
-            Finish
+            {loading ? <Loader className="mx-auto animate-spin" size={24} /> : "Finish"}
           </Button>
         </div>
       </div>
