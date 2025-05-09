@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import ProgressIndicator from "@/app/onboarding/components/progress-indicator";
 import CardSelect from "@/components/ui/card-select";
+import MultiSelectCardGroup from "@/components/ui/multi-select-card-group";
 
 interface DietaryPreferencesProps {
   formData: any;
@@ -325,65 +326,13 @@ export default function DietaryPreferences({
               <Label className="text-gray-900 text-base">
                 Allergens to Avoid <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {allergenOptions.map((allergen) => {
-                  const isSelected = formData.allergens.includes(
-                    allergen.value
-                  );
-                  return (
-                    <div
-                      key={allergen.value}
-                      onClick={() =>
-                        handleMultiSelect("allergens", allergen.value)
-                      }
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          handleMultiSelect("allergens", allergen.value);
-                        }
-                      }}
-                      className={`relative px-2 py-4 rounded-lg border cursor-pointer transition-all duration-200 text-center text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400
-                        ${
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-50 scale-102 shadow-lg"
-                            : "border-gray-300 hover:border-emerald-300 hover:bg-emerald-50"
-                        }
-                      `}
-                      aria-pressed={isSelected}
-                      style={{ minWidth: 0 }}
-                    >
-                      {/* Checkmark icon */}
-                      {isSelected && (
-                        <span className="absolute top-2 right-2 text-emerald-500">
-                          <svg
-                            width="20"
-                            height="20"
-                            fill="none"
-                            viewBox="0 0 20 20"
-                          >
-                            <circle cx="10" cy="10" r="10" fill="#10B981" />
-                            <path
-                              d="M6 10.5l2.5 2.5 5-5"
-                              stroke="#fff"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </span>
-                      )}
-                      <div className="text-xl mb-1">{allergen.icon}</div>
-                      <div
-                        className={`font-medium ${
-                          isSelected ? "text-emerald-700" : "text-gray-700"
-                        }`}
-                      >
-                        {allergen.label}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <MultiSelectCardGroup
+                options={allergenOptions}
+                selected={formData.allergens}
+                onChange={(vals) => onChange("allergens", vals)}
+                columns={3}
+                error={allergenError}
+              />
               {formData.allergens && formData.allergens.includes("other") && (
                 <div className="mt-4">
                   <Label
@@ -424,9 +373,6 @@ export default function DietaryPreferences({
                     />
                   </div>
                 </div>
-              )}
-              {allergenError && (
-                <p className="text-red-500 text-xs mt-1">{allergenError}</p>
               )}
             </div>
 
@@ -474,65 +420,13 @@ export default function DietaryPreferences({
               <Label className="text-gray-900 text-base">
                 Preferred Cuisines <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {cuisineOptions.map((cuisine) => {
-                  const isSelected = formData.preferredCuisines.includes(
-                    cuisine.value
-                  );
-                  return (
-                    <div
-                      key={cuisine.value}
-                      onClick={() =>
-                        handleMultiSelect("preferredCuisines", cuisine.value)
-                      }
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          handleMultiSelect("preferredCuisines", cuisine.value);
-                        }
-                      }}
-                      className={`relative px-2 py-4 rounded-lg border cursor-pointer transition-all duration-200 text-center text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400
-                        ${
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-50 scale-102 shadow-lg"
-                            : "border-gray-300 hover:border-emerald-300 hover:bg-emerald-50"
-                        }
-                      `}
-                      aria-pressed={isSelected}
-                      style={{ minWidth: 0 }}
-                    >
-                      {/* Checkmark icon */}
-                      {isSelected && (
-                        <span className="absolute top-2 right-2 text-emerald-500">
-                          <svg
-                            width="20"
-                            height="20"
-                            fill="none"
-                            viewBox="0 0 20 20"
-                          >
-                            <circle cx="10" cy="10" r="10" fill="#10B981" />
-                            <path
-                              d="M6 10.5l2.5 2.5 5-5"
-                              stroke="#fff"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </span>
-                      )}
-                      <div className="text-xl mb-1">{cuisine.icon}</div>
-                      <div
-                        className={`font-medium ${
-                          isSelected ? "text-emerald-700" : "text-gray-700"
-                        }`}
-                      >
-                        {cuisine.label}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <MultiSelectCardGroup
+                options={cuisineOptions}
+                selected={formData.preferredCuisines}
+                onChange={(vals) => onChange("preferredCuisines", vals)}
+                columns={3}
+                error={preferredCuisinesError}
+              />
               {formData.preferredCuisines.includes("other") && (
                 <div className="mt-4">
                   <Label
