@@ -27,9 +27,17 @@ type Meal = {
 };
 
 type DayPlan = {
-  day: string;
+  day: string; // This will now be the formatted date
+  start_date?: string; // Keep the raw date if needed elsewhere
   meals: Meal[];
 };
+
+// Helper to format date as 'Month Day, Year'
+function formatDate(dateString?: string) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+}
 
 // Component for the meal plan day card
 const MealPlanDayCard = ({ dayPlan }: { dayPlan: DayPlan }) => (
@@ -74,7 +82,7 @@ const MealCard = ({ meal }: { meal: Meal }) => {
 const MealDetailsModal = ({ meal, onClose }: { meal: Meal; onClose: () => void }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
-      <div 
+      <div
         className="bg-white w-full max-w-xl rounded-xl shadow-2xl transition-all duration-200 overflow-hidden max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -96,7 +104,7 @@ const MealDetailsModal = ({ meal, onClose }: { meal: Meal; onClose: () => void }
               </svg>
             </button>
           </div>
-          
+
           <div className="border-b border-gray-200 mb-4 pb-2">
             <span className="text-sm font-medium text-emerald-600 uppercase">{meal.type}</span>
             {meal.prepTime && (
@@ -137,7 +145,7 @@ const MealDetailsModal = ({ meal, onClose }: { meal: Meal; onClose: () => void }
               </div>
             )}
           </div>
-          
+
           {/* Ingredients Section */}
           {meal.ingredients && meal.ingredients.length > 0 && (
             <div className="mb-6">
@@ -149,7 +157,7 @@ const MealDetailsModal = ({ meal, onClose }: { meal: Meal; onClose: () => void }
               </ul>
             </div>
           )}
-          
+
           {/* Instructions Section */}
           {meal.instructions && meal.instructions.length > 0 && (
             <div className="mb-6">
@@ -161,7 +169,7 @@ const MealDetailsModal = ({ meal, onClose }: { meal: Meal; onClose: () => void }
               </ol>
             </div>
           )}
-          
+
           <div className="mt-6">
             <Button onClick={onClose} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">Close</Button>
           </div>
@@ -206,7 +214,7 @@ export default function MealPlansPage() {
         if (Array.isArray(parsedPlan) && parsedPlan.length > 0) {
           setMealPlan(parsedPlan);
           setGeneratedPlanExists(true);
-          
+
           // Also restore the selected days if available
           const savedDays = localStorage.getItem('smartPlate_selectedDays');
           if (savedDays) {
@@ -226,7 +234,7 @@ export default function MealPlansPage() {
   useEffect(() => {
     const fetchExistingMealPlans = async () => {
       if (!user?.id) return;
-      
+
       try {
         // Fetch the most recent meal plan for this user
         const { data: mealPlans, error: fetchError } = await supabase
@@ -238,6 +246,7 @@ export default function MealPlansPage() {
             description,
             days_covered,
             day,
+            start_date,
             recipe:recipe_id (
               recipe_id,
               title,
@@ -257,12 +266,12 @@ export default function MealPlansPage() {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(30); // Get latest plans to organize by days
-          
+
         if (fetchError) {
           console.error("Error fetching meal plans:", fetchError);
           return;
         }
-        
+
         // If we found meal plans in the database and no local plans exist, convert to our format
         if (mealPlans && mealPlans.length > 0 && !generatedPlanExists) {
           // Group by day to reconstruct the full meal plan
@@ -272,42 +281,50 @@ export default function MealPlansPage() {
             acc[day].push(plan);
             return acc;
           }, {} as Record<number, any[]>);
-          
+
           // Convert to our DayPlan format
-          const formattedPlans: DayPlan[] = Object.entries(plansByDay).map(([day, meals]) => ({
-            day: `Day ${day}`,
-            meals: meals.map(meal => ({
-              type: meal.plan_type || 'meal',
-              name: meal.plan_name || meal.recipe?.title || 'Unnamed meal',
-              description: meal.description || '',
-              calories: meal.nutrition?.calories || 0,
-              protein: meal.nutrition?.protein_g || 0,
-              carbs: meal.nutrition?.carbs_g || 0,
-              fats: meal.nutrition?.fats_g || 0,
-              ingredients: meal.recipe?.ingredients ? JSON.parse(meal.recipe.ingredients) : [],
-              instructions: meal.recipe?.instruction ? JSON.parse(meal.recipe.instruction) : [],
-              prepTime: meal.recipe?.prep_time || 0,
-              difficulty: 'medium'
-            }))
-          })).sort((a, b) => {
-            // Sort by day number
+          const formattedPlans: DayPlan[] = Object.entries(plansByDay).map(([day, meals]) => {
+            // Use the start_date from the first meal of the day (all should be the same)
+            const startDate = meals[0]?.start_date;
+            return {
+              day: startDate ? formatDate(startDate) : `Day ${day}`,
+              start_date: startDate,
+              meals: meals.map(meal => ({
+                type: meal.plan_type || 'meal',
+                name: meal.plan_name || meal.recipe?.title || 'Unnamed meal',
+                description: meal.description || '',
+                calories: meal.nutrition?.calories || 0,
+                protein: meal.nutrition?.protein_g || 0,
+                carbs: meal.nutrition?.carbs_g || 0,
+                fats: meal.nutrition?.fats_g || 0,
+                ingredients: meal.recipe?.ingredients ? JSON.parse(meal.recipe.ingredients) : [],
+                instructions: meal.recipe?.instruction ? JSON.parse(meal.recipe.instruction) : [],
+                prepTime: meal.recipe?.prep_time || 0,
+                difficulty: 'medium'
+              }))
+            };
+          }).sort((a, b) => {
+            // Sort by date if available, else by day number
+            if (a.start_date && b.start_date) {
+              return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+            }
             const dayNumberA = parseInt(a.day.replace(/\D/g, '')) || 0;
             const dayNumberB = parseInt(b.day.replace(/\D/g, '')) || 0;
             return dayNumberA - dayNumberB;
           });
-          
+
           // Only set if we have valid data and we don't already have a local plan
           if (formattedPlans.length > 0 && !localStorage.getItem('smartPlate_mealPlan')) {
             setMealPlan(formattedPlans);
             setGeneratedPlanExists(true);
-            
+
             // Set days based on the fetched plan
             const daysCovered = mealPlans[0]?.days_covered || 3;
             if (daysCovered > 0) {
               setSelectedDays(daysCovered);
               localStorage.setItem('smartPlate_selectedDays', daysCovered.toString());
             }
-            
+
             // Save to localStorage as well
             localStorage.setItem('smartPlate_mealPlan', JSON.stringify(formattedPlans));
           }
@@ -316,7 +333,7 @@ export default function MealPlansPage() {
         console.error("Error loading saved meal plans:", e);
       }
     };
-    
+
     if (user && !isLoading && !generatedPlanExists) {
       fetchExistingMealPlans();
     }
@@ -414,16 +431,16 @@ export default function MealPlansPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        
+
         // Check specifically for Gemini service unavailability
-        if (response.status === 503 || 
-            (errorData.errorCode === "GEMINI_SERVICE_UNAVAILABLE") || 
-            (errorData.error && errorData.error.includes("currently unavailable"))) {
-          
+        if (response.status === 503 ||
+          (errorData.errorCode === "GEMINI_SERVICE_UNAVAILABLE") ||
+          (errorData.error && errorData.error.includes("currently unavailable"))) {
+
           setIsServiceDown(true);
           setRetryAfter(errorData.retryAfter || 60);
           setError("AI service temporarily unavailable. Please try again later.");
-          
+
           toast({
             title: "Service Unavailable",
             description: "Our AI meal planning service is temporarily unavailable. Please try again later.",
@@ -432,7 +449,7 @@ export default function MealPlansPage() {
           });
           return;
         }
-        
+
         throw new Error(errorData.error || `Server error: ${response.status}`);
       }
 
@@ -446,22 +463,30 @@ export default function MealPlansPage() {
       const planData = data.data?.meal_plan?.days || [];
 
       // Transform API data to match our component structure
-      const formattedPlan = planData.map((day: { day: string; meals: Meal[] }) => ({
-        day: day.day,
-        meals: day.meals.map(meal => ({
-          type: meal.type,
-          name: meal.name,
-          description: meal.description,
-          calories: meal.calories,
-          protein: meal.protein,
-          carbs: meal.carbs,
-          fats: meal.fats,
-          ingredients: meal.ingredients,
-          instructions: meal.instructions,
-          prepTime: meal.prepTime,
-          difficulty: meal.difficulty
-        }))
-      }));
+      const baseDate = new Date('2025-05-10'); // Always use May 10, 2025 as the base
+      const formattedPlan = planData.map((day: { day: string; meals: Meal[] }, idx: number) => {
+        // Calculate the date for this day
+        const dayDate = new Date(baseDate);
+        dayDate.setDate(baseDate.getDate() + idx);
+        const formattedDate = formatDate(dayDate.toISOString().slice(0, 10));
+        return {
+          day: formattedDate,
+          start_date: dayDate.toISOString().slice(0, 10),
+          meals: day.meals.map(meal => ({
+            type: meal.type,
+            name: meal.name,
+            description: meal.description,
+            calories: meal.calories,
+            protein: meal.protein,
+            carbs: meal.carbs,
+            fats: meal.fats,
+            ingredients: meal.ingredients,
+            instructions: meal.instructions,
+            prepTime: meal.prepTime,
+            difficulty: meal.difficulty
+          }))
+        };
+      });
 
       setMealPlan(formattedPlan);
       setGeneratedPlanExists(true);
@@ -493,19 +518,19 @@ export default function MealPlansPage() {
     // Don't clear the localStorage here - we'll update it when new plan is generated
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  
+
   const handleClearMealPlan = () => {
     localStorage.removeItem('smartPlate_mealPlan');
     localStorage.removeItem('smartPlate_selectedDays');
     setMealPlan([]);
     setGeneratedPlanExists(false);
     setError(null);
-    
+
     toast({
       title: "Meal plan cleared",
       description: "You can now generate a new meal plan.",
     });
-    
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
