@@ -85,6 +85,12 @@ export default function DietaryPreferences({
     { value: "other", label: "Other", icon: "❓" },
   ];
 
+  const mealsPerDayOptions2 = [
+    { value: "breakfast", label: "Breakfast", icon: "🥐" },
+    { value: "lunch", label: "Lunch", icon: "🥗" },
+    { value: "dinner", label: "Dinner", icon: "🍝" },
+  ];
+
   const mealsPerDayOptions = [
     { value: "2", label: "2" },
     { value: "3", label: "3" },
@@ -468,98 +474,72 @@ export default function DietaryPreferences({
                   </div>
                 </div>
               )}
-              {preferredCuisinesError && (
+              
+            </div>
+
+            <div className="space-y-3">
+              <Label
+                htmlFor="mealsPerDay"
+                className="text-gray-900 text-base"
+              >
+                Meals per Day <span className="text-red-500">*</span>
+              </Label>
+              <MultiSelectCardGroup
+                options={mealsPerDayOptions2}
+                selected={formData.mealsPerDay}
+                onChange={(vals) => onChange("mealsPerDay", vals)}
+                columns={3}
+                error={mealsPerDayError}
+              />
+              {mealsPerDayError && (
                 <p className="text-red-500 text-xs mt-1">
-                  {preferredCuisinesError}
+                  {mealsPerDayError}
                 </p>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <Label
-                  htmlFor="mealsPerDay"
-                  className="text-gray-900 text-base"
+            <div className="space-y-3">
+              <Label
+                htmlFor="mealPrepTimeLimit"
+                className="text-gray-900 text-base"
+              >
+                Meal Prep Time Limit <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <button
+                  type="button"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  onClick={() => setMealPrepTimeOpen((v) => !v)}
                 >
-                  Meals per Day <span className="text-red-500">*</span>
-                </Label>
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    onClick={() => setMealsPerDayOpen((v) => !v)}
-                  >
-                    <span className={formData.mealsPerDay ? "text-gray-900" : "text-gray-400"}>
-                      {formData.mealsPerDay || "Select"}
-                    </span>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
-                  </button>
-                  {mealsPerDayOpen && (
-                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                      {mealsPerDayOptions.map((option) => (
-                        <div
-                          key={option.value}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700"
-                          onClick={() => {
-                            onChange("mealsPerDay", option.value);
-                            setMealsPerDayOpen(false);
-                          }}
-                        >
-                          {option.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {mealsPerDayError && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {mealsPerDayError}
-                  </p>
+                  <span className={formData.mealPrepTimeLimit ? "text-gray-900" : "text-gray-400"}>
+                    {mealPrepTimeOptions.find(opt => opt.value === formData.mealPrepTimeLimit)?.label || "Select"}
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                </button>
+                {mealPrepTimeOpen && (
+                  <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
+                    {mealPrepTimeOptions.map((option) => (
+                      <div
+                        key={option.value}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700"
+                        onClick={() => {
+                          onChange("mealPrepTimeLimit", option.value);
+                          setMealPrepTimeOpen(false);
+                        }}
+                      >
+                        {option.label}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-
-              <div className="space-y-3">
-                <Label
-                  htmlFor="mealPrepTimeLimit"
-                  className="text-gray-900 text-base"
-                >
-                  Meal Prep Time Limit <span className="text-red-500">*</span>
-                </Label>
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    onClick={() => setMealPrepTimeOpen((v) => !v)}
-                  >
-                    <span className={formData.mealPrepTimeLimit ? "text-gray-900" : "text-gray-400"}>
-                      {mealPrepTimeOptions.find(opt => opt.value === formData.mealPrepTimeLimit)?.label || "Select"}
-                    </span>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
-                  </button>
-                  {mealPrepTimeOpen && (
-                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                      {mealPrepTimeOptions.map((option) => (
-                        <div
-                          key={option.value}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700"
-                          onClick={() => {
-                            onChange("mealPrepTimeLimit", option.value);
-                            setMealPrepTimeOpen(false);
-                          }}
-                        >
-                          {option.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {mealPrepTimeLimitError && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {mealPrepTimeLimitError}
-                  </p>
-                )}
-              </div>
+              {mealPrepTimeLimitError && (
+                <p className="text-red-500 text-xs mt-1">
+                  {mealPrepTimeLimitError}
+                </p>
+              )}
             </div>
+            
           </div>
         </div>
         <div className="flex justify-between mt-8 pt-4 bg-white">
