@@ -115,33 +115,7 @@ export default function HealthGoals({
                       >
                         {option.label}
                       </div>
-                      {/* Show numeric input for weekly rate if Lose/Gain Weight is selected */}
-                      {isSelected &&
-                        (option.value === "lose-weight" ||
-                          option.value === "gain-weight") && (
-                          <div className="mt-3 flex flex-col items-center w-full">
-                            <Label className="mb-1 text-xs text-gray-500 self-start">
-                              Optional
-                            </Label>
-                            <div className="flex items-center w-full">
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.1"
-                                placeholder={`e.g., 0.5`}
-                                value={formData.weeklyGoal || ""}
-                                onChange={(e) =>
-                                  onChange("weeklyGoal", e.target.value)
-                                }
-                                className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 text-gray-900 bg-white shadow-sm text-sm"
-                                aria-label="Weekly rate in kg per week"
-                              />
-                            </div>
-                            <span className="text-xs text-gray-500 mt-1 self-start">
-                              kg/week
-                            </span>
-                          </div>
-                        )}
+                      {/* Removed optional weeklyGoal input for lose/gain weight */}
                     </div>
                   );
                 })}
@@ -153,7 +127,7 @@ export default function HealthGoals({
               <Label htmlFor="targetWeight" className="text-gray-900 text-base">
                 Target Weight (in kg)
               </Label>
-              <div className="text-xs text-gray-500">Optional</div>
+              {/* Removed optional label */}
               <div className="relative">
                 <input
                   type="number"
