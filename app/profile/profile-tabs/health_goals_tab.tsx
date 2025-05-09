@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { EditButton } from "@/components/ui/edit-button";
@@ -15,48 +15,69 @@ const healthGoalOptions = [
 interface HealthGoalsForm {
   healthGoal: string;
   targetWeight: string;
-  ratePerWeek: string; // new field for kg/week
 }
 
 const defaultForm: HealthGoalsForm = {
   healthGoal: "lose-weight",
   targetWeight: "",
-  ratePerWeek: "",
 };
 
-export default function HealthGoalsTab() {
-  const [editMode, setEditMode] = useState(false);
-  const [form, setForm] = useState<HealthGoalsForm>(defaultForm);
-  const [formBackup, setFormBackup] = useState<HealthGoalsForm>(defaultForm);
+interface HealthGoalsTabProps {
+  form: HealthGoalsForm;
+  setForm: (form: HealthGoalsForm) => void;
+  onSave: (form: HealthGoalsForm) => Promise<void>;
+  editMode: boolean;
+  handleEdit: () => void;
+  handleCancel: () => void;
+}
+
+export default function HealthGoalsTab({
+  form,
+  setForm,
+  onSave,
+  editMode,
+  handleEdit,
+  handleCancel,
+}: HealthGoalsTabProps) {
+  const [formBackup, setFormBackup] = useState<HealthGoalsForm>(form);
+  const [localForm, setLocalForm] = useState<HealthGoalsForm>(form);
   const [goalDropdownOpen, setGoalDropdownOpen] = useState(false);
 
-  const handleChange = (field: keyof HealthGoalsForm, value: any) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleEdit = () => {
+  useEffect(() => {
     setFormBackup(form);
-    setEditMode(true);
+    setLocalForm(form);
+  }, [form]);
+
+  const handleChange = (field: keyof HealthGoalsForm, value: any) => {
+    setLocalForm({ ...localForm, [field]: value });
   };
 
-  const handleCancel = () => {
-    setForm(formBackup);
-    setEditMode(false);
+  const handleEditLocal = () => {
+    setFormBackup(form);
+    setLocalForm(form);
+    handleEdit();
   };
 
-  const handleSave = () => {
-    // TODO: Save form to backend
-    setEditMode(false);
+  const handleCancelLocal = () => {
+    setLocalForm(formBackup);
+    handleCancel();
+  };
+
+  const handleSaveLocal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await onSave(localForm);
+    setForm(localForm); // update parent state
+    setFormBackup(localForm); // update backup to latest after save
   };
 
   return (
-    <form className="space-y-8" onSubmit={e => { e.preventDefault(); handleSave(); }} autoComplete="off">
+    <form className="space-y-8" onSubmit={handleSaveLocal} autoComplete="off">
       <div className="flex items-start justify-between w-full mb-6">
         <div>
           <div className="text-2xl font-bold text-gray-900 mb-1 max-sm:text-xl">Health Goals</div>
           <div className="text-gray-500 text-base max-sm:text-sm">Define your health and nutrition goals.</div>
         </div>
-        {!editMode && <EditButton onClick={handleEdit} />}
+        {!editMode && <EditButton onClick={handleEditLocal} />}
       </div>
       <div className="space-y-6">
         {/* Health Goal Dropdown */}
@@ -71,8 +92,8 @@ export default function HealthGoalsTab() {
                   onClick={() => setGoalDropdownOpen((v) => !v)}
                   style={{ fontWeight: 400 }}
                 >
-                  <span className={form.healthGoal ? "text-gray-900" : "text-gray-400"}>
-                    {healthGoalOptions.find(opt => opt.value === form.healthGoal)?.label || "Select health goal"}
+                  <span className={localForm.healthGoal ? "text-gray-900" : "text-gray-400"}>
+                    {healthGoalOptions.find(opt => opt.value === localForm.healthGoal)?.label || "Select health goal"}
                   </span>
                   <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                 </button>
@@ -84,7 +105,6 @@ export default function HealthGoalsTab() {
                         className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 text-sm"
                         onClick={() => {
                           handleChange("healthGoal", option.value);
-                          handleChange("ratePerWeek", ""); // Reset ratePerWeek when switching goal
                           setGoalDropdownOpen(false);
                         }}
                       >
@@ -94,47 +114,16 @@ export default function HealthGoalsTab() {
                   </div>
                 )}
               </div>
-              {/* Rate per week input for Lose Weight or Gain Weight */}
-              {(form.healthGoal === "lose-weight" || form.healthGoal === "gain-weight") && (
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {form.healthGoal === "lose-weight"
-                      ? "Weekly Weight Loss Goal (kg)"
-                      : "Weekly Weight Gain Goal (kg)"}
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-                    placeholder="Optional, e.g., 0.5"
-                    value={form.ratePerWeek}
-                    onChange={editMode ? e => handleChange("ratePerWeek", e.target.value) : undefined}
-                    disabled={!editMode}
-                  />
-                </div>
-              )}
+              {/* Removed rate per week input */}
             </>
           ) : (
             <>
               <input
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-                value={healthGoalOptions.find(opt => opt.value === form.healthGoal)?.label || ""}
+                value={healthGoalOptions.find(opt => opt.value === localForm.healthGoal)?.label || ""}
                 disabled
               />
-              {(form.healthGoal === "lose-weight" || form.healthGoal === "gain-weight") && (
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {form.healthGoal === "lose-weight"
-                      ? "Weekly Weight Loss Goal (kg)"
-                      : "Weekly Weight Gain Goal (kg)"}
-                  </label>
-                  <input
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-                    placeholder="Optional, e.g., 0.5"
-                    value={form.ratePerWeek}
-                    disabled
-                  />
-                </div>
-              )}
+              {/* Removed rate per week input */}
             </>
           )}
         </div>
@@ -145,14 +134,14 @@ export default function HealthGoalsTab() {
             type="text"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
             placeholder="e.g., 65"
-            value={form.targetWeight}
+            value={localForm.targetWeight}
             onChange={editMode ? e => handleChange("targetWeight", e.target.value) : undefined}
             disabled={!editMode}
           />
         </div>
       </div>
       {editMode && (
-        <SaveCancelActions onSave={e => { e.preventDefault(); handleSave(); }} onCancel={handleCancel} />
+        <SaveCancelActions onSave={handleSaveLocal} onCancel={handleCancelLocal} />
       )}
     </form>
   );
