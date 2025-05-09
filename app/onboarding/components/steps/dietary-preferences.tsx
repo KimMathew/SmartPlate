@@ -2,7 +2,7 @@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Check, X, ChevronDown } from "lucide-react";
-import { motion } from "framer-motion";
+import DropdownInput from "@/components/ui/dropdown-input";
 import { useState, useEffect } from "react";
 import ProgressIndicator from "@/app/onboarding/components/progress-indicator";
 import CardSelect from "@/components/ui/card-select";
@@ -293,8 +293,8 @@ export default function DietaryPreferences({
             Help us create the perfect meal plan for you.
           </p>
           <div className="space-y-6">
-            <div className="space-y-3">
-              <Label htmlFor="dietType" className="text-gray-900 text-base">
+            <div className="space-y-2">
+              <Label htmlFor="dietType" className="input-label">
                 Diet Type <span className="text-red-500">*</span>
               </Label>
               <CardSelect
@@ -306,10 +306,10 @@ export default function DietaryPreferences({
                 mobileColumns={2}
               />
               {formData.dietType === "other" && (
-                <div className="mt-4">
+                <div className="pt-4 space-y-2">
                   <Label
                     htmlFor="dietTypeOther"
-                    className="text-gray-900 text-sm"
+                    className="input-label"
                   >
                     Specify Your Diet
                   </Label>
@@ -319,7 +319,7 @@ export default function DietaryPreferences({
                     value={otherDiet}
                     onChange={handleOtherDietInput}
                     placeholder="e.g., Paleo"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 bg-white shadow-sm transition-all duration-200 mt-1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 bg-white shadow-sm transition-all duration-200 mt-1"
                   />
                 </div>
               )}
@@ -328,8 +328,8 @@ export default function DietaryPreferences({
               )}
             </div>
 
-            <div className="space-y-3">
-              <Label className="text-gray-900 text-base">
+            <div className="space-y-2">
+              <Label className="input-label">
                 Allergens to Avoid <span className="text-red-500">*</span>
               </Label>
               <MultiSelectCardGroup
@@ -340,10 +340,10 @@ export default function DietaryPreferences({
                 error={allergenError}
               />
               {formData.allergens && formData.allergens.includes("other") && (
-                <div className="mt-4">
+                <div className="pt-4 space-y-2">
                   <Label
                     htmlFor="allergenOther"
-                    className="text-gray-900 text-sm"
+                    className="input-label"
                   >
                     Specify Your Allergen(s)
                   </Label>
@@ -382,10 +382,10 @@ export default function DietaryPreferences({
               )}
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label
                 htmlFor="dislikedIngredients"
-                className="text-gray-900 text-base"
+                className="input-label"
               >
                 Disliked Ingredients (if any)
               </Label>
@@ -422,7 +422,7 @@ export default function DietaryPreferences({
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label className="text-gray-900 text-base">
                 Preferred Cuisines <span className="text-red-500">*</span>
               </Label>
@@ -434,10 +434,10 @@ export default function DietaryPreferences({
                 error={preferredCuisinesError}
               />
               {formData.preferredCuisines.includes("other") && (
-                <div className="mt-4">
+                <div className="pt-4 space-y-2">
                   <Label
                     htmlFor="cuisineOther"
-                    className="text-gray-900 text-sm"
+                    className="input-label"
                   >
                     Specify Other Cuisine(s)
                   </Label>
@@ -477,10 +477,10 @@ export default function DietaryPreferences({
               
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label
                 htmlFor="mealsPerDay"
-                className="text-gray-900 text-base"
+                className="input-label"
               >
                 Meals per Day <span className="text-red-500">*</span>
               </Label>
@@ -498,62 +498,29 @@ export default function DietaryPreferences({
               )}
             </div>
 
-            <div className="space-y-3">
-              <Label
-                htmlFor="mealPrepTimeLimit"
-                className="text-gray-900 text-base"
-              >
-                Meal Prep Time Limit <span className="text-red-500">*</span>
-              </Label>
-              <div className="relative">
-                <button
-                  type="button"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  onClick={() => setMealPrepTimeOpen((v) => !v)}
-                >
-                  <span className={formData.mealPrepTimeLimit ? "text-gray-900" : "text-gray-400"}>
-                    {mealPrepTimeOptions.find(opt => opt.value === formData.mealPrepTimeLimit)?.label || "Select"}
-                  </span>
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
-                </button>
-                {mealPrepTimeOpen && (
-                  <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                    {mealPrepTimeOptions.map((option) => (
-                      <div
-                        key={option.value}
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700"
-                        onClick={() => {
-                          onChange("mealPrepTimeLimit", option.value);
-                          setMealPrepTimeOpen(false);
-                        }}
-                      >
-                        {option.label}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {mealPrepTimeLimitError && (
-                <p className="text-red-500 text-xs mt-1">
-                  {mealPrepTimeLimitError}
-                </p>
-              )}
-            </div>
-            
+            <DropdownInput
+              label={<>Meal Prep Time Limit <span className="text-red-500">*</span></>}
+              options={mealPrepTimeOptions}
+              value={formData.mealPrepTimeLimit}
+              onChange={val => onChange("mealPrepTimeLimit", val)}
+              placeholder="Select"
+              error={mealPrepTimeLimitError}
+              disabled={false}
+            />
           </div>
         </div>
         <div className="flex justify-between mt-8 pt-4 bg-white">
           <Button
             onClick={onBack}
             variant="ghost"
-            className="font-medium"
+            className="px-6 py-2 text-base"
           >
             Back
           </Button>
           <Button
             onClick={handleFinish}
             size="lg"
-            className="px-6 py-2"
+            className="px-6 py-2 text-base"
           >
             Finish
           </Button>

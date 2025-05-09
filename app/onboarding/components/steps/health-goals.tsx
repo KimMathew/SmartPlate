@@ -57,8 +57,8 @@ export default function HealthGoals({
           </p>
 
           <div className="space-y-6">
-            <div className="space-y-3">
-              <Label htmlFor="goalType" className="text-gray-900 text-base">
+            <div className="space-y-2">
+              <Label htmlFor="goalType" className="input-label">
                 Goal Type <span className="text-red-500">*</span>
               </Label>
               <CardSelect
@@ -75,8 +75,8 @@ export default function HealthGoals({
               {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="targetWeight" className="text-gray-900 text-base">
+            <div className="space-y-2">
+              <Label htmlFor="targetWeight" className="input-label">
                 Target Weight (in kg)
               </Label>
               {/* Removed optional label */}
@@ -119,7 +119,7 @@ export default function HealthGoals({
           <Button
             onClick={onBack}
             variant="ghost"
-            className="font-medium"
+            className="px-6 py-2 text-base"
           >
             Back
           </Button>
@@ -133,7 +133,7 @@ export default function HealthGoals({
               onNext();
             }}
             size="lg"
-            className="px-6 py-2"
+            className="px-6 py-2 text-base"
           >
             Next
           </Button>
