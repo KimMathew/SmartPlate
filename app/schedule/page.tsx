@@ -1,12 +1,26 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Share, Printer } from "lucide-react";
 
 export default function SchedulePage() {
   const [date, setDate] = useState<Date>(new Date());
+  const [mealPlan, setMealPlan] = useState<any[]>([]);
+
+  // Load meal plan from localStorage
+  useEffect(() => {
+    const savedPlan = localStorage.getItem('smartPlate_mealPlan');
+    if (savedPlan) {
+      try {
+        const parsedPlan = JSON.parse(savedPlan);
+        setMealPlan(parsedPlan);
+      } catch (e) {
+        setMealPlan([]);
+      }
+    }
+  }, []);
 
   // Calculate the start of the week (Sunday)
   const startOfWeek = new Date(date);
@@ -20,6 +34,24 @@ export default function SchedulePage() {
   });
 
   const mealTypes = ["breakfast", "lunch", "dinner"];
+
+  // Helper to find a meal for a given date and type
+  function getLocalDateString(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  function getMealForDateAndType(date: Date, type: string) {
+    const dateStr = getLocalDateString(date);
+    for (const day of mealPlan) {
+      if (day.start_date === dateStr) {
+        const meal = day.meals.find((m: any) => m.type?.toLowerCase() === type.toLowerCase());
+        if (meal) return meal;
+      }
+    }
+    return null;
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4">
@@ -98,19 +130,29 @@ export default function SchedulePage() {
               <div className="p-4 border-r border-b flex items-center">
                 <span className="capitalize text-sm text-gray-600">{mealType}</span>
               </div>
-              {weekDays.map((_, dayIndex) => (
-                <div
-                  key={`${mealType}-${dayIndex}`}
-                  className="p-4 border-r border-b last:border-r-0"
-                >
-                  <Button
-                    variant="outline"
-                    className="w-full h-full min-h-[60px] border-dashed"
+              {weekDays.map((day, dayIndex) => {
+                const meal = getMealForDateAndType(day, mealType);
+                return (
+                  <div
+                    key={`${mealType}-${dayIndex}`}
+                    className="p-4 border-r border-b last:border-r-0"
                   >
-                    + Add {mealType}
-                  </Button>
-                </div>
-              ))}
+                    {meal ? (
+                      <div className="bg-emerald-50 rounded-lg p-2 text-center">
+                        <div className="font-semibold text-emerald-700">{meal.name}</div>
+                        <div className="text-xs text-gray-500">{meal.calories} cal</div>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="w-full h-full min-h-[60px] border-dashed"
+                      >
+                        + Add {mealType}
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
             </React.Fragment>
           ))}
         </div>

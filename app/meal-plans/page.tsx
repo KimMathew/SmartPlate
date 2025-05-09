@@ -463,15 +463,22 @@ export default function MealPlansPage() {
       const planData = data.data?.meal_plan?.days || [];
 
       // Transform API data to match our component structure
-      const baseDate = new Date('2025-05-10'); // Always use May 10, 2025 as the base
+      // Use local date (not UTC) for start_date to avoid timezone issues
+      function getLocalDateString(date: Date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+      const baseDate = new Date();
       const formattedPlan = planData.map((day: { day: string; meals: Meal[] }, idx: number) => {
         // Calculate the date for this day
         const dayDate = new Date(baseDate);
         dayDate.setDate(baseDate.getDate() + idx);
-        const formattedDate = formatDate(dayDate.toISOString().slice(0, 10));
+        const formattedDate = formatDate(getLocalDateString(dayDate));
         return {
           day: formattedDate,
-          start_date: dayDate.toISOString().slice(0, 10),
+          start_date: getLocalDateString(dayDate),
           meals: day.meals.map(meal => ({
             type: meal.type,
             name: meal.name,
