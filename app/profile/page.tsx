@@ -49,13 +49,26 @@ export default function ProfilePage() {
   });
   const [formBackup, setFormBackup] = useState(form);
 
+  // Add this initial state for dietary preferences
+  const [dietaryForm, setDietaryForm] = useState({
+    dietType: "",
+    dietTypeOther: "",
+    allergens: [] as string[],
+    allergenOther: [] as string[],
+    dislikedIngredients: [] as string[],
+    preferredCuisines: [] as string[],
+    cuisineOther: [] as string[],
+    mealsPerDay: "",
+    mealPrepTimeLimit: "",
+  });
+
   useEffect(() => {
     const supabase = createClient();
     const fetchProfile = async () => {
       if (user) {
         const { data, error } = await supabase
           .from("Users")
-          .select('first_name, last_name, email, "birth-date", gender, height, weight')
+          .select(`first_name, last_name, email, "birth-date", gender, height, weight, diet_type, allergens, disliked_ingredients, preferred_cuisines, meals_per_day, prep_time_limit`)
           .eq("id", user.id)
           .single();
         if (data) {
@@ -71,6 +84,17 @@ export default function ProfilePage() {
             height: data.height !== undefined && data.height !== null ? String(data.height) : "",
             weight: data.weight !== undefined && data.weight !== null ? String(data.weight) : "",
           });
+          setDietaryForm({
+            dietType: data.diet_type ?? "",
+            dietTypeOther: "", // You may want to add this field to your DB if needed
+            allergens: Array.isArray(data.allergens) ? data.allergens : (data.allergens ? data.allergens.split(",") : []),
+            allergenOther: [], // You may want to add this field to your DB if needed
+            dislikedIngredients: Array.isArray(data.disliked_ingredients) ? data.disliked_ingredients : (data.disliked_ingredients ? data.disliked_ingredients.split(",") : []),
+            preferredCuisines: Array.isArray(data.preferred_cuisines) ? data.preferred_cuisines : (data.preferred_cuisines ? data.preferred_cuisines.split(",") : []),
+            cuisineOther: [], // You may want to add this field to your DB if needed
+            mealsPerDay: data.meals_per_day ?? "",
+            mealPrepTimeLimit: data.prep_time_limit ?? "",
+          });
         } else {
           setProfile({ fullName: "", email: user.email ?? "" });
           setForm({
@@ -80,6 +104,17 @@ export default function ProfilePage() {
             gender: "",
             height: "",
             weight: "",
+          });
+          setDietaryForm({
+            dietType: "",
+            dietTypeOther: "",
+            allergens: [],
+            allergenOther: [],
+            dislikedIngredients: [],
+            preferredCuisines: [],
+            cuisineOther: [],
+            mealsPerDay: "",
+            mealPrepTimeLimit: "",
           });
         }
       } else {
@@ -91,6 +126,17 @@ export default function ProfilePage() {
           gender: "",
           height: "",
           weight: "",
+        });
+        setDietaryForm({
+          dietType: "",
+          dietTypeOther: "",
+          allergens: [],
+          allergenOther: [],
+          dislikedIngredients: [],
+          preferredCuisines: [],
+          cuisineOther: [],
+          mealsPerDay: "",
+          mealPrepTimeLimit: "",
         });
       }
     };
@@ -199,7 +245,7 @@ export default function ProfilePage() {
               />
             )}
             {activeTab === 1 && (
-              <DietaryPreferencesTab />
+              <DietaryPreferencesTab form={dietaryForm} setForm={setDietaryForm} />
             )}
             {activeTab === 2 && (
               // Render HealthGoalsTab for the Health Goals tab
