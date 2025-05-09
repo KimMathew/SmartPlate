@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import ProgressIndicator from "../progress-indicator";
+import ProgressIndicator from "@/app/onboarding/components/progress-indicator";
 
 interface HealthGoalsProps {
   formData: any;

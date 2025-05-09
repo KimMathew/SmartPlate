@@ -39,7 +39,7 @@ export default function Hero({
 
         <Button
           size="lg"
-          className="px-8 py-6 text-lg max-sm:text-base"
+          className="py-3 text-lg max-sm:text-base"
           onClick={openLoginModal}
         >
           Plan Your First Meal

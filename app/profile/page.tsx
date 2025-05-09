@@ -10,11 +10,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User, Apple, Target, Settings, Pencil } from "lucide-react";
 import PersonalInfoTab from "./profile-tabs/personal_info_tab";
 import DietaryPreferencesTab from "./profile-tabs/dietary_tab";
 import HealthGoalsTab from "./profile-tabs/health_goals_tab";
+import { useSession } from "@/lib/session-context";
+import { createClient } from "@/lib/supabase";
 
 const TABS = [
   { label: "Personal Info", icon: <User className="w-4 h-4 mr-2" /> },
@@ -33,10 +35,13 @@ const DIET_TYPES = [
 ];
 
 export default function ProfilePage() {
+  const { user, isLoading } = useSession();
+  const [profile, setProfile] = useState<{ fullName: string; email: string } | null>(null);
   const [activeTab, setActiveTab] = useState(0); // Default to Personal Info
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({
-    name: "Jane Smith",
+    firstName: "Jane",
+    lastName: "Smith",
     dob: "1990-01-01",
     gender: "Female",
     height: "165",
@@ -44,23 +49,97 @@ export default function ProfilePage() {
   });
   const [formBackup, setFormBackup] = useState(form);
 
+  useEffect(() => {
+    const supabase = createClient();
+    const fetchProfile = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from("Users")
+          .select('first_name, last_name, email, "birth-date", gender, height, weight')
+          .eq("id", user.id)
+          .single();
+        if (data) {
+          setProfile({
+            fullName: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
+            email: data.email ?? user.email ?? "",
+          });
+          setForm({
+            firstName: data.first_name ?? "",
+            lastName: data.last_name ?? "",
+            dob: data["birth-date"] ?? "",
+            gender: data.gender ?? "",
+            height: data.height !== undefined && data.height !== null ? String(data.height) : "",
+            weight: data.weight !== undefined && data.weight !== null ? String(data.weight) : "",
+          });
+        } else {
+          setProfile({ fullName: "", email: user.email ?? "" });
+          setForm({
+            firstName: "",
+            lastName: "",
+            dob: "",
+            gender: "",
+            height: "",
+            weight: "",
+          });
+        }
+      } else {
+        setProfile(null);
+        setForm({
+          firstName: "",
+          lastName: "",
+          dob: "",
+          gender: "",
+          height: "",
+          weight: "",
+        });
+      }
+    };
+    fetchProfile();
+  }, [user]);
+
+  async function updateProfile(updatedForm: typeof form) {
+    if (!user) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("Users")
+      .update({
+        first_name: updatedForm.firstName,
+        last_name: updatedForm.lastName,
+        "birth-date": updatedForm.dob,
+        gender: updatedForm.gender,
+        height: updatedForm.height ? Number(updatedForm.height) : null,
+        weight: updatedForm.weight ? Number(updatedForm.weight) : null,
+      })
+      .eq("id", user.id);
+    if (!error) {
+      setForm(updatedForm);
+      setEditMode(false);
+      setProfile({
+        fullName: `${updatedForm.firstName} ${updatedForm.lastName}`.trim(),
+        email: profile?.email || user.email || "",
+      });
+    } else {
+      // Optionally show error to user
+      alert("Failed to update profile. Please try again.");
+    }
+  }
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
   function handleEdit() {
-    setFormBackup(form);
+    setFormBackup(form); // Save current form as backup
     setEditMode(true);
   }
 
   function handleCancel() {
-    setForm(formBackup);
+    setForm(formBackup); // Restore backup
     setEditMode(false);
   }
 
   function handleSave(updatedForm: typeof form) {
-    setForm(updatedForm);
-    setEditMode(false);
+    updateProfile(updatedForm);
   }
 
   return (
@@ -75,15 +154,15 @@ export default function ProfilePage() {
           <CardContent className="flex items-center gap-8 pt-8 pb-8 pl-8 pr-8 flex-row
             max-sm:gap-6 max-sm:pt-6 max-sm:pb-6 max-sm:pl-6 max-sm:pr-6 max-sm:flex-row">
             <Avatar className="h-24 w-24 max-sm:h-16 max-sm:w-16">
-              <AvatarImage src="/placeholder-user.jpg" alt={form.name} />
+              <AvatarImage src="/placeholder-user.jpg" alt={profile?.fullName || `${form.firstName} ${form.lastName}`} />
               <AvatarFallback className="bg-gray-200 text-gray-700 text-3xl max-sm:text-xl">
-                {form.name.split(" ").map((n) => n[0]).join("")}
+                {(profile?.fullName || `${form.firstName} ${form.lastName}`).split(" ").map((n: string) => n[0]).join("")}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex flex-col justify-center">
-                <div className="text-2xl font-bold text-gray-900 max-sm:text-xl">{form.name}</div>
-                <div className="text-gray-500 text-base mt-1 max-sm:text-sm">jane.smith@example.com</div>
+                <div className="text-2xl font-bold text-gray-900 max-sm:text-xl">{profile?.fullName || `${form.firstName} ${form.lastName}`}</div>
+                <div className="text-gray-500 text-base mt-1 max-sm:text-sm">{profile?.email || ""}</div>
               </div>
             </div>
             {/* Removed Edit Profile Button */}
@@ -116,6 +195,7 @@ export default function ProfilePage() {
                 handleChange={handleChange}
                 handleSave={handleSave}
                 handleCancel={handleCancel}
+                handleEdit={handleEdit}
               />
             )}
             {activeTab === 1 && (

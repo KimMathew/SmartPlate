@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import OnboardingLayout from "@/components/onboarding/onboarding-layout";
-import BasicInformation from "@/components/onboarding/steps/basic-information";
-import PhysicalData from "@/components/onboarding/steps/physical-data";
-import HealthGoals from "@/components/onboarding/steps/health-goals";
-import DietaryPreferences from "@/components/onboarding/steps/dietary-preferences";
-import CompletionStep from "@/components/onboarding/steps/completion-step";
+import OnboardingLayout from "@/app/onboarding/components/onboarding-layout";
+import BasicInformation from "@/app/onboarding/components/steps/basic-information";
+import PhysicalData from "@/app/onboarding/components/steps/physical-data";
+import HealthGoals from "@/app/onboarding/components/steps/health-goals";
+import DietaryPreferences from "@/app/onboarding/components/steps/dietary-preferences";
+import CompletionStep from "@/app/onboarding/components/steps/completion-step";
 import { createClient } from "@/lib/supabase";
 import { useSearchParams } from "next/navigation";
 import Forbidden from "@/components/ui/forbidden";
@@ -27,37 +27,37 @@ export default function OnboardingPage() {
   const [forbidden, setForbidden] = useState(false);
 
   useEffect(() => {
-    //1. Check sessionStorage for signup data
-    const storedData = sessionStorage.getItem("tempSignupData");
+    // //1. Check sessionStorage for signup data
+    // const storedData = sessionStorage.getItem("tempSignupData");
 
-    // 2. If no data exists, show forbidden
-    if (!storedData) {
-      setForbidden(true);
-      return;
-    }
+    // // 2. If no data exists, show forbidden
+    // if (!storedData) {
+    //   setForbidden(true);
+    //   return;
+    // }
 
-    // 3. Parse and set the user data
-    const parsed = JSON.parse(storedData);
-    setUserData(parsed);
-    // Update formData with firstName, lastName, email from signup
-    setFormData((prev) => ({
-      ...prev,
-      firstName: parsed.firstName || "User",
-      lastName: parsed.lastName || "",
-      email: parsed.email || "",
-
-    //BYPASS ONBOARDING FOR DEBUGGING
-    // setUserData({
-    //   firstName: "Debug",
-    //   lastName: "User",
-    //   email: "debug@example.com",
-    //   password: "password123"
-    // });
+    // // 3. Parse and set the user data
+    // const parsed = JSON.parse(storedData);
+    // setUserData(parsed);
+    // // Update formData with firstName, lastName, email from signup
     // setFormData((prev) => ({
     //   ...prev,
-    //   firstName: "Debug",
-    //   lastName: "User",
-    //   email: "debug@example.com"
+    //   firstName: parsed.firstName || "User",
+    //   lastName: parsed.lastName || "",
+    //   email: parsed.email || "",
+
+    //BYPASS ONBOARDING FOR DEBUGGING
+    setUserData({
+      firstName: "Debug",
+      lastName: "User",
+      email: "debug@example.com",
+      password: "password123"
+    });
+    setFormData((prev) => ({
+      ...prev,
+      firstName: "Debug",
+      lastName: "User",
+      email: "debug@example.com"
     }));
   }, [router]);
 
