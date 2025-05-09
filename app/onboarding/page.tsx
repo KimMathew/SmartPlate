@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import OnboardingLayout from "@/components/onboarding/onboarding-layout";
-import BasicInformation from "@/components/onboarding/steps/basic-information";
-import PhysicalData from "@/components/onboarding/steps/physical-data";
-import HealthGoals from "@/components/onboarding/steps/health-goals";
-import DietaryPreferences from "@/components/onboarding/steps/dietary-preferences";
-import CompletionStep from "@/components/onboarding/steps/completion-step";
+import OnboardingLayout from "@/app/onboarding/components/onboarding-layout";
+import BasicInformation from "@/app/onboarding/components/steps/basic-information";
+import PhysicalData from "@/app/onboarding/components/steps/physical-data";
+import HealthGoals from "@/app/onboarding/components/steps/health-goals";
+import DietaryPreferences from "@/app/onboarding/components/steps/dietary-preferences";
+import CompletionStep from "@/app/onboarding/components/steps/completion-step";
 import { createClient } from "@/lib/supabase";
 import { useSearchParams } from "next/navigation";
 import Forbidden from "@/components/ui/forbidden";

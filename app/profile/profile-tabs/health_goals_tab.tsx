@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
-import { EditButton } from "@/components/edit-button";
+import { EditButton } from "@/components/ui/edit-button";
+import { SaveCancelActions } from "@/components/ui/save-cancel-actions";
 
 const healthGoalOptions = [
   { value: "lose-weight", label: "Lose Weight" },
@@ -55,9 +56,7 @@ export default function HealthGoalsTab() {
           <div className="text-2xl font-bold text-gray-900 mb-1 max-sm:text-xl">Health Goals</div>
           <div className="text-gray-500 text-base max-sm:text-sm">Define your health and nutrition goals.</div>
         </div>
-        {!editMode && (
-          <EditButton onClick={handleEdit} />
-        )}
+        {!editMode && <EditButton onClick={handleEdit} />}
       </div>
       <div className="space-y-6">
         {/* Health Goal Dropdown */}
@@ -153,10 +152,7 @@ export default function HealthGoalsTab() {
         </div>
       </div>
       {editMode && (
-        <div className="flex gap-4 pt-2">
-          <Button type="submit" className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-8 py-3 rounded-md">Save Changes</Button>
-          <Button type="button" variant="outline" onClick={handleCancel}>Cancel</Button>
-        </div>
+        <SaveCancelActions onSave={e => { e.preventDefault(); handleSave(); }} onCancel={handleCancel} />
       )}
     </form>
   );

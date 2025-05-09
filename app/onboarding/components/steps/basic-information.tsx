@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
-import ProgressIndicator from "../progress-indicator";
+import ProgressIndicator from "@/app/onboarding/components/progress-indicator";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,

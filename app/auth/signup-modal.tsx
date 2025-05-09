@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { X, Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Loader } from "../ui/loader";
+import { Loader } from "@/components/ui/loader";
 
 interface SignupModalProps {
   isOpen: boolean;

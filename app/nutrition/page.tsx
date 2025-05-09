@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import NutritionSummaryCard from "@/components/NutritionSummaryCard";
-import NutritionVisualizationCard from "@/components/NutritionVisualizationCard";
-import MealLogCard from "@/components/MealLogCard";
+import NutritionSummaryCard from "@/app/nutrition/components/NutritionSummaryCard";
+import NutritionVisualizationCard from "@/app/nutrition/components/NutritionVisualizationCard";
+import MealLogCard from "@/app/nutrition/components/MealLogCard";
 
 // TODO: Replace this with data from the backend/database
 const nutritionData = {
