@@ -292,8 +292,64 @@ export async function POST(req: Request) {
       }
     });
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response.text();
+    // Add retry logic with exponential backoff
+    const MAX_RETRIES = 3;
+    let retries = 0;
+    let response;
+    
+    while (retries < MAX_RETRIES) {
+      try {
+        console.log(`Attempt ${retries + 1} of ${MAX_RETRIES} to generate meal plan with Gemini`);
+        const result = await model.generateContent(prompt);
+        response = await result.response.text();
+        break; // Success! Exit the retry loop
+      } catch (error: any) {
+        retries++;
+        
+        // Check if this is a service availability error
+        const isServiceUnavailable = 
+          error.message?.includes("503") || 
+          error.message?.includes("Service Unavailable") ||
+          error.message?.includes("currently unavailable");
+        
+        if (isServiceUnavailable) {
+          console.error(`Gemini API service unavailable (attempt ${retries}/${MAX_RETRIES}):`, error);
+          
+          if (retries >= MAX_RETRIES) {
+            console.error("Max retries exceeded. Using fallback solution.");
+            
+            return NextResponse.json({
+              success: false,
+              error: "The AI service is currently unavailable. Please try again in a few minutes.",
+              errorCode: "GEMINI_SERVICE_UNAVAILABLE",
+              retryAfter: 60, // Suggest retry after 60 seconds
+            }, { 
+              status: 503,
+              headers: {
+                'Retry-After': '60'
+              }
+            });
+          }
+          
+          // Exponential backoff: wait longer between each retry
+          const delayMs = Math.pow(2, retries) * 1000; // 2s, 4s, 8s
+          console.log(`Waiting ${delayMs}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          continue;
+        } else {
+          // Some other error occurred, don't retry
+          console.error("Unexpected error calling Gemini API:", error);
+          throw error;
+        }
+      }
+    }
+
+    if (!response) {
+      return NextResponse.json({
+        success: false,
+        error: "Failed to generate meal plan. Our AI service is experiencing issues."
+      }, { status: 500 });
+    }
 
     // 4. Clean and parse the JSON response
     let parsedResponse;
