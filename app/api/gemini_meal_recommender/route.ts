@@ -1,21 +1,37 @@
 import { createClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 // Use server-side environment variables for API credentials
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-    db: {
-      schema: 'public',
-    },
+const createSupabaseClient = (authToken?: string, useServiceRole = false) => {
+  // If service role is requested but not available, log a warning and use anon key instead
+  if (useServiceRole && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn("SUPABASE_SERVICE_ROLE_KEY is not defined. Falling back to anon key. You should add this to your environment variables.");
+    useServiceRole = false;
   }
-);
+
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    useServiceRole ? process.env.SUPABASE_SERVICE_ROLE_KEY! : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+      global: {
+        headers: authToken && !useServiceRole
+          ? {
+            Authorization: `Bearer ${authToken}`,
+          }
+          : {},
+      },
+      db: {
+        schema: 'public',
+      },
+    }
+  );
+};
 
 // Use the server-side API key for Gemini - this should be a secret environment variable
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY!);
@@ -46,7 +62,7 @@ interface Meal {
 }
 
 // Utility function to check if a table exists
-async function getTableNames() {
+async function getTableNames(supabase: ReturnType<typeof createSupabaseClient>) {
   const { data, error } = await supabase
     .rpc('get_all_tables'); // This assumes you have RPC access, otherwise use a different method
 
@@ -97,6 +113,31 @@ function findBestMatchingTable(tables: string[], baseName: string) {
 export async function POST(req: Request) {
   try {
     const { userId, days } = await req.json();
+    const cookieStore = await cookies();
+    let supabaseAuthToken = cookieStore.get('sb-access-token')?.value;
+
+    // Fallback: check Authorization header for Bearer token
+    if (!supabaseAuthToken) {
+      const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        supabaseAuthToken = authHeader.replace('Bearer ', '').trim();
+      }
+    }
+
+    // Initialize Supabase client with auth token if available
+    const supabase = createSupabaseClient(supabaseAuthToken);
+
+    // Debugging: Log auth token and authenticated user
+    console.log("Auth token:", supabaseAuthToken);
+    const { data: userInfo, error: userInfoError } = await supabase.auth.getUser();
+    console.log("Supabase auth user:", userInfo);
+    if (userInfoError) {
+      console.error("Error fetching authenticated user:", userInfoError);
+    }
+
+    // Debugging: Test select from meal_plan
+    const { data: selectTestData, error: selectTestError } = await supabase.from('meal_plan').select('*').limit(1);
+    console.log("Select test:", selectTestData, selectTestError);
 
     console.log("API request received for userId:", userId, "days:", days);
 
@@ -133,7 +174,7 @@ export async function POST(req: Request) {
         console.log("Available tables:", allTables);
       } else {
         // Fall back to the custom function
-        allTables = await getTableNames();
+        allTables = await getTableNames(supabase);
       }
     } catch (e) {
       console.warn("Couldn't query schema, using direct table access:", e);
@@ -144,13 +185,11 @@ export async function POST(req: Request) {
     const mealPlanTable = findBestMatchingTable(allTables, 'meal_plan') || 'meal_plan';
     const recipesTable = findBestMatchingTable(allTables, 'recipe') || 'recipe';
     const nutritionTable = findBestMatchingTable(allTables, 'nutrition_info') || 'nutrition_info';
-    const mealEntriesTable = findBestMatchingTable(allTables, 'meal_plan_items') || 'meal_plan_items';
 
     console.log("Using tables:", {
       mealPlanTable,
       recipesTable,
-      nutritionTable,
-      mealEntriesTable
+      nutritionTable
     });
 
     // 1. Fetch user onboarding data
@@ -316,94 +355,121 @@ export async function POST(req: Request) {
       }, { status: 500 });
     }
 
-    // 5. Insert meal plan into database - with more debugging and schema detection
-    const now = new Date().toISOString();
-    let mealPlanId;
-    let formattedMealPlan = [];
+    // 5. Insert meal plan, nutrition, and recipe for each meal in each day
+    const today = new Date();
+    const startDate = today.toISOString().slice(0, 10);
+    const daysCovered = Object.keys(parsedResponse).length;
+    const endDateObj = new Date(today);
+    endDateObj.setDate(today.getDate() + daysCovered - 1);
+    const endDate = endDateObj.toISOString().slice(0, 10);
 
-    // Try to create the main meal plan record
-    console.log(`Attempting to insert into ${mealPlanTable} table for user ${userId}`);
+    // Create a separate client with service role key to bypass RLS
+    const supabaseAdmin = createSupabaseClient(undefined, true);
 
-    try {
-      // First, check the structure of the meal plan table
-      const { data: tableInfo, error: tableInfoError } = await supabase
-        .from(mealPlanTable)
-        .select('*')
-        .limit(1);
+    let mealPlanIds: any[] = [];
+    let failedMeals: any[] = [];
+    for (const [dayKey, dayData] of Object.entries(parsedResponse)) {
+      // Insert nutrition_info for the day
+      let nutrition_id = null;
+      if ((dayData as { totals?: { calories?: number } }).totals) {
+        const nutritionPayload = {
+          calories: (dayData as { totals?: { calories?: number } }).totals?.calories ?? 0,
+          protein_g: (dayData as { totals?: { protein?: number } }).totals?.protein ?? 0,
+          carbs_g: (dayData as { totals?: { carbs?: number } }).totals?.carbs ?? 0,
+          fats_g: (dayData as { totals?: { fats?: number } }).totals?.fats ?? 0,
+          vitamins: null // Not in JSON
+        };
 
-      if (tableInfoError) {
-        console.error(`Error querying ${mealPlanTable} table:`, tableInfoError);
-      } else if (tableInfo) {
-        console.log(`${mealPlanTable} table columns:`, tableInfo.length ? Object.keys(tableInfo[0]) : "No rows");
-      }
+        // Use service role client to bypass RLS for nutrition_info
+        const { data: nutrition, error: nutritionError } = await supabaseAdmin
+          .from('nutrition_info')
+          .insert(nutritionPayload)
+          .select('nutrition_id')
+          .single();
 
-      // Prepare a more flexible payload based on possible column names
-      const mealPlanPayload = {
-        user_id: userId,
-        plan_name: `${days}-Day Meal Plan`, // Changed from plan_name to title to match the database schema
-        created_at: now,
-        plan_type: user.diet_type || "balanced",
-        description: `Auto-generated meal plan for ${days} days`,
-        start_date: now,
-        end_date: new Date(Date.now() + days * 86400000).toISOString() // days * ms in a day
-      };
-
-      console.log("Using payload for meal plan:", mealPlanPayload);
-
-      const { data: mealPlanData, error: mealPlanError } = await supabase
-        .from(mealPlanTable)
-        .insert(mealPlanPayload)
-        .select()
-        .single();
-
-      if (mealPlanError) {
-        console.error("Full error from meal plan insert:", JSON.stringify(mealPlanError, null, 2));
-
-        if (mealPlanError.code === "23502") { // not-null violation
-          console.error("Not-null constraint violation. Trying with minimal fields.");
-
-          // Try with absolute minimum fields
-          const { data: minimalPlanData, error: minimalPlanError } = await supabase
-            .from(mealPlanTable)
-            .insert({ user_id: userId })
-            .select()
-            .single();
-
-          if (minimalPlanError) {
-            console.error("Minimal insert still failed:", minimalPlanError);
-            throw new Error(`Database schema error: Could not insert into ${mealPlanTable}`);
-          } else {
-            mealPlanId = minimalPlanData?.id || minimalPlanData?.plan_id;
-            console.log("Created minimal meal plan with ID:", mealPlanId);
-          }
+        if (nutritionError) {
+          console.error('Error inserting nutrition_info:', nutritionError);
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to insert nutrition_info',
+            details: nutritionError
+          }, { status: 500 });
         } else {
-          throw new Error(`Database error: ${mealPlanError.message}`);
+          nutrition_id = nutrition?.nutrition_id;
+          console.log('Inserted nutrition_info:', nutrition);
         }
-      } else {
-        mealPlanId = mealPlanData?.id || mealPlanData?.plan_id;
-        console.log("Created meal plan with ID:", mealPlanId);
       }
-    } catch (dbError) {
-      console.error("Database operation failed:", dbError);
-      return NextResponse.json({
-        success: false,
-        error: "Database error: Failed to store meal plan",
-        details: {
-          message: dbError instanceof Error ? dbError.message : String(dbError)
-        }
-      }, { status: 500 });
-    }
 
-    if (!mealPlanId) {
-      console.error("Failed to get meal plan ID after database insert");
-      return NextResponse.json({
-        success: false,
-        error: "Database error: Failed to retrieve meal plan ID"
-      }, { status: 500 });
+      // Insert each meal as a recipe and then meal_plan
+      for (const meal of (dayData as { meals?: Meal[] }).meals || []) {
+        // Skip if required fields are missing
+        if (!meal.name || !meal.type) {
+          failedMeals.push({ day: dayKey, reason: 'Missing name or type', meal });
+          continue;
+        }
+        // Insert recipe
+        const recipePayload = {
+          title: meal.name,
+          ingredients: meal.ingredients ? JSON.stringify(meal.ingredients) : '[]',
+          instruction: meal.instructions ? JSON.stringify(meal.instructions) : '[]',
+          cuisine_type: meal.cuisine_type || null,
+          prep_time: meal.prepTime || meal.prep_time || null,
+          image_url: null,
+          source_url: null
+        };
+        const supabaseServiceRole = createSupabaseClient(undefined, true);
+        const { data: recipe, error: recipeError } = await supabaseServiceRole
+          .from('recipe')
+          .insert(recipePayload)
+          .select('recipe_id')
+          .single();
+        if (recipeError || !recipe?.recipe_id) {
+          console.error('Error inserting recipe:', recipeError);
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to insert recipe',
+            details: recipeError
+          }, { status: 500 });
+        }
+        const recipe_id = recipe.recipe_id;
+        console.log('Inserted recipe:', recipe);
+
+        // Insert meal_plan row
+        const mealPlanPayload = {
+          user_id: userId,
+          nutrition_id,
+          recipe_id,
+          plan_type: meal.type,
+          plan_name: meal.name,
+          description: meal.description || '',
+          start_date: startDate,
+          end_date: endDate,
+          days_covered: daysCovered
+        };
+
+        // Use service role client to bypass RLS for meal_plan table too
+        const { data: mealPlanData, error: mealPlanError } = await supabaseAdmin
+          .from(mealPlanTable)
+          .insert(mealPlanPayload)
+          .select('plan_id')
+          .single();
+
+        if (mealPlanError) {
+          console.error('Error inserting meal_plan:', mealPlanError);
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to insert meal_plan',
+            details: mealPlanError
+          }, { status: 500 });
+        } else {
+          mealPlanIds.push(mealPlanData?.plan_id);
+          console.log('Inserted meal_plan:', mealPlanData);
+        }
+      }
     }
 
     // 6. Process each day's meals for frontend only - skip database inserts for now
-    formattedMealPlan = Object.entries(parsedResponse).map(([dayIndex, dayData]) => {
+    let formattedMealPlan = Object.entries(parsedResponse).map(([dayIndex, dayData]) => {
       if (!dayData) {
         return {
           day: `Day ${dayIndex.replace('day', '')}`,
@@ -475,7 +541,7 @@ export async function POST(req: Request) {
       success: true,
       data: {
         message: "Meal plan created successfully",
-        plan_id: mealPlanId,
+        plan_id: mealPlanIds,
         meal_plan: {
           days: formattedMealPlan
         }
