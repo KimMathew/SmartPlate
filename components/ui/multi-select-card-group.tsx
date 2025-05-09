@@ -85,7 +85,7 @@ const MultiSelectCardGroup: React.FC<MultiSelectCardGroupProps> = ({
           );
         })}
       </div>
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      {error && <p className="text-red-500 text-xs mt-3">{error}</p>}
     </div>
   );
 };

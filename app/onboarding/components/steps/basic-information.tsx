@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import ProgressIndicator from "@/app/onboarding/components/progress-indicator";
+import DropdownInput from "@/components/ui/dropdown-input";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -127,10 +128,10 @@ export default function BasicInformation({
           </p>
 
           <div className="space-y-6">
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label
                 htmlFor="dateOfBirth"
-                className="block text-sm font-medium text-gray-700"
+                className="input-label"
               >
                 Date of Birth <span className="text-red-500">*</span>
               </label>
@@ -221,46 +222,18 @@ export default function BasicInformation({
               )}
             </div>
 
-            <div className="space-y-1">
-              <label
-                htmlFor="gender"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Gender (Optional)
-              </label>
-              <div className="relative">
-                <button
-                  type="button"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  onClick={() => setGenderOpen(!genderOpen)}
-                >
-                  <span
-                    className={
-                      formData.gender ? "text-gray-900" : "text-gray-400"
-                    }
-                  >
-                    {formData.gender || "Select gender"}
-                  </span>
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
-                </button>
-
-                {genderOpen && (
-                  <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                    {["Male", "Female", "Non-binary", "Prefer not to say"].map(
-                      (option) => (
-                        <div
-                          key={option}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700"
-                          onClick={() => handleGenderSelect(option)}
-                        >
-                          {option}
-                        </div>
-                      )
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+            <DropdownInput
+              label="Gender (Optional)"
+              options={[
+                { value: "Male", label: "Male" },
+                { value: "Female", label: "Female" },
+                { value: "Non-binary", label: "Non-binary" },
+                { value: "Prefer not to say", label: "Prefer not to say" },
+              ]}
+              value={formData.gender}
+              onChange={val => onChange("gender", val)}
+              placeholder="Select gender"
+            />
           </div>
         </div>
 
@@ -268,7 +241,7 @@ export default function BasicInformation({
           <Button
             onClick={handleNext}
             size="lg"
-            className="px-6 py-2"
+            className="px-6 py-2 text-base"
           >
             Next
           </Button>

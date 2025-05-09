@@ -114,11 +114,11 @@ export default function PhysicalData({
             This helps us calculate your calorie needs for better meal plans.
           </p>
 
-          <div className="space-y-5">
-            <div className="space-y-1">
+          <div className="space-y-6">
+            <div className="space-y-2">
               <label
                 htmlFor="height"
-                className="block text-sm font-medium text-gray-700"
+                className="input-label"
               >
                 Height (in cm) <span className="text-red-500">*</span>
               </label>
@@ -140,10 +140,10 @@ export default function PhysicalData({
               )}
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label
                 htmlFor="weight"
-                className="block text-sm font-medium text-gray-700"
+                className="input-label"
               >
                 Weight (in kg) <span className="text-red-500">*</span>
               </label>
@@ -166,7 +166,7 @@ export default function PhysicalData({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="input-label">
                 Activity <span className="text-red-500">*</span>
               </label>
               <CardSelect
@@ -201,14 +201,14 @@ export default function PhysicalData({
           <Button
             onClick={onBack}
             variant="ghost"
-            className="font-medium"
+            className="px-6 py-2 text-base"
           >
             Back
           </Button>
           <Button
             onClick={handleNext}
             size="lg"
-            className="px-6 py-2"
+            className="px-6 py-2 text-base"
           >
             Next
           </Button>
