@@ -5,6 +5,7 @@ import { ArrowLeft, Check, X, ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import ProgressIndicator from "@/app/onboarding/components/progress-indicator";
+import CardSelect from "@/components/ui/card-select";
 
 interface DietaryPreferencesProps {
   formData: any;
@@ -175,6 +176,7 @@ export default function DietaryPreferences({
       const value = dislikedIngredientInput.trim().replace(/,$/, "");
       if (value && !dislikedIngredientList.includes(value)) {
         const updated = [...dislikedIngredientList, value];
+        setDislikedIngredientList(updated); // <-- Fix: update local state
         setDislikedIngredientInput("");
         onChange("dislikedIngredients", updated);
       }
@@ -288,61 +290,14 @@ export default function DietaryPreferences({
               <Label htmlFor="dietType" className="text-gray-900 text-base">
                 Diet Type <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {dietOptions.map((option) => {
-                  const isSelected = formData.dietType === option.value;
-                  return (
-                    <div
-                      key={option.value}
-                      onClick={() => handleDietTypeChange(option.value)}
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          handleDietTypeChange(option.value);
-                        }
-                      }}
-                      className={`relative px-2 py-4 rounded-lg border cursor-pointer transition-all duration-200 text-center text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400
-                        ${
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-50 scale-102 shadow-lg"
-                            : "border-gray-300 hover:border-emerald-300 hover:bg-emerald-50"
-                        }
-                      `}
-                      aria-pressed={isSelected}
-                      style={{ minWidth: 0 }}
-                    >
-                      {/* Checkmark icon */}
-                      {isSelected && (
-                        <span className="absolute top-2 right-2 text-emerald-500">
-                          <svg
-                            width="20"
-                            height="20"
-                            fill="none"
-                            viewBox="0 0 20 20"
-                          >
-                            <circle cx="10" cy="10" r="10" fill="#10B981" />
-                            <path
-                              d="M6 10.5l2.5 2.5 5-5"
-                              stroke="#fff"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </span>
-                      )}
-                      <div className="text-xl mb-1">{option.icon}</div>
-                      <div
-                        className={`font-medium ${
-                          isSelected ? "text-emerald-700" : "text-gray-700"
-                        }`}
-                      >
-                        {option.label}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <CardSelect
+                options={dietOptions}
+                value={formData.dietType}
+                onChange={handleDietTypeChange}
+                columns={3}
+                align="center"
+                mobileColumns={2}
+              />
               {formData.dietType === "other" && (
                 <div className="mt-4">
                   <Label

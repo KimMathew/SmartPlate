@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import ProgressIndicator from "@/app/onboarding/components/progress-indicator";
+import CardSelect from "@/components/ui/card-select";
 
 interface HealthGoalsProps {
   formData: any;
@@ -60,92 +61,17 @@ export default function HealthGoals({
               <Label htmlFor="goalType" className="text-gray-900 text-base">
                 Goal Type <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {[
+              <CardSelect
+                options={[
                   { value: "lose-weight", label: "Lose Weight", icon: "⬇️" },
                   { value: "maintain", label: "Maintain", icon: "⚖️" },
                   { value: "gain-weight", label: "Gain Weight", icon: "⬆️" },
-                ].map((option) => {
-                  const isSelected = formData.goalType === option.value;
-                  return (
-                    <div
-                      key={option.value}
-                      onClick={() => onChange("goalType", option.value)}
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          onChange("goalType", option.value);
-                        }
-                      }}
-                      className={`relative px-2 py-4 rounded-lg border cursor-pointer transition-all duration-200 text-center text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400
-                        ${
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-50 scale-102 shadow-lg"
-                            : "border-gray-300 hover:border-emerald-300 hover:bg-emerald-50"
-                        }
-                      `}
-                      aria-pressed={isSelected}
-                      style={{ minWidth: 0 }}
-                    >
-                      {/* Checkmark icon */}
-                      {isSelected && (
-                        <span className="absolute top-2 right-2 text-emerald-500">
-                          <svg
-                            width="20"
-                            height="20"
-                            fill="none"
-                            viewBox="0 0 20 20"
-                          >
-                            <circle cx="10" cy="10" r="10" fill="#10B981" />
-                            <path
-                              d="M6 10.5l2.5 2.5 5-5"
-                              stroke="#fff"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </span>
-                      )}
-                      <div className="text-xl mb-1">{option.icon}</div>
-                      <div
-                        className={`font-medium ${
-                          isSelected ? "text-emerald-700" : "text-gray-700"
-                        }`}
-                      >
-                        {option.label}
-                      </div>
-                      {/* Show numeric input for weekly rate if Lose/Gain Weight is selected */}
-                      {isSelected &&
-                        (option.value === "lose-weight" ||
-                          option.value === "gain-weight") && (
-                          <div className="mt-3 flex flex-col items-center w-full">
-                            <Label className="mb-1 text-xs text-gray-500 self-start">
-                              Optional
-                            </Label>
-                            <div className="flex items-center w-full">
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.1"
-                                placeholder={`e.g., 0.5`}
-                                value={formData.weeklyGoal || ""}
-                                onChange={(e) =>
-                                  onChange("weeklyGoal", e.target.value)
-                                }
-                                className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 text-gray-900 bg-white shadow-sm text-sm"
-                                aria-label="Weekly rate in kg per week"
-                              />
-                            </div>
-                            <span className="text-xs text-gray-500 mt-1 self-start">
-                              kg/week
-                            </span>
-                          </div>
-                        )}
-                    </div>
-                  );
-                })}
-              </div>
+                ]}
+                value={formData.goalType}
+                onChange={(val) => onChange("goalType", val)}
+                columns={3}
+                align="center"
+              />
               {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
             </div>
 
@@ -153,7 +79,7 @@ export default function HealthGoals({
               <Label htmlFor="targetWeight" className="text-gray-900 text-base">
                 Target Weight (in kg)
               </Label>
-              <div className="text-xs text-gray-500">Optional</div>
+              {/* Removed optional label */}
               <div className="relative">
                 <input
                   type="number"
