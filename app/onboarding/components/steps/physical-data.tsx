@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import ProgressIndicator from "../progress-indicator";
+import ProgressIndicator from "@/app/onboarding/components/progress-indicator";
 import { Button } from "@/components/ui/button";
 
 interface PhysicalDataProps {

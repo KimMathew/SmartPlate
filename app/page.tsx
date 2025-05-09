@@ -5,8 +5,8 @@ import Hero from "@/app/landing/components/hero";
 import Features from "@/app/landing/components/features";
 import WhyChooseSection from "@/app/landing/components/why-choose-section";
 import Footer from "@/app/landing/components/footer";
-import LoginModal from "@/components/auth/login-modal";
-import SignupModal from "@/components/auth/signup-modal";
+import LoginModal from "@/app/auth/login-modal";
+import SignupModal from "@/app/auth/signup-modal";
 
 export default function Home() {
   const [loginModalOpen, setLoginModalOpen] = useState(false);

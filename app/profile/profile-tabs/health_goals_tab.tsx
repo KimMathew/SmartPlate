@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
-import { EditButton } from "@/components/edit-button";
-import { SaveCancelActions } from "@/components/save-cancel-actions";
+import { EditButton } from "@/components/ui/edit-button";
+import { SaveCancelActions } from "@/components/ui/save-cancel-actions";
 
 const healthGoalOptions = [
   { value: "lose-weight", label: "Lose Weight" },

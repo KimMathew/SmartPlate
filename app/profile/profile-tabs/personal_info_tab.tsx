@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Pencil, ChevronDown } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { EditButton } from "@/components/edit-button";
-import { SaveCancelActions } from "@/components/save-cancel-actions";
+import { EditButton } from "@/components/ui/edit-button";
+import { SaveCancelActions } from "@/components/ui/save-cancel-actions";
 
 interface PersonalInfoTabProps {
   form: {

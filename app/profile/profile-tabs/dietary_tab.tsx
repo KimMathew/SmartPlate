@@ -11,8 +11,8 @@ import {
   SelectItem
 } from "@/components/ui/select";
 import { BadgeInput } from "@/components/ui/badge-input";
-import { EditButton } from "@/components/edit-button";
-import { SaveCancelActions } from "@/components/save-cancel-actions";
+import { EditButton } from "@/components/ui/edit-button";
+import { SaveCancelActions } from "@/components/ui/save-cancel-actions";
 
 interface DietaryPreferencesForm {
   dietType: string;
