@@ -175,6 +175,7 @@ export default function DietaryPreferences({
       const value = dislikedIngredientInput.trim().replace(/,$/, "");
       if (value && !dislikedIngredientList.includes(value)) {
         const updated = [...dislikedIngredientList, value];
+        setDislikedIngredientList(updated); // <-- Fix: update local state
         setDislikedIngredientInput("");
         onChange("dislikedIngredients", updated);
       }
