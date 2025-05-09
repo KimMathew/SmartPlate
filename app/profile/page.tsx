@@ -43,11 +43,25 @@ export default function ProfilePage() {
     firstName: "Jane",
     lastName: "Smith",
     dob: "1990-01-01",
-    gender: "Female",
+    gender: "Female" as string | null,
     height: "165",
     weight: "65",
+    activityLevel: "", // Added activityLevel
   });
   const [formBackup, setFormBackup] = useState(form);
+
+  // Add this initial state for dietary preferences
+  const [dietaryForm, setDietaryForm] = useState({
+    dietType: "",
+    dietTypeOther: "",
+    allergens: [] as string[],
+    allergenOther: [] as string[],
+    dislikedIngredients: [] as string[],
+    preferredCuisines: [] as string[],
+    cuisineOther: [] as string[],
+    mealsPerDay: "",
+    mealPrepTimeLimit: "",
+  });
 
   useEffect(() => {
     const supabase = createClient();
@@ -55,7 +69,7 @@ export default function ProfilePage() {
       if (user) {
         const { data, error } = await supabase
           .from("Users")
-          .select('first_name, last_name, email, "birth-date", gender, height, weight')
+          .select(`first_name, last_name, email, "birth-date", gender, height, weight, diet_type, allergens, disliked_ingredients, preferred_cuisines, meals_per_day, prep_time_limit, activity_level`)
           .eq("id", user.id)
           .single();
         if (data) {
@@ -70,6 +84,18 @@ export default function ProfilePage() {
             gender: data.gender ?? "",
             height: data.height !== undefined && data.height !== null ? String(data.height) : "",
             weight: data.weight !== undefined && data.weight !== null ? String(data.weight) : "",
+            activityLevel: data.activity_level ?? "", // Fetch from DB
+          });
+          setDietaryForm({
+            dietType: data.diet_type ?? "",
+            dietTypeOther: "", // You may want to add this field to your DB if needed
+            allergens: Array.isArray(data.allergens) ? data.allergens : (data.allergens ? data.allergens.split(",") : []),
+            allergenOther: [], // You may want to add this field to your DB if needed
+            dislikedIngredients: Array.isArray(data.disliked_ingredients) ? data.disliked_ingredients : (data.disliked_ingredients ? data.disliked_ingredients.split(",") : []),
+            preferredCuisines: Array.isArray(data.preferred_cuisines) ? data.preferred_cuisines : (data.preferred_cuisines ? data.preferred_cuisines.split(",") : []),
+            cuisineOther: [], // You may want to add this field to your DB if needed
+            mealsPerDay: data.meals_per_day !== undefined && data.meals_per_day !== null ? String(data.meals_per_day) : "",
+            mealPrepTimeLimit: data.prep_time_limit ?? "",
           });
         } else {
           setProfile({ fullName: "", email: user.email ?? "" });
@@ -80,6 +106,18 @@ export default function ProfilePage() {
             gender: "",
             height: "",
             weight: "",
+            activityLevel: "", // Reset
+          });
+          setDietaryForm({
+            dietType: "",
+            dietTypeOther: "",
+            allergens: [],
+            allergenOther: [],
+            dislikedIngredients: [],
+            preferredCuisines: [],
+            cuisineOther: [],
+            mealsPerDay: "",
+            mealPrepTimeLimit: "",
           });
         }
       } else {
@@ -91,6 +129,18 @@ export default function ProfilePage() {
           gender: "",
           height: "",
           weight: "",
+          activityLevel: "", // Reset
+        });
+        setDietaryForm({
+          dietType: "",
+          dietTypeOther: "",
+          allergens: [],
+          allergenOther: [],
+          dislikedIngredients: [],
+          preferredCuisines: [],
+          cuisineOther: [],
+          mealsPerDay: "",
+          mealPrepTimeLimit: "",
         });
       }
     };
@@ -106,9 +156,10 @@ export default function ProfilePage() {
         first_name: updatedForm.firstName,
         last_name: updatedForm.lastName,
         "birth-date": updatedForm.dob,
-        gender: updatedForm.gender,
+        gender: updatedForm.gender === "" ? null : updatedForm.gender,
         height: updatedForm.height ? Number(updatedForm.height) : null,
         weight: updatedForm.weight ? Number(updatedForm.weight) : null,
+        activity_level: updatedForm.activityLevel ?? null, // Save activityLevel
       })
       .eq("id", user.id);
     if (!error) {
@@ -124,7 +175,32 @@ export default function ProfilePage() {
     }
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // Handler to update dietary preferences in Supabase
+  async function handleSaveDietaryPreferences(updatedDietaryForm: typeof dietaryForm) {
+    if (!user) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("Users")
+      .update({
+        diet_type: updatedDietaryForm.dietType,
+        // Optionally: diet_type_other: updatedDietaryForm.dietTypeOther,
+        allergens: updatedDietaryForm.allergens,
+        // Optionally: allergen_other: updatedDietaryForm.allergenOther,
+        disliked_ingredients: updatedDietaryForm.dislikedIngredients,
+        preferred_cuisines: updatedDietaryForm.preferredCuisines,
+        // Optionally: cuisine_other: updatedDietaryForm.cuisineOther,
+        meals_per_day: updatedDietaryForm.mealsPerDay,
+        prep_time_limit: updatedDietaryForm.mealPrepTimeLimit,
+      })
+      .eq("id", user.id);
+    if (!error) {
+      setDietaryForm(updatedDietaryForm);
+    } else {
+      alert("Failed to update dietary preferences. Please try again.");
+    }
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
@@ -199,7 +275,14 @@ export default function ProfilePage() {
               />
             )}
             {activeTab === 1 && (
-              <DietaryPreferencesTab />
+              <DietaryPreferencesTab
+                form={dietaryForm}
+                setForm={setDietaryForm}
+                onSave={handleSaveDietaryPreferences}
+                editMode={editMode}
+                handleEdit={handleEdit}
+                handleCancel={handleCancel}
+              />
             )}
             {activeTab === 2 && (
               // Render HealthGoalsTab for the Health Goals tab
