@@ -40,6 +40,11 @@ function formatDate(dateString?: string) {
   return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+// Helper to capitalize meal types
+function capitalizeMealType(type: string): string {
+  return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
 // Component for the meal plan day card
 const MealPlanDayCard = ({ dayPlan }: { dayPlan: DayPlan }) => (
   <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
@@ -57,12 +62,12 @@ const MealCard = ({ meal }: { meal: Meal }) => {
   const [showDetails, setShowDetails] = useState(false);
 
   return (
-    <>
-      <div
+    <>      <div
         onClick={() => setShowDetails(true)}
         className="p-4 border rounded-lg hover:border-emerald-200 transition-colors cursor-pointer hover:bg-emerald-50"
-      >
-        <h3 className="text-lg font-semibold text-emerald-500">{meal.type}</h3>
+      >        <h3 className="text-lg font-semibold text-emerald-500">
+          {capitalizeMealType(meal.type)}
+        </h3>
         <p className="text-gray-800 font-medium">{meal.name}</p>
         <p className="text-gray-600 text-sm line-clamp-2">{meal.description}</p>
         <div className="flex justify-between mt-2 text-gray-500 text-sm">
@@ -89,8 +94,7 @@ const MealDetailsModal = ({ meal, onClose }: { meal: Meal; onClose: () => void }
       >
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-              <div className="bg-emerald-100 text-emerald-600 p-2 rounded-full">
+            <div className="flex items-center gap-2">              <div className="bg-emerald-100 text-emerald-600 p-2 rounded-full">
                 {meal.type.toLowerCase() === 'breakfast' && '🍳'}
                 {meal.type.toLowerCase() === 'lunch' && '🥗'}
                 {meal.type.toLowerCase() === 'dinner' && '🍽️'}
@@ -104,10 +108,9 @@ const MealDetailsModal = ({ meal, onClose }: { meal: Meal; onClose: () => void }
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-          </div>
-
-          <div className="border-b border-gray-200 mb-4 pb-2">
-            <span className="text-sm font-medium text-emerald-600 uppercase">{meal.type}</span>
+          </div>          <div className="border-b border-gray-200 mb-4 pb-2">            <span className="text-sm font-medium text-emerald-600 uppercase">
+              {capitalizeMealType(meal.type)}
+            </span>
             {meal.prepTime && (
               <span className="text-sm text-gray-500 ml-4">⏱️ {meal.prepTime} mins</span>
             )}
@@ -192,6 +195,7 @@ export default function MealPlansPage() {
   const [error, setError] = useState<string | null>(null);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const [isServiceDown, setIsServiceDown] = useState(false);
+  const [currentBatchNumber, setCurrentBatchNumber] = useState<number | null>(null);
   const { toast } = useToast();
   const supabase = createClient();
 
@@ -206,38 +210,75 @@ export default function MealPlansPage() {
   const selectedDays = contextValue?.selectedDays ?? localSelectedDays;
   const setSelectedDays = contextValue?.setSelectedDays ?? setLocalSelectedDays;
 
-  // Load meal plan from localStorage on initial render
+  // Helper to get user-specific localStorage key
+  function getMealPlanKey(userId?: string) {
+    return userId ? `smartPlate_mealPlan_${userId}` : 'smartPlate_mealPlan';
+  }
+  function getSelectedDaysKey(userId?: string) {
+    return userId ? `smartPlate_selectedDays_${userId}` : 'smartPlate_selectedDays';
+  }
+  function getBatchNumberKey(userId?: string) {
+    return userId ? `smartPlate_batchNumber_${userId}` : 'smartPlate_batchNumber';
+  }
   useEffect(() => {
-    const savedPlan = localStorage.getItem('smartPlate_mealPlan');
-    if (savedPlan) {
-      try {
-        const parsedPlan = JSON.parse(savedPlan);
-        if (Array.isArray(parsedPlan) && parsedPlan.length > 0) {
-          setMealPlan(parsedPlan);
-          setGeneratedPlanExists(true);
-
-          // Also restore the selected days if available
-          const savedDays = localStorage.getItem('smartPlate_selectedDays');
-          if (savedDays) {
-            const days = parseInt(savedDays);
-            if (!isNaN(days) && days > 0) {
-              setSelectedDays(days);
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Error parsing saved meal plan:", e);
-      }
+  const key = getMealPlanKey(user?.id);
+  const savedPlan = localStorage.getItem(key);
+  const batchKey = getBatchNumberKey(user?.id);
+  const savedBatchNumber = localStorage.getItem(batchKey);
+  
+  if (savedBatchNumber) {
+    try {
+      const batchNumber = parseInt(savedBatchNumber);
+      setCurrentBatchNumber(batchNumber);
+    } catch (err) {
+      console.error("Error parsing batch number from localStorage", err);
     }
-  }, []);
+  }
+  
+  if (savedPlan) {
+    try {
+      const parsedPlan: DayPlan[] = JSON.parse(savedPlan);
+      if (Array.isArray(parsedPlan) && parsedPlan.length > 0) {
+        // Filter out duplicate meals based on name+type or a unique ID if present
+        const dedupedPlan = parsedPlan.map(day => ({
+          ...day,
+          meals: Array.from(new Map(day.meals.map(m => [m.name + m.type, m])).values()),
+        }));
+        setMealPlan(dedupedPlan);
+        setGeneratedPlanExists(true);
+      }
+    } catch (err) {
+      console.error("Error parsing meal plan from localStorage", err);
+    }
+  }
+}, [user?.id]);
+
 
   // Load meal plans from Supabase when user is authenticated
   useEffect(() => {
     const fetchExistingMealPlans = async () => {
       if (!user?.id) return;
 
-      try {
-        // Fetch the most recent meal plan for this user
+      try {        // Get the maximum batch_number for this user
+        const { data: maxBatchData, error: maxBatchError } = await supabase
+          .from('meal_plan')
+          .select('batch_number')
+          .eq('user_id', user.id)
+          .order('batch_number', { ascending: false })
+          .limit(1);
+          
+        if (maxBatchError) {
+          console.error("Error fetching max batch number:", maxBatchError);
+        } else if (maxBatchData && maxBatchData.length > 0) {
+          const maxBatchNumber = maxBatchData[0].batch_number;
+          setCurrentBatchNumber(maxBatchNumber);
+          // Save to localStorage
+          localStorage.setItem(getBatchNumberKey(user?.id), maxBatchNumber.toString());
+        }
+        
+        // Fetch the most recent meal plan for this user with the max batch_number
+        let batchNumberFilter = maxBatchData?.[0]?.batch_number;
+        
         const { data: mealPlans, error: fetchError } = await supabase
           .from('meal_plan')
           .select(`
@@ -248,6 +289,7 @@ export default function MealPlansPage() {
             days_covered,
             day,
             start_date,
+            batch_number,
             recipe:recipe_id (
               recipe_id,
               title,
@@ -265,7 +307,8 @@ export default function MealPlansPage() {
             )
           `)
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
+          .eq('batch_number', batchNumberFilter)
+          .order('day', { ascending: true })
           .limit(30); // Get latest plans to organize by days
 
         if (fetchError) {
@@ -315,7 +358,7 @@ export default function MealPlansPage() {
           });
 
           // Only set if we have valid data and we don't already have a local plan
-          if (formattedPlans.length > 0 && !localStorage.getItem('smartPlate_mealPlan')) {
+          if (formattedPlans.length > 0 && !localStorage.getItem(getMealPlanKey(user?.id))) {
             setMealPlan(formattedPlans);
             setGeneratedPlanExists(true);
 
@@ -323,11 +366,11 @@ export default function MealPlansPage() {
             const daysCovered = mealPlans[0]?.days_covered || 3;
             if (daysCovered > 0) {
               setSelectedDays(daysCovered);
-              localStorage.setItem('smartPlate_selectedDays', daysCovered.toString());
+              localStorage.setItem(getSelectedDaysKey(user?.id), daysCovered.toString());
             }
 
             // Save to localStorage as well
-            localStorage.setItem('smartPlate_mealPlan', JSON.stringify(formattedPlans));
+            localStorage.setItem(getMealPlanKey(user?.id), JSON.stringify(formattedPlans));
           }
         }
       } catch (e) {
@@ -343,6 +386,10 @@ export default function MealPlansPage() {
   // Check authentication on component mount
   useEffect(() => {
     if (!sessionLoading && !session) {
+      // Clear in-memory meal plan and state on logout
+      setMealPlan([]);
+      setGeneratedPlanExists(false);
+      setError(null);
       toast({
         title: "Authentication required",
         description: "Please log in to generate meal plans.",
@@ -371,6 +418,18 @@ export default function MealPlansPage() {
           variant: "destructive"
         });
         return;
+      }
+
+      // Get the next batch_number for this user
+      let nextBatchNumber = 1;
+      const { data: maxBatch, error: batchError } = await supabase
+        .from('meal_plan')
+        .select('batch_number')
+        .eq('user_id', user.id)
+        .order('batch_number', { ascending: false })
+        .limit(1);
+      if (!batchError && maxBatch && maxBatch.length > 0 && maxBatch[0].batch_number) {
+        nextBatchNumber = maxBatch[0].batch_number + 1;
       }
 
       // Get the session token
@@ -452,12 +511,18 @@ export default function MealPlansPage() {
         }
 
         throw new Error(errorData.error || `Server error: ${response.status}`);
-      }
-
-      const data = await response.json();
+      }      const data = await response.json();
 
       if (!data.success) {
         throw new Error(data.error || "Failed to generate meal plan");
+      }
+
+      // Get the batch_number from the API response
+      const batchNumber = data.data?.batch_number;
+      if (batchNumber) {
+        setCurrentBatchNumber(batchNumber);
+        // Save batch_number to localStorage
+        localStorage.setItem(getBatchNumberKey(user?.id), batchNumber.toString());
       }
 
       // Update to use the correct property based on API response structure
@@ -494,18 +559,18 @@ export default function MealPlansPage() {
             difficulty: meal.difficulty
           }))
         };
-      });
-
-      setMealPlan(formattedPlan);
+      });      setMealPlan(formattedPlan);
       setGeneratedPlanExists(true);
-
-      // Save to localStorage
-      localStorage.setItem('smartPlate_mealPlan', JSON.stringify(formattedPlan));
-      localStorage.setItem('smartPlate_selectedDays', selectedDays.toString());
+      
+      // Save the meal plan to localStorage
+      localStorage.setItem(getMealPlanKey(user?.id), JSON.stringify(formattedPlan));
+      localStorage.setItem(getSelectedDaysKey(user?.id), selectedDays.toString());
+      
+      // Batch number was already saved earlier from the API response
 
       toast({
         title: "Meal plan generated!",
-        description: `Your ${selectedDays}-day meal plan is ready.`,
+        description: `Your ${selectedDays}-day meal plan is ready. (Batch #${currentBatchNumber})`,
       });
 
     } catch (error) {
@@ -526,12 +591,13 @@ export default function MealPlansPage() {
     // Don't clear the localStorage here - we'll update it when new plan is generated
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
   const handleClearMealPlan = () => {
-    localStorage.removeItem('smartPlate_mealPlan');
-    localStorage.removeItem('smartPlate_selectedDays');
+    localStorage.removeItem(getMealPlanKey(user?.id));
+    localStorage.removeItem(getSelectedDaysKey(user?.id));
+    localStorage.removeItem(getBatchNumberKey(user?.id));
     setMealPlan([]);
     setGeneratedPlanExists(false);
+    setCurrentBatchNumber(null);
     setError(null);
 
     toast({
@@ -742,13 +808,16 @@ export default function MealPlansPage() {
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm text-gray-500">Step 2: Generated Plan</span>
             <Progress value={100} className="w-full mx-4" />
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6">
+          </div>          <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">AI Generated Meal Plan</h2>
             <div className="bg-emerald-50 p-4 rounded-md mb-6">
               <p className="text-emerald-700 font-medium">Based on your preferences</p>
               <p className="text-gray-600">Your personalized {selectedDays}-day nutrition plan</p>
+              {currentBatchNumber && (
+                <div className="bg-emerald-100 px-2 py-1 mt-2 rounded inline-flex items-center">
+                  <span className="text-sm text-emerald-700 font-medium">Batch #{currentBatchNumber}</span>
+                </div>
+              )}
             </div>
             <p className="text-gray-600 mb-6">
               Each meal is balanced to meet your nutritional goals while incorporating your favorite ingredients.

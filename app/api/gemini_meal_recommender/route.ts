@@ -249,7 +249,8 @@ export async function POST(req: Request) {
         ### Constraints:
         - Exclude allergens: ${user.allergens?.join(", ") || "none"}
         - Avoid disliked ingredients: ${user.disliked_ingredients?.join(", ") || "none"}
-        - Prioritize cuisines: ${user.preferred_cuisines?.join(", ") || "any"}
+        - Prioritize cuisines: ${user.preferred_cuisines?.join(", ") || "any"
+        }
         
         Format the JSON as follows:
         {
@@ -418,8 +419,26 @@ export async function POST(req: Request) {
     // Create a separate client with service role key to bypass RLS
     const supabaseAdmin = createSupabaseClient(undefined, true);
 
+    // --- BATCH NUMBER LOGIC ---
+    // Get the next batch_number for this user
+    let nextBatchNumber = 1;
+    const { data: maxBatch, error: batchError } = await supabaseAdmin
+      .from(mealPlanTable)
+      .select('batch_number')
+      .eq('user_id', userId)
+      .order('batch_number', { ascending: false })
+      .limit(1);
+    if (!batchError && maxBatch && maxBatch.length > 0 && maxBatch[0].batch_number) {
+      nextBatchNumber = maxBatch[0].batch_number + 1;
+    }
+    console.log(`Using batch_number ${nextBatchNumber} for user ${userId}`);
+
     let mealPlanIds: any[] = [];
     let failedMeals: any[] = [];
+    
+    // Track processed meals to avoid duplicates
+    const processedMealKeys = new Set();
+    let duplicateCount = 0;
 
     for (const [dayKey, dayData] of Object.entries(parsedResponse)) {
       // Extract day number from the key (e.g., "day1" becomes 1)
@@ -436,7 +455,19 @@ export async function POST(req: Request) {
         if (!meal.name || !meal.type) {
           failedMeals.push({ day: dayKey, reason: 'Missing name or type', meal });
           continue;
+        }        // Create a unique key for each meal to detect duplicates
+        // Use day, type, name, and ingredients (if available) to create a more robust unique key
+        const ingredientsHash = meal.ingredients ? 
+          meal.ingredients.slice(0, 3).map(i => typeof i === 'string' ? i.trim().toLowerCase().substring(0, 10) : '').join('-') : '';
+        const mealKey = `${dayNumber}-${meal.type}-${meal.name}-${ingredientsHash}`;
+        
+        if (processedMealKeys.has(mealKey)) {
+          console.log(`Skipping duplicate meal: ${mealKey}`);
+          duplicateCount++;
+          continue; // Skip this meal as it's a duplicate
         }
+        // Mark this meal as processed
+        processedMealKeys.add(mealKey);
 
         // 1. Insert recipe first with day column
         const recipePayload = {
@@ -506,7 +537,8 @@ export async function POST(req: Request) {
           start_date: formattedDate, // Use day-specific date
           end_date: formattedDate,   // Same as start_date
           days_covered: daysCovered,
-          day: dayNumber             // Add day number to meal plan
+          day: dayNumber,           // Add day number to meal plan
+          batch_number: nextBatchNumber // Set batch_number for this generation
         };
 
         const { data: mealPlanData, error: mealPlanError } = await supabaseAdmin
@@ -524,6 +556,16 @@ export async function POST(req: Request) {
           console.log('Inserted meal_plan:', mealPlanData);
         }
       }
+    }
+
+    console.log(`Total duplicate meals skipped: ${duplicateCount}`);
+
+    // Log deduplication summary
+    console.log(`Meal plan generation complete - Batch #${nextBatchNumber}`);
+    console.log(`Total meals processed: ${processedMealKeys.size}`);
+    console.log(`Duplicates skipped: ${duplicateCount}`);
+    if (failedMeals.length > 0) {
+      console.log(`Failed meals: ${failedMeals.length}`);
     }
 
     // 6. Process each day's meals for frontend only - skip database inserts for now
@@ -600,6 +642,8 @@ export async function POST(req: Request) {
       data: {
         message: "Meal plan created successfully",
         plan_id: mealPlanIds,
+        batch_number: nextBatchNumber, // Include batch_number in response
+        duplicates_skipped: duplicateCount, // Add info about skipped duplicates
         meal_plan: {
           days: formattedMealPlan
         }

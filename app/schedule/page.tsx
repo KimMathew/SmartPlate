@@ -9,17 +9,9 @@ export default function SchedulePage() {
   const [date, setDate] = useState<Date>(new Date());
   const [mealPlan, setMealPlan] = useState<any[]>([]);
 
-  // Load meal plan from localStorage
+  // Remove loading meal plan from localStorage
   useEffect(() => {
-    const savedPlan = localStorage.getItem('smartPlate_mealPlan');
-    if (savedPlan) {
-      try {
-        const parsedPlan = JSON.parse(savedPlan);
-        setMealPlan(parsedPlan);
-      } catch (e) {
-        setMealPlan([]);
-      }
-    }
+    setMealPlan([]);
   }, []);
 
   // Calculate the start of the week (Sunday)
