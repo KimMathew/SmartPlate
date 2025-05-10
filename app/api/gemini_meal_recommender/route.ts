@@ -445,9 +445,17 @@ export async function POST(req: Request) {
       const dayNumber = parseInt(dayKey.replace(/\D/g, '')) || 1;
 
       // Calculate date for this specific day (day1 = today, day2 = tomorrow, etc.)
-      const dayDate = new Date(today);
-      dayDate.setDate(today.getDate() + dayNumber - 1); // -1 because day1 is today (0 days from now)
-      const formattedDate = dayDate.toISOString().slice(0, 10);
+      // Use GMT+8 for start_date
+      const now = new Date();
+      // Calculate the date in GMT+8 at midnight
+      const gmt8 = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+      gmt8.setUTCHours(0, 0, 0, 0); // Set to midnight GMT+8
+      gmt8.setUTCDate(gmt8.getUTCDate() + dayNumber - 1);
+      const year = gmt8.getUTCFullYear();
+      const month = String(gmt8.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(gmt8.getUTCDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
+      console.log("[DEBUG] GMT+8 formatted date:", formattedDate);
 
       // Insert each meal as a recipe, nutrition_info, and then meal_plan
       for (const meal of (dayData as { meals?: Meal[] }).meals || []) {

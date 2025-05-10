@@ -14,6 +14,55 @@ export default function SchedulePage() {
     setMealPlan([]);
   }, []);
 
+  // Load meal plan on mount if user is logged in
+  useEffect(() => {
+    (async () => {
+      const { createClient } = await import("@/lib/supabase");
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user?.id) return;
+      const { data: maxBatchResult } = await supabase
+        .from('meal_plan')
+        .select('batch_number')
+        .eq('user_id', user.id)
+        .order('batch_number', { ascending: false })
+        .limit(1);
+      const maxBatchNumber = maxBatchResult?.[0]?.batch_number;
+      if (!maxBatchNumber) return;
+      const { data: mealPlans } = await supabase
+        .from('meal_plan')
+        .select(`plan_id, day, start_date, plan_type, plan_name, description, recipe_id, nutrition_id, batch_number, user_id, recipe:recipe_id (title, ingredients, instruction, prep_time), nutrition:nutrition_id (calories, protein_g, carbs_g, fats_g)`)
+        .eq('user_id', user.id)
+        .eq('batch_number', maxBatchNumber)
+        .order('day', { ascending: true });
+      if (!mealPlans || mealPlans.length === 0) return;
+      const plansByDay: Record<string, any[]> = {};
+      mealPlans.forEach((plan: any) => {
+        const date = plan.start_date;
+        if (!plansByDay[date]) plansByDay[date] = [];
+        plansByDay[date].push(plan);
+      });
+      const formattedPlan = Object.entries(plansByDay).map(([start_date, meals]) => ({
+        start_date,
+        meals: (meals as any[]).map((meal: any) => ({
+          type: meal.plan_type,
+          name: meal.plan_name,
+          description: meal.description,
+          calories: meal.nutrition?.calories || 0,
+          protein: meal.nutrition?.protein_g || 0,
+          carbs: meal.nutrition?.carbs_g || 0,
+          fats: meal.nutrition?.fats_g || 0,
+          ingredients: meal.recipe?.ingredients ? JSON.parse(meal.recipe.ingredients) : [],
+          instructions: meal.recipe?.instruction ? JSON.parse(meal.recipe.instruction) : [],
+          prepTime: meal.recipe?.prep_time || 0,
+          difficulty: 'medium',
+        }))
+      }));
+      setMealPlan(formattedPlan);
+    })();
+  }, []);
+
   // Calculate the start of the week (Sunday)
   const startOfWeek = new Date(date);
   startOfWeek.setDate(date.getDate() - date.getDay());
@@ -149,6 +198,79 @@ export default function SchedulePage() {
           ))}
         </div>
       </div>
+
+    {/* Save the Generated Plan Button */}
+      <div className="flex justify-center mb-4">
+        <Button
+          variant="default"
+          onClick={async () => {
+            const { createClient } = await import("@/lib/supabase");
+            const supabase = createClient();
+            const { data: { session } } = await supabase.auth.getSession();
+            const user = session?.user;
+            if (!user?.id) {
+              alert("You must be logged in to load your meal plan.");
+              return;
+            }
+            console.log("User ID:", user.id);
+            // Get the max batch_number for this user
+            const { data: maxBatchResult, error: maxBatchError } = await supabase
+              .from('meal_plan')
+              .select('batch_number')
+              .eq('user_id', user.id)
+              .order('batch_number', { ascending: false })
+              .limit(1);
+            const maxBatchNumber = maxBatchResult?.[0]?.batch_number;
+            if (!maxBatchNumber) {
+              alert(`No meal plan found for your account.\n\nYou need to generate a meal plan first.\n\nUser ID: ${user.id}\nMax Batch Data: ${JSON.stringify(maxBatchResult)}\nMax Batch Error: ${maxBatchError ? JSON.stringify(maxBatchError) : 'None'}`);
+              return;
+            }
+            // Use a simpler query: just filter meal_plan.user_id === user.id and batch_number === maxBatchNumber
+            const { data: mealPlans, error: fetchError } = await supabase
+              .from('meal_plan')
+              .select(`plan_id, day, start_date, plan_type, plan_name, description, recipe_id, nutrition_id, batch_number, user_id, recipe:recipe_id (title, ingredients, instruction, prep_time), nutrition:nutrition_id (calories, protein_g, carbs_g, fats_g)`)
+              .eq('user_id', user.id)
+              .eq('batch_number', maxBatchNumber)
+              .order('day', { ascending: true });
+            if (fetchError) {
+              alert("Error fetching meal plan: " + fetchError.message);
+              return;
+            }
+            if (!mealPlans || mealPlans.length === 0) {
+              alert("No meal plan data found for your account.");
+              return;
+            }
+            // Group meals by start_date (fix TS errors by typing accumulator and meals)
+            const plansByDay: Record<string, typeof mealPlans> = {};
+            mealPlans.forEach((plan: any) => {
+              const date = plan.start_date;
+              if (!plansByDay[date]) plansByDay[date] = [];
+              plansByDay[date].push(plan);
+            });
+            // Format for calendar
+            const formattedPlan = Object.entries(plansByDay).map(([start_date, meals]) => ({
+              start_date,
+              meals: (meals as any[]).map((meal) => ({
+                type: meal.plan_type,
+                name: meal.plan_name,
+                description: meal.description,
+                calories: meal.nutrition?.calories || 0,
+                protein: meal.nutrition?.protein_g || 0,
+                carbs: meal.nutrition?.carbs_g || 0,
+                fats: meal.nutrition?.fats_g || 0,
+                ingredients: meal.recipe?.ingredients ? JSON.parse(meal.recipe.ingredients) : [],
+                instructions: meal.recipe?.instruction ? JSON.parse(meal.recipe.instruction) : [],
+                prepTime: meal.recipe?.prep_time || 0,
+                difficulty: 'medium',
+              }))
+            }));
+            setMealPlan(formattedPlan);
+          }}
+        >
+          Seve the Generated Plan
+        </Button>
+      </div>
+
     </div>
   );
 }
