@@ -211,10 +211,9 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
 
   const activityLevels = [
     { value: "sedentary", label: "Sedentary", description: "Little or no exercise" },
-    { value: "lightly_active", label: "Lightly Active", description: "Light exercise/sports 1-3 days/week" },
-    { value: "moderately_active", label: "Moderately Active", description: "Moderate exercise/sports 3-5 days/week" },
-    { value: "very_active", label: "Very Active", description: "Hard exercise/sports 6-7 days a week" },
-    { value: "super_active", label: "Super Active", description: "Very hard exercise/sports & physical job" },
+    { value: "lightly-active", label: "Lightly Active", description: "Light exercise/sports 1-3 days/week" },
+    { value: "moderately-active", label: "Moderately Active", description: "Moderate exercise/sports 3-5 days/week" },
+    { value: "very-active", label: "Very Active", description: "Hard exercise/sports 6-7 days a week" },
   ];
 
   return (
@@ -433,7 +432,13 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
             id="activityLevel"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
             placeholder="e.g., Moderately Active"
-            value={activityLevels.find(a => a.value === localForm.activityLevel)?.label || ""}
+            value={(() => {
+              if (!localForm.activityLevel) return "";
+              const found = activityLevels.find(a => a.value === localForm.activityLevel);
+              if (found) return found.label;
+              // If activityLevel is not empty but not in the list, display the raw value
+              return localForm.activityLevel;
+            })()}
             readOnly
             disabled
           />

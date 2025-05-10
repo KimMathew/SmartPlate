@@ -59,7 +59,7 @@ export default function ProfilePage() {
     dislikedIngredients: [] as string[],
     preferredCuisines: [] as string[],
     cuisineOther: [] as string[],
-    mealsPerDay: "",
+    mealsPerDay: [] as string[], // CHANGED: now an array
     mealPrepTimeLimit: "",
   });
 
@@ -75,7 +75,7 @@ export default function ProfilePage() {
       if (user) {
         const { data, error } = await supabase
           .from("Users")
-          .select(`first_name, last_name, email, "birth-date", gender, height, weight, diet_type, allergens, disliked_ingredients, preferred_cuisines, meals_per_day, prep_time_limit, activity_level, goal_type, target_weight`)
+          .select(`first_name, last_name, email, "birth-date", gender, height, weight, diet_type, allergens, disliked_ingredients, preferred_cuisines, meals_perday, prep_time_limit, activity_level, goal_type, target_weight`)
           .eq("id", user.id)
           .single();
         if (data) {
@@ -100,7 +100,11 @@ export default function ProfilePage() {
             dislikedIngredients: Array.isArray(data.disliked_ingredients) ? data.disliked_ingredients : (data.disliked_ingredients ? data.disliked_ingredients.split(",") : []),
             preferredCuisines: Array.isArray(data.preferred_cuisines) ? data.preferred_cuisines : (data.preferred_cuisines ? data.preferred_cuisines.split(",") : []),
             cuisineOther: [], // You may want to add this field to your DB if needed
-            mealsPerDay: data.meals_per_day !== undefined && data.meals_per_day !== null ? String(data.meals_per_day) : "",
+            mealsPerDay: Array.isArray(data.meals_perday)
+              ? data.meals_perday
+              : (typeof data.meals_perday === "string" && data.meals_perday
+                ? data.meals_perday.split(",").map((m: string) => m.trim()).filter(Boolean)
+                : []),
             mealPrepTimeLimit: data.prep_time_limit ?? "",
           });
           setHealthGoalsForm({
@@ -126,7 +130,7 @@ export default function ProfilePage() {
             dislikedIngredients: [],
             preferredCuisines: [],
             cuisineOther: [],
-            mealsPerDay: "",
+            mealsPerDay: [], // CHANGED: now an array
             mealPrepTimeLimit: "",
           });
           setHealthGoalsForm({
@@ -153,7 +157,7 @@ export default function ProfilePage() {
           dislikedIngredients: [],
           preferredCuisines: [],
           cuisineOther: [],
-          mealsPerDay: "",
+          mealsPerDay: [], // CHANGED: now an array
           mealPrepTimeLimit: "",
         });
         setHealthGoalsForm({
@@ -200,15 +204,17 @@ export default function ProfilePage() {
     const { error } = await supabase
       .from("Users")
       .update({
-        diet_type: updatedDietaryForm.dietType,
+        diet_type: updatedDietaryForm.dietType === "other" && updatedDietaryForm.dietTypeOther
+          ? updatedDietaryForm.dietTypeOther
+          : updatedDietaryForm.dietType,
         // Optionally: diet_type_other: updatedDietaryForm.dietTypeOther,
-        allergens: updatedDietaryForm.allergens,
+        allergens: updatedDietaryForm.allergens, // send as array
         // Optionally: allergen_other: updatedDietaryForm.allergenOther,
-        disliked_ingredients: updatedDietaryForm.dislikedIngredients,
-        preferred_cuisines: updatedDietaryForm.preferredCuisines,
+        disliked_ingredients: updatedDietaryForm.dislikedIngredients, // send as array
+        preferred_cuisines: updatedDietaryForm.preferredCuisines, // send as array
         // Optionally: cuisine_other: updatedDietaryForm.cuisineOther,
-        meals_per_day: updatedDietaryForm.mealsPerDay,
-        prep_time_limit: updatedDietaryForm.mealPrepTimeLimit,
+        meals_perday: updatedDietaryForm.mealsPerDay, // send as array
+        prep_time_limit: updatedDietaryForm.mealPrepTimeLimit || null,
       })
       .eq("id", user.id);
     if (!error) {
