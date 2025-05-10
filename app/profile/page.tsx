@@ -7,9 +7,8 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { User, Apple, Target, Settings, Pencil } from "lucide-react";
 import PersonalInfoTab from "./profile-tabs/personal_info_tab";
@@ -191,9 +190,16 @@ export default function ProfilePage() {
         fullName: `${updatedForm.firstName} ${updatedForm.lastName}`.trim(),
         email: profile?.email || user.email || "",
       });
+      toast({
+        title: "Profile updated",
+        description: "Your personal information has been saved.",
+      });
     } else {
-      // Optionally show error to user
-      alert("Failed to update profile. Please try again.");
+      toast({
+        title: "Update failed",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
     }
   }
 
@@ -207,21 +213,27 @@ export default function ProfilePage() {
         diet_type: updatedDietaryForm.dietType === "other" && updatedDietaryForm.dietTypeOther
           ? updatedDietaryForm.dietTypeOther
           : updatedDietaryForm.dietType,
-        // Optionally: diet_type_other: updatedDietaryForm.dietTypeOther,
-        allergens: updatedDietaryForm.allergens, // send as array
-        // Optionally: allergen_other: updatedDietaryForm.allergenOther,
-        disliked_ingredients: updatedDietaryForm.dislikedIngredients, // send as array
-        preferred_cuisines: updatedDietaryForm.preferredCuisines, // send as array
-        // Optionally: cuisine_other: updatedDietaryForm.cuisineOther,
-        meals_perday: updatedDietaryForm.mealsPerDay, // send as array
+        allergens: updatedDietaryForm.allergens,
+        disliked_ingredients: updatedDietaryForm.dislikedIngredients,
+        preferred_cuisines: updatedDietaryForm.preferredCuisines,
+        meals_perday: updatedDietaryForm.mealsPerDay,
         prep_time_limit: updatedDietaryForm.mealPrepTimeLimit || null,
       })
       .eq("id", user.id);
     if (!error) {
       setDietaryForm(updatedDietaryForm);
       setEditMode(false); // Exit edit mode after save
+      toast({
+        title: "Dietary preferences updated",
+        description: "Your dietary preferences have been saved.",
+        
+      });
     } else {
-      alert("Failed to update dietary preferences. Please try again.");
+      toast({
+        title: "Update failed",
+        description: "Failed to update dietary preferences. Please try again.",
+        variant: "destructive",
+      });
     }
   }
 
@@ -239,8 +251,16 @@ export default function ProfilePage() {
     if (!error) {
       setHealthGoalsForm(updatedHealthGoalsForm);
       setEditMode(false); // Exit edit mode after save
+      toast({
+        title: "Health goals updated",
+        description: "Your health goals have been saved.",
+      });
     } else {
-      alert("Failed to update health goals. Please try again.");
+      toast({
+        title: "Update failed",
+        description: "Failed to update health goals. Please try again.",
+        variant: "destructive",
+      });
     }
   }
 
