@@ -287,7 +287,7 @@ export default function ProfilePage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           My Profile
-        </h1>
+        </h1> 
       </div>
       <div className="grid grid-cols-1 gap-6 w-full">
         <Card>

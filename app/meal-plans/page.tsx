@@ -5,12 +5,15 @@ import { Progress } from "@/components/ui/progress";
 import { useUserChoice } from "@/lib/user-choice-context";
 import { useState, useEffect } from 'react';
 import { createClient } from "@/lib/supabase";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Calendar, Check, Download, Dumbbell, Flame, Loader2, RefreshCw, Save, Sparkles, Trash2, Coffee, Utensils, ChefHat } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 // Ensure the correct path to the use-toast module
 import { useToast } from "@/components/ui/use-toast"; // Update the path to the correct location
 import { useSession } from "@/lib/session-context";
 import { useRouter } from "next/navigation";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 // Types
 type Meal = {
@@ -42,14 +45,35 @@ function formatDate(dateString?: string) {
 
 // Component for the meal plan day card
 const MealPlanDayCard = ({ dayPlan }: { dayPlan: DayPlan }) => (
-  <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
-    <h2 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">{dayPlan.day}</h2>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {dayPlan.meals.map((meal, index) => (
-        <MealCard key={index} meal={meal} />
-      ))}
-    </div>
-  </div>
+  <Card>
+    <CardHeader className="pb-3 border-b">
+      <div className="flex items-center justify-between flex-col space-y-2 md:space-y-0 md:flex-row">
+        <div className="flex items-center gap-2">
+          <div className="bg-emerald-100 p-1.5 rounded-full">
+            <Calendar className="h-5 w-5 text-emerald-600" />
+          </div>
+          <CardTitle className="text-xl font-medium">{dayPlan.day}</CardTitle>
+        </div>
+        <div className="flex items-center gap-3 text-sm">
+          <Badge variant="outline" className="bg-amber-50 border-amber-100 text-amber-700 hover:bg-amber-50 text-sm">
+            {/* Insert Total Calorie Here */}
+            🔥 cal
+          </Badge>
+          <Badge variant="outline" className="bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-50 text-sm">
+            {/* Insert Total Grams of Protein Here */}
+            💪 g protein
+          </Badge>
+        </div>
+      </div>
+    </CardHeader>
+    <CardContent className="p-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {dayPlan.meals.map((meal, index) => (
+          <MealCard key={index} meal={meal} />
+        ))}
+      </div>
+    </CardContent>
+  </Card>
 );
 
 // Meal card component
@@ -60,14 +84,29 @@ const MealCard = ({ meal }: { meal: Meal }) => {
     <>
       <div
         onClick={() => setShowDetails(true)}
-        className="p-4 border rounded-lg hover:border-emerald-200 transition-colors cursor-pointer hover:bg-emerald-50"
+        className="p-5 border rounded-lg  hover:border-emerald-200 transition-colors cursor-pointer hover:bg-emerald-50"
       >
-        <h3 className="text-lg font-semibold text-emerald-500">{meal.type}</h3>
-        <p className="text-gray-800 font-medium">{meal.name}</p>
-        <p className="text-gray-600 text-sm line-clamp-2">{meal.description}</p>
-        <div className="flex justify-between mt-2 text-gray-500 text-sm">
-          <span>{meal.calories} cal</span>
-          <span>{meal.protein}g protein</span>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="bg-emerald-50 p-1.5 rounded-full text-emerald-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors duration-200">
+            {meal.type.toLowerCase() === "breakfast" && <Coffee className="h-4 w-4" />}
+            {meal.type.toLowerCase() === "lunch" && <Utensils className="h-4 w-4" />}
+            {meal.type.toLowerCase() === "dinner" && <ChefHat className="h-4 w-4" />}
+          </div>
+          <h3 className="text-emerald-500 font-medium capitalize group-hover:text-emerald-600 transition-colors duration-200">
+            {meal.type}
+          </h3>
+        </div>
+
+        <h4 className="font-semibold text-gray-800 mb-2 leading-tight">{meal.name}</h4>
+        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{meal.description}</p>
+
+        <div className="flex justify-between items-center pt-1">
+          <Badge variant="outline" className="bg-amber-50 border-amber-100 text-amber-700 hover:bg-amber-50">
+            🔥 {meal.calories} cal
+          </Badge>
+          <Badge variant="outline" className="bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-50">
+            💪 {meal.protein}g protein
+          </Badge>
         </div>
       </div>
 
@@ -84,9 +123,14 @@ const MealDetailsModal = ({ meal, onClose }: { meal: Meal; onClose: () => void }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
       <div
-        className="bg-white w-full max-w-xl rounded-xl shadow-2xl transition-all duration-200 overflow-hidden max-h-[90vh] overflow-y-auto"
+        className="bg-white w-full max-w-xl rounded-xl shadow-2xl transition-all duration-200 overflow-hidden max-h-[90vh] overflow-y-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 absolute top-5 right-4 z-10">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-2">
@@ -97,13 +141,9 @@ const MealDetailsModal = ({ meal, onClose }: { meal: Meal; onClose: () => void }
                 {meal.type.toLowerCase() === 'snack' && '🥜'}
                 {!['breakfast', 'lunch', 'dinner', 'snack'].includes(meal.type.toLowerCase()) && '🍲'}
               </div>
-              <h3 className="text-xl font-bold text-gray-900">{meal.name}</h3>
+              <h3 className="text-xl font-bold text-gray-900 max-sm:text-lg pr-2 max-sm:pr-4">{meal.name}</h3>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            
           </div>
 
           <div className="border-b border-gray-200 mb-4 pb-2">
@@ -194,6 +234,10 @@ export default function MealPlansPage() {
   const [isServiceDown, setIsServiceDown] = useState(false);
   const { toast } = useToast();
   const supabase = createClient();
+
+  const [selectedDuration, setSelectedDuration] = useState("3 days")
+  // Plan Your Meals Card Options
+  const days = [1, 2, 3, 4, 5, 6, 7]
 
   // Context handling with fallback
   let contextValue;
@@ -668,13 +712,16 @@ export default function MealPlansPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Personalized Meal Plan</h1>
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-sm text-gray-500">Step 1: Select Duration</span>
-        <Progress value={50} className="w-full mx-4" />
+    <div className="space-y-6 ">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Personalized Meal Plan
+        </h1>
+        <p className="text-gray-500 dark:text-gray-300 mb-2">
+          Tailored nutrition for your unique lifestyle
+        </p>
       </div>
-
+      
       {error && !isServiceDown && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -694,35 +741,43 @@ export default function MealPlansPage() {
         </Alert>
       )}
 
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Plan Your Meals</h2>
-          <p className="text-gray-600 mb-6">
-            Choose your plan duration and we'll create a personalized meal plan based on your preferences.
-          </p>
-        </div>
+      {/* For Plan Your Meals Card */}
+      <Card className="overflow-hidden ">
+        <CardHeader className="text-center space-y-1">
+          <CardTitle  className="text-gray-900 font-bold text-2xl">
+            Plan Your Meals
+          </CardTitle>
+          <CardDescription className="text-base">
+            Pick your plan duration, and get a personalized meal plan tailored to your tastes and dietary needs.
+          </CardDescription>
+        </CardHeader>
 
-        <div className="flex flex-wrap justify-center gap-3 mb-6">
-          {[3, 5, 7, 14, 21, 30].map((days) => (
-            <button
-              key={days}
-              onClick={() => handleDaySelection(days)}
-              className={`px-4 py-2 md:px-6 md:py-3 rounded-lg text-center transition-all duration-200 
-                focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent 
-                text-gray-900 font-medium shadow-sm hover:shadow-md hover:bg-emerald-50
-                ${selectedDays === days ? "bg-emerald-100 border-emerald-500 border-2" : "border border-gray-300"}`}
-              disabled={isLoading}
-            >
-              {days} {days === 1 ? "day" : "days"}
-            </button>
-          ))}
-        </div>
-
-        <div className="text-center">
-          <Button
-            onClick={handleGenerateMealPlan}
-            className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-md text-lg font-medium"
-            disabled={isLoading}
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-3">
+            {days.map((days) => (
+              <Button
+                key={days}
+                variant={selectedDays === days ? "default" : "outline"}
+                className={`h-16 ${
+                  selectedDays === days
+                    ? "bg-emerald-500 hover:bg-emerald-600"
+                    : "hover:border-emerald-200 hover:bg-emerald-50"
+                }`}
+                onClick={() => handleDaySelection(days)}
+              >
+                <div className="flex items-center justify-center">
+                  {selectedDays === days && <Check className="w-4 h-4 mr-1.5 -ml-1" />}
+                  {days} {days === 1 ? "day" : "days"}
+                </div>
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+        <CardFooter className="flex justify-center pt-2 pb-6">
+          <Button 
+          onClick={handleGenerateMealPlan}
+          size="lg" className="px-6 py-3 text-base"
+          disabled={isLoading}
           >
             {isLoading ? (
               <>
@@ -733,49 +788,43 @@ export default function MealPlansPage() {
               "Generate My Meal Plan"
             )}
           </Button>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
 
       {generatedPlanExists && (
-        <div className="space-y-6 pb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Personalized Meal Plan</h1>
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm text-gray-500">Step 2: Generated Plan</span>
-            <Progress value={100} className="w-full mx-4" />
-          </div>
+        <div className="space-y-6 pb-8 ">
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-emerald-500" />
+                <CardTitle className="text-xl font-medium">AI Generated Meal Plan</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-100">
+                <h3 className="text-emerald-700 font-medium mb-1">Based on your preferences</h3>
+                <CardDescription className="text-emerald-600">Your personalized 1-day nutrition plan</CardDescription>
+              </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">AI Generated Meal Plan</h2>
-            <div className="bg-emerald-50 p-4 rounded-md mb-6">
-              <p className="text-emerald-700 font-medium">Based on your preferences</p>
-              <p className="text-gray-600">Your personalized {selectedDays}-day nutrition plan</p>
-            </div>
-            <p className="text-gray-600 mb-6">
-              Each meal is balanced to meet your nutritional goals while incorporating your favorite ingredients.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Button
-                onClick={handleRegenerate}
-                variant="outline"
-                className="hover:bg-emerald-50"
-              >
+              <p className="text-gray-600 text-sm">
+                Each meal is balanced to meet your nutritional goals while incorporating your favorite ingredients.
+              </p>
+            </CardContent>
+            <CardFooter className="flex flex-wrap gap-3 pt-2 justify-start md:justify-end">
+              <Button variant="outline" className="flex items-center gap-2" onClick={handleRegenerate} disabled={isLoading}>
+                <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
                 Generate New Plan
               </Button>
-              <Button
-                onClick={handleClearMealPlan}
-                variant="outline"
-                className="hover:bg-emerald-50"
-              >
+              <Button variant="outline" className="flex items-center gap-2 text-gray-500" onClick={handleClearMealPlan}>
+                <Trash2 className="h-4 w-4" />
                 Clear Meal Plan
               </Button>
-              <Button
-                onClick={handleSaveMealPlan}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white"
-              >
+              <Button className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 md:ml-auto" onClick={handleSaveMealPlan}>
+                <Save className="h-4 w-4" />
                 Save This Plan
               </Button>
-            </div>
-          </div>
+            </CardFooter>
+          </Card>
 
           {mealPlan.length > 0 ? (
             mealPlan.map((dayPlan) => <MealPlanDayCard key={dayPlan.day} dayPlan={dayPlan} />)
@@ -785,14 +834,16 @@ export default function MealPlansPage() {
             </div>
           )}
 
-          <div className="text-center mt-6">
-            <Button
-              variant="link"
-              className="text-emerald-500 hover:text-emerald-700"
+          <div className="text-center mt-6 flex flex-col items-center">
+            <Button 
+              variant="ghost" 
+              className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 flex gap-2"
               onClick={() => {/* Implement export functionality */ }}
             >
+              <Download className="h-4 w-4" />
               Export {selectedDays}-Day Plan
             </Button>
+            
           </div>
         </div>
       )}
