@@ -7,7 +7,8 @@ import { useState, useEffect } from 'react';
 import { createClient } from "@/lib/supabase";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useToast } from "@/components/ui/use-toast";
+// Ensure the correct path to the use-toast module
+import { useToast } from "@/components/ui/use-toast"; // Update the path to the correct location
 import { useSession } from "@/lib/session-context";
 import { useRouter } from "next/navigation";
 
