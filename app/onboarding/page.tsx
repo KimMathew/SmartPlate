@@ -46,18 +46,18 @@ export default function OnboardingPage() {
       lastName: parsed.lastName || "",
       email: parsed.email || "",
 
-      //BYPASS ONBOARDING FOR DEBUGGING
-      // setUserData({
-      //   firstName: "Debug",
-      //   lastName: "User",
-      //   email: "debug@example.com",
-      //   password: "password123"
-      // });
-      // setFormData((prev) => ({
-      //   ...prev,
-      //   firstName: "Debug",
-      //   lastName: "User",
-      //   email: "debug@example.com"
+    //BYPASS ONBOARDING FOR DEBUGGING
+    // setUserData({
+    //   firstName: "Debug",
+    //   lastName: "User",
+    //   email: "debug@example.com",
+    //   password: "password123"
+    // });
+    // setFormData((prev) => ({
+    //   ...prev,
+    //   firstName: "Debug",
+    //   lastName: "User",
+    //   email: "debug@example.com"
     }));
   }, [router]);
 
@@ -85,10 +85,13 @@ export default function OnboardingPage() {
 
     // Dietary Preferences
     dietType: "",
+    dietTypeOther: "", // Added field for custom diet type
     allergens: [] as string[],
+    allergenOther: "", // Added for custom allergen(s)
     dislikedIngredients: [] as string[],
     preferredCuisines: [] as string[],
-    mealsPerDay: "",
+    cuisineOther: "", // Added for custom cuisine(s)
+    mealsPerDay: [] as string[],
     mealPrepTimeLimit: "",
 
     // User data from signup
@@ -179,6 +182,28 @@ export default function OnboardingPage() {
         userError
       );
     }
+
+    // Prepare allergens and cuisines for DB: replace 'other' with custom values if present
+    let allergens = formData.allergens;
+    if (Array.isArray(allergens) && allergens.includes("other") && formData.allergenOther) {
+      const customAllergens = typeof formData.allergenOther === "string"
+        ? formData.allergenOther.split(",").map(s => s.trim()).filter(Boolean)
+        : formData.allergenOther;
+      allergens = [
+        ...allergens.filter(a => a !== "other"),
+        ...customAllergens
+      ];
+    }
+    let preferredCuisines = formData.preferredCuisines;
+    if (Array.isArray(preferredCuisines) && preferredCuisines.includes("other") && formData.cuisineOther) {
+      const customCuisines = Array.isArray(formData.cuisineOther)
+        ? formData.cuisineOther
+        : String(formData.cuisineOther).split(",").map(s => s.trim()).filter(Boolean);
+      preferredCuisines = [
+        ...preferredCuisines.filter(c => c !== "other"),
+        ...customCuisines
+      ];
+    }
     const { data, error } = await supabase
       .from("Users")
       .insert({
@@ -193,11 +218,11 @@ export default function OnboardingPage() {
         'activity_level': formData.activityLevel,
         'goal_type': formData.goalType,
         'target_weight': formData.targetWeight,
-        'diet_type': formData.dietType,
-        'allergens': formData.allergens,
+        'diet_type': (formData.dietType === "other" && formData.dietTypeOther) ? formData.dietTypeOther : formData.dietType,
+        'allergens': allergens,
         'disliked_ingredients': formData.dislikedIngredients,
-        'preferred_cuisines': formData.preferredCuisines,
-        'meals_per_day': formData.mealsPerDay,
+        'preferred_cuisines': preferredCuisines,
+        'meals_perday': formData.mealsPerDay,
         'prep_time_limit': formData.mealPrepTimeLimit,
       })
       .eq("id", userData.user?.id);

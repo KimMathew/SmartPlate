@@ -2,9 +2,12 @@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Check, X, ChevronDown } from "lucide-react";
-import { motion } from "framer-motion";
+import DropdownInput from "@/components/ui/dropdown-input";
 import { useState, useEffect } from "react";
 import ProgressIndicator from "@/app/onboarding/components/progress-indicator";
+import CardSelect from "@/components/ui/card-select";
+import MultiSelectCardGroup from "@/components/ui/multi-select-card-group";
+import { Loader } from "@/components/ui/loader";
 
 interface DietaryPreferencesProps {
   formData: any;
@@ -55,6 +58,7 @@ export default function DietaryPreferences({
   const [imageVisible, setImageVisible] = useState(false);
   const [mealsPerDayOpen, setMealsPerDayOpen] = useState(false);
   const [mealPrepTimeOpen, setMealPrepTimeOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const dietOptions = [
     { value: "vegan", label: "Vegan", icon: "🌱" },
@@ -81,6 +85,12 @@ export default function DietaryPreferences({
     { value: "indian", label: "Indian", icon: "🍛" },
     { value: "any", label: "Any", icon: "🌍" },
     { value: "other", label: "Other", icon: "❓" },
+  ];
+
+  const mealsPerDayOptions2 = [
+    { value: "breakfast", label: "Breakfast", icon: "🥐" },
+    { value: "lunch", label: "Lunch", icon: "🥗" },
+    { value: "dinner", label: "Dinner", icon: "🍝" },
   ];
 
   const mealsPerDayOptions = [
@@ -129,6 +139,7 @@ export default function DietaryPreferences({
   const handleOtherDietInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOtherDiet(e.target.value);
     onChange("dietTypeOther", e.target.value);
+    // Do NOT update dietType here!
     setDietError("");
   };
 
@@ -175,6 +186,7 @@ export default function DietaryPreferences({
       const value = dislikedIngredientInput.trim().replace(/,$/, "");
       if (value && !dislikedIngredientList.includes(value)) {
         const updated = [...dislikedIngredientList, value];
+        setDislikedIngredientList(updated); // <-- Fix: update local state
         setDislikedIngredientInput("");
         onChange("dislikedIngredients", updated);
       }
@@ -266,7 +278,8 @@ export default function DietaryPreferences({
       setMealPrepTimeLimitError("");
     }
     if (hasError) return;
-    onFinish();
+    setLoading(true);
+    Promise.resolve(onFinish()).finally(() => setLoading(false));
   };
 
   return (
@@ -284,70 +297,23 @@ export default function DietaryPreferences({
             Help us create the perfect meal plan for you.
           </p>
           <div className="space-y-6">
-            <div className="space-y-3">
-              <Label htmlFor="dietType" className="text-gray-900 text-base">
+            <div className="space-y-2">
+              <Label htmlFor="dietType" className="input-label">
                 Diet Type <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {dietOptions.map((option) => {
-                  const isSelected = formData.dietType === option.value;
-                  return (
-                    <div
-                      key={option.value}
-                      onClick={() => handleDietTypeChange(option.value)}
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          handleDietTypeChange(option.value);
-                        }
-                      }}
-                      className={`relative px-2 py-4 rounded-lg border cursor-pointer transition-all duration-200 text-center text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400
-                        ${
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-50 scale-102 shadow-lg"
-                            : "border-gray-300 hover:border-emerald-300 hover:bg-emerald-50"
-                        }
-                      `}
-                      aria-pressed={isSelected}
-                      style={{ minWidth: 0 }}
-                    >
-                      {/* Checkmark icon */}
-                      {isSelected && (
-                        <span className="absolute top-2 right-2 text-emerald-500">
-                          <svg
-                            width="20"
-                            height="20"
-                            fill="none"
-                            viewBox="0 0 20 20"
-                          >
-                            <circle cx="10" cy="10" r="10" fill="#10B981" />
-                            <path
-                              d="M6 10.5l2.5 2.5 5-5"
-                              stroke="#fff"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </span>
-                      )}
-                      <div className="text-xl mb-1">{option.icon}</div>
-                      <div
-                        className={`font-medium ${
-                          isSelected ? "text-emerald-700" : "text-gray-700"
-                        }`}
-                      >
-                        {option.label}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <CardSelect
+                options={dietOptions}
+                value={formData.dietType}
+                onChange={handleDietTypeChange}
+                columns={3}
+                align="center"
+                mobileColumns={2}
+              />
               {formData.dietType === "other" && (
-                <div className="mt-4">
+                <div className="pt-4 space-y-2">
                   <Label
                     htmlFor="dietTypeOther"
-                    className="text-gray-900 text-sm"
+                    className="input-label"
                   >
                     Specify Your Diet
                   </Label>
@@ -357,7 +323,7 @@ export default function DietaryPreferences({
                     value={otherDiet}
                     onChange={handleOtherDietInput}
                     placeholder="e.g., Paleo"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 bg-white shadow-sm transition-all duration-200 mt-1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 bg-white shadow-sm transition-all duration-200 mt-1"
                   />
                 </div>
               )}
@@ -366,74 +332,22 @@ export default function DietaryPreferences({
               )}
             </div>
 
-            <div className="space-y-3">
-              <Label className="text-gray-900 text-base">
+            <div className="space-y-2">
+              <Label className="input-label">
                 Allergens to Avoid <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {allergenOptions.map((allergen) => {
-                  const isSelected = formData.allergens.includes(
-                    allergen.value
-                  );
-                  return (
-                    <div
-                      key={allergen.value}
-                      onClick={() =>
-                        handleMultiSelect("allergens", allergen.value)
-                      }
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          handleMultiSelect("allergens", allergen.value);
-                        }
-                      }}
-                      className={`relative px-2 py-4 rounded-lg border cursor-pointer transition-all duration-200 text-center text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400
-                        ${
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-50 scale-102 shadow-lg"
-                            : "border-gray-300 hover:border-emerald-300 hover:bg-emerald-50"
-                        }
-                      `}
-                      aria-pressed={isSelected}
-                      style={{ minWidth: 0 }}
-                    >
-                      {/* Checkmark icon */}
-                      {isSelected && (
-                        <span className="absolute top-2 right-2 text-emerald-500">
-                          <svg
-                            width="20"
-                            height="20"
-                            fill="none"
-                            viewBox="0 0 20 20"
-                          >
-                            <circle cx="10" cy="10" r="10" fill="#10B981" />
-                            <path
-                              d="M6 10.5l2.5 2.5 5-5"
-                              stroke="#fff"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </span>
-                      )}
-                      <div className="text-xl mb-1">{allergen.icon}</div>
-                      <div
-                        className={`font-medium ${
-                          isSelected ? "text-emerald-700" : "text-gray-700"
-                        }`}
-                      >
-                        {allergen.label}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <MultiSelectCardGroup
+                options={allergenOptions}
+                selected={formData.allergens}
+                onChange={(vals) => onChange("allergens", vals)}
+                columns={3}
+                error={allergenError}
+              />
               {formData.allergens && formData.allergens.includes("other") && (
-                <div className="mt-4">
+                <div className="pt-4 space-y-2">
                   <Label
                     htmlFor="allergenOther"
-                    className="text-gray-900 text-sm"
+                    className="input-label"
                   >
                     Specify Your Allergen(s)
                   </Label>
@@ -470,15 +384,12 @@ export default function DietaryPreferences({
                   </div>
                 </div>
               )}
-              {allergenError && (
-                <p className="text-red-500 text-xs mt-1">{allergenError}</p>
-              )}
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label
                 htmlFor="dislikedIngredients"
-                className="text-gray-900 text-base"
+                className="input-label"
               >
                 Disliked Ingredients (if any)
               </Label>
@@ -515,74 +426,22 @@ export default function DietaryPreferences({
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label className="text-gray-900 text-base">
                 Preferred Cuisines <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {cuisineOptions.map((cuisine) => {
-                  const isSelected = formData.preferredCuisines.includes(
-                    cuisine.value
-                  );
-                  return (
-                    <div
-                      key={cuisine.value}
-                      onClick={() =>
-                        handleMultiSelect("preferredCuisines", cuisine.value)
-                      }
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          handleMultiSelect("preferredCuisines", cuisine.value);
-                        }
-                      }}
-                      className={`relative px-2 py-4 rounded-lg border cursor-pointer transition-all duration-200 text-center text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400
-                        ${
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-50 scale-102 shadow-lg"
-                            : "border-gray-300 hover:border-emerald-300 hover:bg-emerald-50"
-                        }
-                      `}
-                      aria-pressed={isSelected}
-                      style={{ minWidth: 0 }}
-                    >
-                      {/* Checkmark icon */}
-                      {isSelected && (
-                        <span className="absolute top-2 right-2 text-emerald-500">
-                          <svg
-                            width="20"
-                            height="20"
-                            fill="none"
-                            viewBox="0 0 20 20"
-                          >
-                            <circle cx="10" cy="10" r="10" fill="#10B981" />
-                            <path
-                              d="M6 10.5l2.5 2.5 5-5"
-                              stroke="#fff"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </span>
-                      )}
-                      <div className="text-xl mb-1">{cuisine.icon}</div>
-                      <div
-                        className={`font-medium ${
-                          isSelected ? "text-emerald-700" : "text-gray-700"
-                        }`}
-                      >
-                        {cuisine.label}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <MultiSelectCardGroup
+                options={cuisineOptions}
+                selected={formData.preferredCuisines}
+                onChange={(vals) => onChange("preferredCuisines", vals)}
+                columns={3}
+                error={preferredCuisinesError}
+              />
               {formData.preferredCuisines.includes("other") && (
-                <div className="mt-4">
+                <div className="pt-4 space-y-2">
                   <Label
                     htmlFor="cuisineOther"
-                    className="text-gray-900 text-sm"
+                    className="input-label"
                   >
                     Specify Other Cuisine(s)
                   </Label>
@@ -619,114 +478,57 @@ export default function DietaryPreferences({
                   </div>
                 </div>
               )}
-              {preferredCuisinesError && (
+              
+            </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="mealsPerDay"
+                className="input-label"
+              >
+                Meals per Day <span className="text-red-500">*</span>
+              </Label>
+              <MultiSelectCardGroup
+                options={mealsPerDayOptions2}
+                selected={formData.mealsPerDay}
+                onChange={(vals) => onChange("mealsPerDay", vals)}
+                columns={3}
+                error={mealsPerDayError}
+              />
+              {mealsPerDayError && (
                 <p className="text-red-500 text-xs mt-1">
-                  {preferredCuisinesError}
+                  {mealsPerDayError}
                 </p>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <Label
-                  htmlFor="mealsPerDay"
-                  className="text-gray-900 text-base"
-                >
-                  Meals per Day <span className="text-red-500">*</span>
-                </Label>
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    onClick={() => setMealsPerDayOpen((v) => !v)}
-                  >
-                    <span className={formData.mealsPerDay ? "text-gray-900" : "text-gray-400"}>
-                      {formData.mealsPerDay || "Select"}
-                    </span>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
-                  </button>
-                  {mealsPerDayOpen && (
-                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                      {mealsPerDayOptions.map((option) => (
-                        <div
-                          key={option.value}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700"
-                          onClick={() => {
-                            onChange("mealsPerDay", option.value);
-                            setMealsPerDayOpen(false);
-                          }}
-                        >
-                          {option.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {mealsPerDayError && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {mealsPerDayError}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <Label
-                  htmlFor="mealPrepTimeLimit"
-                  className="text-gray-900 text-base"
-                >
-                  Meal Prep Time Limit <span className="text-red-500">*</span>
-                </Label>
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    onClick={() => setMealPrepTimeOpen((v) => !v)}
-                  >
-                    <span className={formData.mealPrepTimeLimit ? "text-gray-900" : "text-gray-400"}>
-                      {mealPrepTimeOptions.find(opt => opt.value === formData.mealPrepTimeLimit)?.label || "Select"}
-                    </span>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
-                  </button>
-                  {mealPrepTimeOpen && (
-                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                      {mealPrepTimeOptions.map((option) => (
-                        <div
-                          key={option.value}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700"
-                          onClick={() => {
-                            onChange("mealPrepTimeLimit", option.value);
-                            setMealPrepTimeOpen(false);
-                          }}
-                        >
-                          {option.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {mealPrepTimeLimitError && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {mealPrepTimeLimitError}
-                  </p>
-                )}
-              </div>
-            </div>
+            <DropdownInput
+              label={<>Meal Prep Time Limit <span className="text-red-500">*</span></>}
+              options={mealPrepTimeOptions}
+              value={formData.mealPrepTimeLimit}
+              onChange={val => onChange("mealPrepTimeLimit", val)}
+              placeholder="Select"
+              error={mealPrepTimeLimitError}
+              disabled={false}
+            />
           </div>
         </div>
         <div className="flex justify-between mt-8 pt-4 bg-white">
           <Button
             onClick={onBack}
             variant="ghost"
-            className="font-medium"
+            className="px-6 py-2 text-base"
+            disabled={loading}
           >
             Back
           </Button>
           <Button
             onClick={handleFinish}
             size="lg"
-            className="px-6 py-2"
+            className="px-6 py-2 text-base"
+            disabled={loading}
           >
-            Finish
+            {loading ? <Loader className="mx-auto animate-spin" size={24} /> : "Finish"}
           </Button>
         </div>
       </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Pencil, ChevronDown } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -13,13 +12,14 @@ interface PersonalInfoTabProps {
     firstName: string;
     lastName: string;
     dob: string;
-    gender: string;
+    gender: string | null;
     height: string;
     weight: string;
+    activityLevel: string;
   };
   editMode: boolean;
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleSave: (form: { firstName: string; lastName: string; dob: string; gender: string; height: string; weight: string; }) => void;
+  handleSave: (form: { firstName: string; lastName: string; dob: string; gender: string | null; height: string; weight: string; activityLevel: string; }) => void;
   handleCancel: () => void;
   handleEdit: () => void;
 }
@@ -27,13 +27,21 @@ interface PersonalInfoTabProps {
 export default function PersonalInfoTab({ form, editMode, handleChange, handleSave, handleCancel, handleEdit }: PersonalInfoTabProps) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [genderDropdownOpen, setGenderDropdownOpen] = useState(false);
+  const [activityLevelDropdownOpen, setActivityLevelDropdownOpen] = useState(false);
   const [firstNameError, setFirstNameError] = useState("");
   const [lastNameError, setLastNameError] = useState("");
   const [dobError, setDobError] = useState("");
   const [heightError, setHeightError] = useState("");
   const [weightError, setWeightError] = useState("");
+  const [localForm, setLocalForm] = useState(form);
+  const [formBackup, setFormBackup] = useState(form);
 
   const nameRegex = /^[A-Za-z\s'-]+$/;
+
+  useEffect(() => {
+    setLocalForm(form);
+    setFormBackup(form);
+  }, [form]);
 
   function validateFirstName(value: string) {
     if (!value || !nameRegex.test(value)) {
@@ -122,7 +130,7 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
     }
     if (name === "height") validateHeight(value);
     if (name === "weight") validateWeight(value);
-    handleChange(e);
+    setLocalForm({ ...localForm, [name]: value });
   }
 
   // Helper to format date as yyyy-mm-dd
@@ -142,34 +150,51 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
   }
 
   function onGenderSelect(option: string) {
-    handleChange({
-      target: { name: "gender", value: option } as any,
-    } as React.ChangeEvent<HTMLInputElement>);
+    setLocalForm({ ...localForm, gender: option });
     setGenderDropdownOpen(false);
   }
 
   function onDateSelect(date: Date | undefined) {
     if (date) {
-      handleChange({
-        target: { name: "dob", value: formatDate(date) } as any,
-      } as React.ChangeEvent<HTMLInputElement>);
-      // Immediately clear error if valid
-      if (validateDob(formatDate(date))) {
+      const formatted = formatDate(date);
+      setLocalForm({ ...localForm, dob: formatted });
+      if (validateDob(formatted)) {
         setDobError("");
       }
     }
     setCalendarOpen(false);
   }
 
+  function onActivityLevelSelect(option: string) {
+    setLocalForm({ ...localForm, activityLevel: option });
+    setActivityLevelDropdownOpen(false);
+  }
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const validFirst = validateFirstName(form.firstName);
-    const validLast = validateLastName(form.lastName);
-    const validDob = validateDob(form.dob);
-    const validHeight = validateHeight(form.height);
-    const validWeight = validateWeight(form.weight);
+    const validFirst = validateFirstName(localForm.firstName);
+    const validLast = validateLastName(localForm.lastName);
+    const validDob = validateDob(localForm.dob);
+    const validHeight = validateHeight(localForm.height);
+    const validWeight = validateWeight(localForm.weight);
     if (!validFirst || !validLast || !validDob || !validHeight || !validWeight) return;
-    handleSave(form);
+    // Ensure gender is null if empty string
+    const formToSave = {
+      ...localForm,
+      gender: localForm.gender === "" ? null : localForm.gender,
+    };
+    handleSave(formToSave);
+  }
+
+  function handleEditLocal() {
+    setFormBackup(form);
+    setLocalForm(form);
+    handleEdit();
+  }
+
+  function handleCancelLocal() {
+    setLocalForm(formBackup);
+    handleCancel();
   }
 
   // Clear all error states when exiting edit mode (e.g., on cancel)
@@ -183,6 +208,13 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
     }
   }, [editMode]);
 
+  const activityLevels = [
+    { value: "sedentary", label: "Sedentary", description: "Little or no exercise" },
+    { value: "lightly-active", label: "Lightly Active", description: "Light exercise/sports 1-3 days/week" },
+    { value: "moderately-active", label: "Moderately Active", description: "Moderate exercise/sports 3-5 days/week" },
+    { value: "very-active", label: "Very Active", description: "Hard exercise/sports 6-7 days a week" },
+  ];
+
   return (
     <form className="space-y-8" onSubmit={onSubmit} autoComplete="off">
       <div className="flex items-start justify-between w-full mb-6">
@@ -191,7 +223,7 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
           <div className="text-gray-500 text-base max-sm:text-sm">Manage your personal details easily.</div>
         </div>
         {!editMode && (
-          <EditButton onClick={handleEdit} />
+          <EditButton onClick={handleEditLocal} />
         )}
       </div>
       <div className="space-y-6">
@@ -204,7 +236,7 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
               id="firstName"
               className={`w-full px-3 py-2 border ${firstNameError ? "border-red-500" : "border-gray-300"} rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white`}
               placeholder="e.g., Juan"
-              value={form.firstName}
+              value={localForm.firstName}
               onChange={editMode ? onInputChange : undefined}
               onBlur={editMode ? (e) => validateFirstName(e.target.value) : undefined}
               disabled={!editMode}
@@ -221,7 +253,7 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
               id="lastName"
               className={`w-full px-3 py-2 border ${lastNameError ? "border-red-500" : "border-gray-300"} rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white`}
               placeholder="e.g., Dela Cruz"
-              value={form.lastName}
+              value={localForm.lastName}
               onChange={editMode ? onInputChange : undefined}
               onBlur={editMode ? (e) => validateLastName(e.target.value) : undefined}
               disabled={!editMode}
@@ -242,7 +274,7 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
                   id="dob"
                   className={`w-full px-3 py-2 border ${dobError ? "border-red-500" : "border-gray-300"} rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white pr-10 ${editMode ? "cursor-pointer" : "cursor-default"}`}
                   placeholder="mm/dd/yyyy"
-                  value={form.dob}
+                  value={localForm.dob}
                   readOnly
                   onClick={editMode ? () => setCalendarOpen(true) : undefined}
                   onBlur={editMode ? (e) => validateDob(e.target.value) : undefined}
@@ -266,7 +298,7 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
                 <PopoverContent align="start" className="p-0 w-auto bg-white">
                   <Calendar
                     mode="single"
-                    selected={parseDate(form.dob)}
+                    selected={parseDate(localForm.dob)}
                     onSelect={onDateSelect}
                     initialFocus
                     fromYear={1900}
@@ -290,8 +322,8 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
                 onClick={() => setGenderDropdownOpen((v) => !v)}
                 style={{ fontWeight: 400 }}
               >
-                <span className={form.gender ? "text-gray-900" : "text-gray-400"}>
-                  {form.gender || "Select gender"}
+                <span className={localForm.gender ? "text-gray-900" : "text-gray-400"}>
+                  {localForm.gender || "Select gender"}
                 </span>
                 <ChevronDown className="h-4 w-4 text-gray-500" />
               </button>
@@ -316,7 +348,7 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
               id="gender"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
               placeholder="e.g., Female"
-              value={form.gender}
+              value={localForm.gender ?? ""}
               readOnly
               disabled
             />
@@ -334,7 +366,7 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
             id="height"
             className={`w-full px-3 py-2 border ${heightError ? "border-red-500" : "border-gray-300"} rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white`}
             placeholder="e.g., 170"
-            value={form.height}
+            value={localForm.height}
             onChange={editMode ? onInputChange : undefined}
             onBlur={editMode ? (e) => validateHeight(e.target.value) : undefined}
             disabled={!editMode}
@@ -351,7 +383,7 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
             id="weight"
             className={`w-full px-3 py-2 border ${weightError ? "border-red-500" : "border-gray-300"} rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white`}
             placeholder="e.g., 70"
-            value={form.weight}
+            value={localForm.weight}
             onChange={editMode ? onInputChange : undefined}
             onBlur={editMode ? (e) => validateWeight(e.target.value) : undefined}
             disabled={!editMode}
@@ -361,8 +393,59 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
           )}
         </div>
       </div>
+      {/* Activity Level Dropdown */}
+      <div className="mt-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="activityLevel">Activity Level</label>
+        {editMode ? (
+          <div className="relative">
+            <button
+              type="button"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-900 text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              onClick={() => setActivityLevelDropdownOpen((v) => !v)}
+              style={{ fontWeight: 400 }}
+            >
+              <span className={localForm.activityLevel ? "text-gray-900" : "text-gray-400"}>
+                {activityLevels.find(a => a.value === localForm.activityLevel)?.label || "Select activity level"}
+              </span>
+              <ChevronDown className="h-4 w-4 text-gray-500" />
+            </button>
+            {activityLevelDropdownOpen && (
+              <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
+                {activityLevels.map(option => (
+                  <div
+                    key={option.value}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 text-sm"
+                    onClick={() => onActivityLevelSelect(option.value)}
+                  >
+                    <div className="font-medium">{option.label}</div>
+                    <div className="text-xs text-gray-500">{option.description}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <input
+            type="text"
+            name="activityLevel"
+            id="activityLevel"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
+            placeholder="e.g., Moderately Active"
+            value={(() => {
+              if (!localForm.activityLevel) return "";
+              const found = activityLevels.find(a => a.value === localForm.activityLevel);
+              if (found) return found.label;
+              // If activityLevel is not empty but not in the list, display the raw value
+              return localForm.activityLevel;
+            })()}
+            readOnly
+            disabled
+          />
+        )}
+        <div className="text-gray-500 text-xs mt-2">This helps us calculate your calorie needs for better meal plans.</div>
+      </div>
       {editMode && (
-        <SaveCancelActions onSave={onSubmit} onCancel={handleCancel} />
+        <SaveCancelActions onSave={onSubmit} onCancel={handleCancelLocal} />
       )}
     </form>
   );

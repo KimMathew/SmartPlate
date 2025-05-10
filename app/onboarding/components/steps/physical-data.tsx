@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import ProgressIndicator from "@/app/onboarding/components/progress-indicator";
 import { Button } from "@/components/ui/button";
+import CardSelect from "@/components/ui/card-select";
 
 interface PhysicalDataProps {
   formData: any;
@@ -113,11 +114,11 @@ export default function PhysicalData({
             This helps us calculate your calorie needs for better meal plans.
           </p>
 
-          <div className="space-y-5">
-            <div className="space-y-1">
+          <div className="space-y-6">
+            <div className="space-y-2">
               <label
                 htmlFor="height"
-                className="block text-sm font-medium text-gray-700"
+                className="input-label"
               >
                 Height (in cm) <span className="text-red-500">*</span>
               </label>
@@ -139,10 +140,10 @@ export default function PhysicalData({
               )}
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label
                 htmlFor="weight"
-                className="block text-sm font-medium text-gray-700"
+                className="input-label"
               >
                 Weight (in kg) <span className="text-red-500">*</span>
               </label>
@@ -165,79 +166,28 @@ export default function PhysicalData({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="input-label">
                 Activity <span className="text-red-500">*</span>
               </label>
-              <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
-                {activityLevels.map((level) => {
-                  const isSelected = formData.activityLevel === level.value;
-                  return (
-                    <div
-                      key={level.value}
-                      onClick={() => {
-                        onChange("activityLevel", level.value);
-                        setErrors((prev) => ({
-                          ...prev,
-                          activityLevel: undefined,
-                        }));
-                      }}
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          onChange("activityLevel", level.value);
-                          setErrors((prev) => ({
-                            ...prev,
-                            activityLevel: undefined,
-                          }));
-                        }
-                      }}
-                      className={`relative min-w-[180px] border rounded-md p-3 cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400
-                        ${
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-50 scale-102 shadow-lg"
-                            : "border-gray-300 hover:border-emerald-400 hover:bg-emerald-50"
-                        }
-                      `}
-                      aria-pressed={isSelected}
-                    >
-                      {/* Checkmark icon */}
-                      {isSelected && (
-                        <span className="absolute top-2 right-2 text-emerald-500">
-                          <svg
-                            width="20"
-                            height="20"
-                            fill="none"
-                            viewBox="0 0 20 20"
-                          >
-                            <circle cx="10" cy="10" r="10" fill="#10B981" />
-                            <path
-                              d="M6 10.5l2.5 2.5 5-5"
-                              stroke="#fff"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </span>
-                      )}
-                      <div
-                        className={`font-medium ${
-                          isSelected ? "text-emerald-700" : "text-gray-900"
-                        }`}
-                      >
-                        {level.label}
-                      </div>
-                      <div
-                        className={`text-sm ${
-                          isSelected ? "text-emerald-600" : "text-gray-500"
-                        }`}
-                      >
-                        {level.description}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <CardSelect
+                options={activityLevels.map((level) => ({
+                  value: level.value,
+                  label: level.label,
+                  description: level.description,
+                }))}
+                value={formData.activityLevel}
+                onChange={(val) => {
+                  onChange("activityLevel", val);
+                  setErrors((prev) => ({ ...prev, activityLevel: undefined }));
+                }}
+                columns={2}
+                align="left"
+                renderDescription={(option) =>
+                  option.description ? (
+                    <div className={`text-sm ${formData.activityLevel === option.value ? "text-emerald-600" : "text-gray-500"}`}>{option.description}</div>
+                  ) : null
+                }
+              />
               {errors.activityLevel && (
                 <p className="text-red-500 text-xs mt-1">
                   {errors.activityLevel}
@@ -251,14 +201,14 @@ export default function PhysicalData({
           <Button
             onClick={onBack}
             variant="ghost"
-            className="font-medium"
+            className="px-6 py-2 text-base"
           >
             Back
           </Button>
           <Button
             onClick={handleNext}
             size="lg"
-            className="px-6 py-2"
+            className="px-6 py-2 text-base"
           >
             Next
           </Button>

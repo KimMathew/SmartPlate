@@ -3,7 +3,7 @@
 import * as React from "react"
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"
-import { X } from "lucide-react"
+import { X, Check } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -111,6 +111,68 @@ const ToastDescription = React.forwardRef<
   />
 ))
 ToastDescription.displayName = ToastPrimitives.Description.displayName
+
+type ToastMessage = {
+  id?: string; // Add id for unique key
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  variant?: "default" | "destructive";
+  icon?: React.ReactNode;
+  duration?: number;
+};
+
+let toastHandler: ((opts: ToastMessage) => void) | null = null;
+
+export function ToastToasterProvider({ children }: { children: React.ReactNode }) {
+  const [toasts, setToasts] = React.useState<ToastMessage[]>([]);
+
+  React.useEffect(() => {
+    toastHandler = (opts: ToastMessage) => {
+      // Always assign a unique id
+      const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      setToasts((prev) => [...prev, { ...opts, id }]);
+    };
+    return () => {
+      toastHandler = null;
+    };
+  }, []);
+
+  return (
+    <ToastProvider>
+      {children}
+      <ToastViewport />
+      {toasts.map((props) => {
+        // Determine icon and color
+        let icon = props.icon;
+        if (!icon) {
+          if (props.variant === "destructive") {
+            icon = <X className="h-8 w-8 text-white mb-1" />;
+          } else {
+            icon = <Check className="h-8 w-8 text-emerald-500 mb-1" />;
+          }
+        }
+        return (
+          <Toast key={props.id} variant={props.variant} duration={props.duration ?? 4000} onOpenChange={(open) => {
+            if (!open) setToasts((prev) => prev.filter((t) => t.id !== props.id));
+          }}>
+            <div className="flex items-center space-x-4">
+              {icon}
+              <div className="flex flex-col space-y-1">
+                {props.title && <ToastTitle>{props.title}</ToastTitle>}
+                {props.description && <ToastDescription>{props.description}</ToastDescription>}
+              </div>
+            </div>
+            <ToastClose />
+          </Toast>
+        );
+      })}
+    </ToastProvider>
+  );
+}
+
+export function toast(opts: ToastMessage) {
+  if (toastHandler) toastHandler(opts);
+}
 
 type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>
 

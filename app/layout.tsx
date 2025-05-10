@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import type React from "react"
 import type { Metadata } from "next"
 import { SessionProvider } from "@/lib/session-context";
+import { ToastToasterProvider } from "@/hooks/use-toast";
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -22,7 +23,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className={`${inter.className} bg-background text-foreground antialiased`}>
         <SessionProvider>
-          {children}
+          <ToastToasterProvider>
+            {children}
+          </ToastToasterProvider>
         </SessionProvider>
       </body>
     </html>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
+import { Pencil, ChevronDown } from "lucide-react";
 import {
   Select,
   SelectTrigger,
@@ -22,59 +22,77 @@ interface DietaryPreferencesForm {
   dislikedIngredients: string[];
   preferredCuisines: string[];
   cuisineOther: string[];
-  mealsPerDay: string;
+  mealsPerDay: string[];
   mealPrepTimeLimit: string;
 }
 
-const defaultForm: DietaryPreferencesForm = {
-  dietType: "keto",
-  dietTypeOther: "",
-  allergens: ["Gluten", "Nuts"],
-  allergenOther: [],
-  dislikedIngredients: ["Broccoli", "Mushrooms"],
-  preferredCuisines: ["Italian", "Asian"],
-  cuisineOther: [],
-  mealsPerDay: "3",
-  mealPrepTimeLimit: "30",
-};
+interface DietaryPreferencesTabProps {
+  form: DietaryPreferencesForm;
+  setForm: (form: DietaryPreferencesForm) => void;
+  onSave: (form: DietaryPreferencesForm) => Promise<void>;
+  editMode: boolean;
+  handleEdit: () => void;
+  handleCancel: () => void;
+}
 
-export default function DietaryPreferencesTab() {
-  const [editMode, setEditMode] = useState(false);
-  const [form, setForm] = useState<DietaryPreferencesForm>(defaultForm);
-  const [formBackup, setFormBackup] = useState<DietaryPreferencesForm>(defaultForm);
+export default function DietaryPreferencesTab({ form, setForm, onSave, editMode, handleEdit, handleCancel }: DietaryPreferencesTabProps) {
+  const [formBackup, setFormBackup] = useState<DietaryPreferencesForm>(form);
+  const [localForm, setLocalForm] = useState<DietaryPreferencesForm>(form);
   const [dietTypeDropdownOpen, setDietTypeDropdownOpen] = useState(false);
-  const [mealsPerDayDropdownOpen, setMealsPerDayDropdownOpen] = useState(false);
   const [mealPrepTimeDropdownOpen, setMealPrepTimeDropdownOpen] = useState(false);
   const [allergenInput, setAllergenInput] = useState("");
 
+  // Meals per day options
+  const mealOptions = [
+    { value: "breakfast", label: "Breakfast" },
+    { value: "lunch", label: "Lunch" },
+    { value: "dinner", label: "Dinner" },
+  ];
+
   useEffect(() => {
-    // TODO: Fetch user's dietary preferences from backend and setForm
-  }, []);
+    setFormBackup(form);
+    setLocalForm({
+      ...form,
+      mealsPerDay: Array.isArray(form.mealsPerDay)
+        ? form.mealsPerDay
+        : typeof form.mealsPerDay === "string" && form.mealsPerDay
+        ? [form.mealsPerDay]
+        : [],
+    });
+  }, [form]);
 
   const handleChange = (field: keyof DietaryPreferencesForm, value: any) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    // For arrays, store all items in lowercase
+    if (["allergens", "dislikedIngredients", "preferredCuisines"].includes(field)) {
+      if (Array.isArray(value)) {
+        value = value.map((v) => typeof v === "string" ? v.toLowerCase() : v);
+      }
+    }
+    setLocalForm({ ...localForm, [field]: value });
   };
 
-  const handleEdit = () => {
+  const handleEditLocal = () => {
     setFormBackup(form);
-    setEditMode(true);
+    setLocalForm(form);
+    handleEdit();
   };
 
-  const handleCancel = () => {
-    setForm(formBackup);
-    setEditMode(false);
+  const handleCancelLocal = () => {
+    setLocalForm(formBackup);
+    handleCancel();
   };
 
-  const handleSave = () => {
-    // TODO: Save form to backend
-    setEditMode(false);
+  const handleSave = async () => {
+    await onSave(localForm);
+    setForm(localForm); // update parent state
+    setFormBackup(localForm); // update backup to latest
   };
 
   const handleRemoveAllergen = (item: string) => {
-    setForm((prev) => ({
-      ...prev,
-      allergens: prev.allergens.filter((allergen) => allergen !== item),
-    }));
+    setLocalForm({
+      ...localForm,
+      allergens: localForm.allergens.filter((allergen) => allergen !== item),
+    });
   };
 
   const handleAllergenInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,16 +102,44 @@ export default function DietaryPreferencesTab() {
   const handleAllergenKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
-      const newAllergen = allergenInput.trim();
-      if (newAllergen && !form.allergens.includes(newAllergen)) {
-        setForm((prev) => ({
-          ...prev,
-          allergens: [...prev.allergens, newAllergen],
-        }));
+      const newAllergen = allergenInput.trim().toLowerCase();
+      if (newAllergen && !localForm.allergens.includes(newAllergen)) {
+        setLocalForm({
+          ...localForm,
+          allergens: [...localForm.allergens, newAllergen],
+        });
       }
       setAllergenInput("");
     }
   };
+
+  const handleMealSelect = (meal: string) => {
+    let updatedMeals = Array.isArray(localForm.mealsPerDay) ? [...localForm.mealsPerDay] : [];
+    if (updatedMeals.includes(meal)) {
+      // Prevent deselecting last meal
+      if (updatedMeals.length === 1) return;
+      updatedMeals = updatedMeals.filter((m) => m !== meal);
+    } else {
+      updatedMeals.push(meal);
+    }
+    setLocalForm({ ...localForm, mealsPerDay: updatedMeals });
+  };
+
+  // Dropdown options
+  const dietTypeOptions = [
+    { value: "vegan", label: "Vegan" },
+    { value: "keto", label: "Keto" },
+    { value: "mediterranean", label: "Mediterranean" },
+    { value: "gluten-free", label: "Gluten-Free" },
+    { value: "none", label: "No Restrictions" },
+    { value: "other", label: "Other" },
+  ];
+  const mealPrepTimeOptions = [
+    { value: "15", label: "<15 mins" },
+    { value: "30", label: "<30 mins" },
+    { value: "60", label: "<1 hour" },
+    { value: "no-limit", label: "No Limit" },
+  ];
 
   return (
     <form className="space-y-8" onSubmit={e => { e.preventDefault(); handleSave(); }} autoComplete="off">
@@ -102,80 +148,69 @@ export default function DietaryPreferencesTab() {
           <div className="text-2xl font-bold text-gray-900 mb-1 max-sm:text-xl">Dietary Preferences</div>
           <div className="text-gray-500 text-base max-sm:text-sm">Customize your dietary preferences here.</div>
         </div>
-        {!editMode && <EditButton onClick={handleEdit} />}
+        {!editMode && <EditButton onClick={handleEditLocal} />}
       </div>
       <div className="space-y-6">
         {/* Diet Type */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Diet Type</label>
           {editMode ? (
-            <>
-              <div className="relative">
-                <button
-                  type="button"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-900 text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  onClick={() => setDietTypeDropdownOpen((v) => !v)}
-                  style={{ fontWeight: 400 }}
-                >
-                  <span className={form.dietType ? "text-gray-900" : "text-gray-400"}>
-                    {form.dietType === "vegan"
-                      ? "Vegan"
-                      : form.dietType === "keto"
-                      ? "Keto"
-                      : form.dietType === "mediterranean"
-                      ? "Mediterranean"
-                      : form.dietType === "gluten-free"
-                      ? "Gluten-Free"
-                      : form.dietType === "none"
-                      ? "No Restrictions"
-                      : form.dietType === "other"
-                      ? form.dietTypeOther || "Other"
-                      : "Select diet type"}
-                  </span>
-                  <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                </button>
-                {dietTypeDropdownOpen && (
-                  <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                    {[{ value: "vegan", label: "Vegan" }, { value: "keto", label: "Keto" }, { value: "mediterranean", label: "Mediterranean" }, { value: "gluten-free", label: "Gluten-Free" }, { value: "none", label: "No Restrictions" }, { value: "other", label: "Other" }].map(option => (
-                      <div
-                        key={option.value}
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 text-sm"
-                        onClick={() => {
-                          handleChange("dietType", option.value);
-                          setDietTypeDropdownOpen(false);
-                        }}
-                      >
-                        {option.label}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {form.dietType === "other" && (
+            <div className="relative">
+              <button
+                type="button"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-900 text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                onClick={() => setDietTypeDropdownOpen((v) => !v)}
+                style={{ fontWeight: 400 }}
+              >
+                <span className={localForm.dietType ? "text-gray-900" : "text-gray-400"}>
+                  {(() => {
+                    const found = dietTypeOptions.find(opt => opt.value === localForm.dietType);
+                    if (found) return found.label;
+                    if (localForm.dietType && localForm.dietType !== "other") return localForm.dietType;
+                    return "Select diet type";
+                  })()}
+                </span>
+                <ChevronDown className="h-4 w-4 text-gray-500" />
+              </button>
+              {dietTypeDropdownOpen && (
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
+                  {dietTypeOptions.map(option => (
+                    <div
+                      key={option.value}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 text-sm"
+                      onClick={() => {
+                        handleChange("dietType", option.value);
+                        setDietTypeDropdownOpen(false);
+                      }}
+                    >
+                      {option.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {localForm.dietType === "other" && (
                 <div className="mt-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Specify Your Diet</label>
                   <input
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
                     placeholder="e.g., Paleo"
-                    value={form.dietTypeOther}
+                    value={localForm.dietTypeOther}
                     onChange={e => handleChange("dietTypeOther", e.target.value)}
                     disabled={!editMode}
                   />
                 </div>
               )}
-            </>
+            </div>
           ) : (
             <input
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-              value={
-                form.dietType === "vegan" ? "Vegan" :
-                form.dietType === "keto" ? "Keto" :
-                form.dietType === "mediterranean" ? "Mediterranean" :
-                form.dietType === "gluten-free" ? "Gluten-Free" :
-                form.dietType === "none" ? "No Restrictions" :
-                form.dietType === "other" ? (form.dietTypeOther || "Other") :
-                ""
-              }
+              value={(() => {
+                const found = dietTypeOptions.find(opt => opt.value === localForm.dietType);
+                if (found && localForm.dietType !== "other") return found.label;
+                if (localForm.dietType === "other" && localForm.dietTypeOther) return localForm.dietTypeOther;
+                if (localForm.dietType && localForm.dietType !== "other") return localForm.dietType;
+                return "";
+              })()}
               disabled
             />
           )}
@@ -183,7 +218,7 @@ export default function DietaryPreferencesTab() {
         {/* Allergens */}
         <BadgeInput
           label="Allergens to Avoid"
-          items={form.allergens}
+          items={localForm.allergens}
           onChange={items => handleChange("allergens", items)}
           editMode={editMode}
           placeholder="Type allergen and press Enter or comma"
@@ -191,7 +226,7 @@ export default function DietaryPreferencesTab() {
         {/* Disliked Ingredients */}
         <BadgeInput
           label="Disliked Ingredients"
-          items={form.dislikedIngredients}
+          items={localForm.dislikedIngredients}
           onChange={items => handleChange("dislikedIngredients", items)}
           editMode={editMode}
           placeholder="Type ingredient and press Enter or comma"
@@ -199,7 +234,7 @@ export default function DietaryPreferencesTab() {
         {/* Preferred Cuisines */}
         <BadgeInput
           label="Preferred Cuisines"
-          items={form.preferredCuisines}
+          items={localForm.preferredCuisines}
           onChange={items => handleChange("preferredCuisines", items)}
           editMode={editMode}
           placeholder="Type cuisine and press Enter or comma"
@@ -210,103 +245,80 @@ export default function DietaryPreferencesTab() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Meals per Day</label>
             {editMode ? (
-              <>
-                <div className="relative">
+              <div className="flex gap-2">
+                {mealOptions.map((option) => (
                   <button
+                    key={option.value}
                     type="button"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-900 text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    onClick={() => setMealsPerDayDropdownOpen((v) => !v)}
-                    style={{ fontWeight: 400 }}
+                    className={`px-4 py-2 rounded-md border text-sm font-medium transition-colors duration-150 ${
+                      localForm.mealsPerDay.includes(option.value)
+                        ? "bg-emerald-500 text-white border-emerald-500"
+                        : "bg-white text-gray-900 border-gray-300 hover:bg-gray-100"
+                    }`}
+                    onClick={() => handleMealSelect(option.value)}
+                    aria-pressed={localForm.mealsPerDay.includes(option.value)}
                   >
-                    <span className={form.mealsPerDay ? "text-gray-900" : "text-gray-400"}>
-                      {form.mealsPerDay || "Select number of meals"}
-                    </span>
-                    <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                    {option.label}
                   </button>
-                  {mealsPerDayDropdownOpen && (
-                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                      {["2", "3", "4", "5"].map(option => (
-                        <div
-                          key={option}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 text-sm"
-                          onClick={() => {
-                            handleChange("mealsPerDay", option);
-                            setMealsPerDayDropdownOpen(false);
-                          }}
-                        >
-                          {option}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </>
+                ))}
+              </div>
             ) : (
-              <input
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-                value={form.mealsPerDay}
-                disabled
-              />
+              <div className="flex gap-2">
+                {localForm.mealsPerDay && localForm.mealsPerDay.length > 0 ? (
+                  localForm.mealsPerDay.map((meal) => {
+                    const label = mealOptions.find((opt) => opt.value === meal)?.label || meal;
+                    return (
+                      <span
+                        key={meal}
+                        className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold border border-emerald-200"
+                      >
+                        {label}
+                      </span>
+                    );
+                  })
+                ) : (
+                  <span className="text-gray-400 text-sm">No meals selected</span>
+                )}
+              </div>
             )}
           </div>
           {/* Meal Prep Time Limit */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Meal Prep Time Limit</label>
             {editMode ? (
-              <>
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-900 text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    onClick={() => setMealPrepTimeDropdownOpen((v) => !v)}
-                    style={{ fontWeight: 400 }}
-                  >
-                    <span className={form.mealPrepTimeLimit ? "text-gray-900" : "text-gray-400"}>
-                      {form.mealPrepTimeLimit === "15"
-                        ? "<15 mins"
-                        : form.mealPrepTimeLimit === "30"
-                        ? "<30 mins"
-                        : form.mealPrepTimeLimit === "60"
-                        ? "<1 hour"
-                        : form.mealPrepTimeLimit === "no-limit"
-                        ? "No Limit"
-                        : "Select time limit"}
-                    </span>
-                    <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                  </button>
-                  {mealPrepTimeDropdownOpen && (
-                    <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                      {[
-                        { value: "15", label: "<15 mins" },
-                        { value: "30", label: "<30 mins" },
-                        { value: "60", label: "<1 hour" },
-                        { value: "no-limit", label: "No Limit" },
-                      ].map(option => (
-                        <div
-                          key={option.value}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 text-sm"
-                          onClick={() => {
-                            handleChange("mealPrepTimeLimit", option.value);
-                            setMealPrepTimeDropdownOpen(false);
-                          }}
-                        >
-                          {option.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </>
+              <div className="relative">
+                <button
+                  type="button"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-900 text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  onClick={() => setMealPrepTimeDropdownOpen((v) => !v)}
+                  style={{ fontWeight: 400 }}
+                >
+                  <span className={localForm.mealPrepTimeLimit ? "text-gray-900" : "text-gray-400"}>
+                    {mealPrepTimeOptions.find(opt => opt.value === localForm.mealPrepTimeLimit)?.label || "Select time limit"}
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                </button>
+                {mealPrepTimeDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
+                    {mealPrepTimeOptions.map(option => (
+                      <div
+                        key={option.value}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 text-sm"
+                        onClick={() => {
+                          handleChange("mealPrepTimeLimit", option.value);
+                          setMealPrepTimeDropdownOpen(false);
+                        }}
+                      >
+                        {option.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             ) : (
               <input
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-                value={
-                  form.mealPrepTimeLimit === "15" ? "<15 mins" :
-                  form.mealPrepTimeLimit === "30" ? "<30 mins" :
-                  form.mealPrepTimeLimit === "60" ? "<1 hour" :
-                  form.mealPrepTimeLimit === "no-limit" ? "No Limit" :
-                  ""
-                }
+                value={mealPrepTimeOptions.find(opt => opt.value === localForm.mealPrepTimeLimit)?.label || ""}
                 disabled
               />
             )}
@@ -314,7 +326,7 @@ export default function DietaryPreferencesTab() {
         </div>
       </div>
       {editMode && (
-        <SaveCancelActions onSave={e => { e.preventDefault(); handleSave(); }} onCancel={handleCancel} />
+        <SaveCancelActions onSave={e => { e.preventDefault(); handleSave(); }} onCancel={handleCancelLocal} />
       )}
     </form>
   );

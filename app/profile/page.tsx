@@ -7,9 +7,8 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { User, Apple, Target, Settings, Pencil } from "lucide-react";
 import PersonalInfoTab from "./profile-tabs/personal_info_tab";
@@ -43,11 +42,31 @@ export default function ProfilePage() {
     firstName: "Jane",
     lastName: "Smith",
     dob: "1990-01-01",
-    gender: "Female",
+    gender: "Female" as string | null,
     height: "165",
     weight: "65",
+    activityLevel: "", // Added activityLevel
   });
   const [formBackup, setFormBackup] = useState(form);
+
+  // Add this initial state for dietary preferences
+  const [dietaryForm, setDietaryForm] = useState({
+    dietType: "",
+    dietTypeOther: "",
+    allergens: [] as string[],
+    allergenOther: [] as string[],
+    dislikedIngredients: [] as string[],
+    preferredCuisines: [] as string[],
+    cuisineOther: [] as string[],
+    mealsPerDay: [] as string[], // CHANGED: now an array
+    mealPrepTimeLimit: "",
+  });
+
+  // Add this initial state for health goals
+  const [healthGoalsForm, setHealthGoalsForm] = useState({
+    healthGoal: "",
+    targetWeight: ""
+  });
 
   useEffect(() => {
     const supabase = createClient();
@@ -55,7 +74,7 @@ export default function ProfilePage() {
       if (user) {
         const { data, error } = await supabase
           .from("Users")
-          .select('first_name, last_name, email, "birth-date", gender, height, weight')
+          .select(`first_name, last_name, email, "birth-date", gender, height, weight, diet_type, allergens, disliked_ingredients, preferred_cuisines, meals_perday, prep_time_limit, activity_level, goal_type, target_weight`)
           .eq("id", user.id)
           .single();
         if (data) {
@@ -70,6 +89,26 @@ export default function ProfilePage() {
             gender: data.gender ?? "",
             height: data.height !== undefined && data.height !== null ? String(data.height) : "",
             weight: data.weight !== undefined && data.weight !== null ? String(data.weight) : "",
+            activityLevel: data.activity_level ?? "", // Fetch from DB
+          });
+          setDietaryForm({
+            dietType: data.diet_type ?? "",
+            dietTypeOther: "", // You may want to add this field to your DB if needed
+            allergens: Array.isArray(data.allergens) ? data.allergens : (data.allergens ? data.allergens.split(",") : []),
+            allergenOther: [], // You may want to add this field to your DB if needed
+            dislikedIngredients: Array.isArray(data.disliked_ingredients) ? data.disliked_ingredients : (data.disliked_ingredients ? data.disliked_ingredients.split(",") : []),
+            preferredCuisines: Array.isArray(data.preferred_cuisines) ? data.preferred_cuisines : (data.preferred_cuisines ? data.preferred_cuisines.split(",") : []),
+            cuisineOther: [], // You may want to add this field to your DB if needed
+            mealsPerDay: Array.isArray(data.meals_perday)
+              ? data.meals_perday
+              : (typeof data.meals_perday === "string" && data.meals_perday
+                ? data.meals_perday.split(",").map((m: string) => m.trim()).filter(Boolean)
+                : []),
+            mealPrepTimeLimit: data.prep_time_limit ?? "",
+          });
+          setHealthGoalsForm({
+            healthGoal: data.goal_type ?? "",
+            targetWeight: data.target_weight !== undefined && data.target_weight !== null ? String(data.target_weight) : ""
           });
         } else {
           setProfile({ fullName: "", email: user.email ?? "" });
@@ -80,6 +119,22 @@ export default function ProfilePage() {
             gender: "",
             height: "",
             weight: "",
+            activityLevel: "", // Reset
+          });
+          setDietaryForm({
+            dietType: "",
+            dietTypeOther: "",
+            allergens: [],
+            allergenOther: [],
+            dislikedIngredients: [],
+            preferredCuisines: [],
+            cuisineOther: [],
+            mealsPerDay: [], // CHANGED: now an array
+            mealPrepTimeLimit: "",
+          });
+          setHealthGoalsForm({
+            healthGoal: "",
+            targetWeight: ""
           });
         }
       } else {
@@ -91,6 +146,22 @@ export default function ProfilePage() {
           gender: "",
           height: "",
           weight: "",
+          activityLevel: "", // Reset
+        });
+        setDietaryForm({
+          dietType: "",
+          dietTypeOther: "",
+          allergens: [],
+          allergenOther: [],
+          dislikedIngredients: [],
+          preferredCuisines: [],
+          cuisineOther: [],
+          mealsPerDay: [], // CHANGED: now an array
+          mealPrepTimeLimit: "",
+        });
+        setHealthGoalsForm({
+          healthGoal: "",
+          targetWeight: ""
         });
       }
     };
@@ -106,9 +177,10 @@ export default function ProfilePage() {
         first_name: updatedForm.firstName,
         last_name: updatedForm.lastName,
         "birth-date": updatedForm.dob,
-        gender: updatedForm.gender,
+        gender: updatedForm.gender === "" ? null : updatedForm.gender,
         height: updatedForm.height ? Number(updatedForm.height) : null,
         weight: updatedForm.weight ? Number(updatedForm.weight) : null,
+        activity_level: updatedForm.activityLevel ?? null, // Save activityLevel
       })
       .eq("id", user.id);
     if (!error) {
@@ -118,13 +190,81 @@ export default function ProfilePage() {
         fullName: `${updatedForm.firstName} ${updatedForm.lastName}`.trim(),
         email: profile?.email || user.email || "",
       });
+      toast({
+        title: "Profile updated",
+        description: "Your personal information has been saved.",
+      });
     } else {
-      // Optionally show error to user
-      alert("Failed to update profile. Please try again.");
+      toast({
+        title: "Update failed",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
     }
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // Handler to update dietary preferences in Supabase
+  async function handleSaveDietaryPreferences(updatedDietaryForm: typeof dietaryForm) {
+    if (!user) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("Users")
+      .update({
+        diet_type: updatedDietaryForm.dietType === "other" && updatedDietaryForm.dietTypeOther
+          ? updatedDietaryForm.dietTypeOther
+          : updatedDietaryForm.dietType,
+        allergens: updatedDietaryForm.allergens,
+        disliked_ingredients: updatedDietaryForm.dislikedIngredients,
+        preferred_cuisines: updatedDietaryForm.preferredCuisines,
+        meals_perday: updatedDietaryForm.mealsPerDay,
+        prep_time_limit: updatedDietaryForm.mealPrepTimeLimit || null,
+      })
+      .eq("id", user.id);
+    if (!error) {
+      setDietaryForm(updatedDietaryForm);
+      setEditMode(false); // Exit edit mode after save
+      toast({
+        title: "Dietary preferences updated",
+        description: "Your dietary preferences have been saved.",
+        
+      });
+    } else {
+      toast({
+        title: "Update failed",
+        description: "Failed to update dietary preferences. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  // Handler to update health goals in Supabase
+  async function handleSaveHealthGoals(updatedHealthGoalsForm: typeof healthGoalsForm) {
+    if (!user) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("Users")
+      .update({
+        goal_type: updatedHealthGoalsForm.healthGoal,
+        target_weight: updatedHealthGoalsForm.targetWeight ? Number(updatedHealthGoalsForm.targetWeight) : null,
+      })
+      .eq("id", user.id);
+    if (!error) {
+      setHealthGoalsForm(updatedHealthGoalsForm);
+      setEditMode(false); // Exit edit mode after save
+      toast({
+        title: "Health goals updated",
+        description: "Your health goals have been saved.",
+      });
+    } else {
+      toast({
+        title: "Update failed",
+        description: "Failed to update health goals. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
@@ -199,11 +339,24 @@ export default function ProfilePage() {
               />
             )}
             {activeTab === 1 && (
-              <DietaryPreferencesTab />
+              <DietaryPreferencesTab
+                form={dietaryForm}
+                setForm={setDietaryForm}
+                onSave={handleSaveDietaryPreferences}
+                editMode={editMode}
+                handleEdit={handleEdit}
+                handleCancel={handleCancel}
+              />
             )}
             {activeTab === 2 && (
-              // Render HealthGoalsTab for the Health Goals tab
-              <HealthGoalsTab />
+              <HealthGoalsTab
+                form={healthGoalsForm}
+                setForm={setHealthGoalsForm}
+                onSave={handleSaveHealthGoals}
+                editMode={editMode}
+                handleEdit={handleEdit}
+                handleCancel={handleCancel}
+              />
             )}
             {/* ...existing code for other tabs... */}
           </CardContent>

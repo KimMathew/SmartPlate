@@ -46,7 +46,7 @@ export const BadgeInput: React.FC<BadgeInputProps> = ({
               key={item}
               className="inline-flex items-center px-3 py-1 mr-2 mb-1 rounded-full bg-emerald-100 text-emerald-800 text-sm font-medium"
             >
-              {item}
+              {item.charAt(0).toUpperCase() + item.slice(1)}
               <button
                 type="button"
                 className="ml-2 text-emerald-600 hover:text-red-500 focus:outline-none"
@@ -76,7 +76,7 @@ export const BadgeInput: React.FC<BadgeInputProps> = ({
                 key={item}
                 className="inline-flex items-center px-3 py-1 mr-2 mb-1 rounded-full bg-emerald-100 text-emerald-800 text-sm font-medium"
               >
-                {item}
+                {item.charAt(0).toUpperCase() + item.slice(1)}
               </span>
             ))
           )}
