@@ -22,7 +22,7 @@ interface DietaryPreferencesForm {
   dislikedIngredients: string[];
   preferredCuisines: string[];
   cuisineOther: string[];
-  mealsPerDay: string;
+  mealsPerDay: string[];
   mealPrepTimeLimit: string;
 }
 
@@ -39,13 +39,26 @@ export default function DietaryPreferencesTab({ form, setForm, onSave, editMode,
   const [formBackup, setFormBackup] = useState<DietaryPreferencesForm>(form);
   const [localForm, setLocalForm] = useState<DietaryPreferencesForm>(form);
   const [dietTypeDropdownOpen, setDietTypeDropdownOpen] = useState(false);
-  const [mealsPerDayDropdownOpen, setMealsPerDayDropdownOpen] = useState(false);
   const [mealPrepTimeDropdownOpen, setMealPrepTimeDropdownOpen] = useState(false);
   const [allergenInput, setAllergenInput] = useState("");
 
+  // Meals per day options
+  const mealOptions = [
+    { value: "breakfast", label: "Breakfast" },
+    { value: "lunch", label: "Lunch" },
+    { value: "dinner", label: "Dinner" },
+  ];
+
   useEffect(() => {
     setFormBackup(form);
-    setLocalForm(form);
+    setLocalForm({
+      ...form,
+      mealsPerDay: Array.isArray(form.mealsPerDay)
+        ? form.mealsPerDay
+        : typeof form.mealsPerDay === "string" && form.mealsPerDay
+        ? [form.mealsPerDay]
+        : [],
+    });
   }, [form]);
 
   const handleChange = (field: keyof DietaryPreferencesForm, value: any) => {
@@ -100,6 +113,18 @@ export default function DietaryPreferencesTab({ form, setForm, onSave, editMode,
     }
   };
 
+  const handleMealSelect = (meal: string) => {
+    let updatedMeals = Array.isArray(localForm.mealsPerDay) ? [...localForm.mealsPerDay] : [];
+    if (updatedMeals.includes(meal)) {
+      // Prevent deselecting last meal
+      if (updatedMeals.length === 1) return;
+      updatedMeals = updatedMeals.filter((m) => m !== meal);
+    } else {
+      updatedMeals.push(meal);
+    }
+    setLocalForm({ ...localForm, mealsPerDay: updatedMeals });
+  };
+
   // Dropdown options
   const dietTypeOptions = [
     { value: "vegan", label: "Vegan" },
@@ -108,12 +133,6 @@ export default function DietaryPreferencesTab({ form, setForm, onSave, editMode,
     { value: "gluten-free", label: "Gluten-Free" },
     { value: "none", label: "No Restrictions" },
     { value: "other", label: "Other" },
-  ];
-  const mealsPerDayOptions = [
-    { value: "2", label: "2" },
-    { value: "3", label: "3" },
-    { value: "4", label: "4" },
-    { value: "5", label: "5" },
   ];
   const mealPrepTimeOptions = [
     { value: "15", label: "<15 mins" },
@@ -144,7 +163,12 @@ export default function DietaryPreferencesTab({ form, setForm, onSave, editMode,
                 style={{ fontWeight: 400 }}
               >
                 <span className={localForm.dietType ? "text-gray-900" : "text-gray-400"}>
-                  {dietTypeOptions.find(opt => opt.value === localForm.dietType)?.label || "Select diet type"}
+                  {(() => {
+                    const found = dietTypeOptions.find(opt => opt.value === localForm.dietType);
+                    if (found) return found.label;
+                    if (localForm.dietType && localForm.dietType !== "other") return localForm.dietType;
+                    return "Select diet type";
+                  })()}
                 </span>
                 <ChevronDown className="h-4 w-4 text-gray-500" />
               </button>
@@ -180,9 +204,13 @@ export default function DietaryPreferencesTab({ form, setForm, onSave, editMode,
           ) : (
             <input
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-              value={
-                dietTypeOptions.find(opt => opt.value === localForm.dietType)?.label || ""
-              }
+              value={(() => {
+                const found = dietTypeOptions.find(opt => opt.value === localForm.dietType);
+                if (found && localForm.dietType !== "other") return found.label;
+                if (localForm.dietType === "other" && localForm.dietTypeOther) return localForm.dietTypeOther;
+                if (localForm.dietType && localForm.dietType !== "other") return localForm.dietType;
+                return "";
+              })()}
               disabled
             />
           )}
@@ -217,41 +245,41 @@ export default function DietaryPreferencesTab({ form, setForm, onSave, editMode,
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Meals per Day</label>
             {editMode ? (
-              <div className="relative">
-                <button
-                  type="button"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm text-gray-900 text-left flex justify-between items-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  onClick={() => setMealsPerDayDropdownOpen((v) => !v)}
-                  style={{ fontWeight: 400 }}
-                >
-                  <span className={localForm.mealsPerDay ? "text-gray-900" : "text-gray-400"}>
-                    {mealsPerDayOptions.find(opt => opt.value === localForm.mealsPerDay)?.label || "Select number of meals"}
-                  </span>
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
-                </button>
-                {mealsPerDayDropdownOpen && (
-                  <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 py-1">
-                    {mealsPerDayOptions.map(option => (
-                      <div
-                        key={option.value}
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 text-sm"
-                        onClick={() => {
-                          handleChange("mealsPerDay", option.value);
-                          setMealsPerDayDropdownOpen(false);
-                        }}
-                      >
-                        {option.label}
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <div className="flex gap-2">
+                {mealOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`px-4 py-2 rounded-md border text-sm font-medium transition-colors duration-150 ${
+                      localForm.mealsPerDay.includes(option.value)
+                        ? "bg-emerald-500 text-white border-emerald-500"
+                        : "bg-white text-gray-900 border-gray-300 hover:bg-gray-100"
+                    }`}
+                    onClick={() => handleMealSelect(option.value)}
+                    aria-pressed={localForm.mealsPerDay.includes(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
             ) : (
-              <input
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white"
-                value={mealsPerDayOptions.find(opt => opt.value === localForm.mealsPerDay)?.label || ""}
-                disabled
-              />
+              <div className="flex gap-2">
+                {localForm.mealsPerDay && localForm.mealsPerDay.length > 0 ? (
+                  localForm.mealsPerDay.map((meal) => {
+                    const label = mealOptions.find((opt) => opt.value === meal)?.label || meal;
+                    return (
+                      <span
+                        key={meal}
+                        className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold border border-emerald-200"
+                      >
+                        {label}
+                      </span>
+                    );
+                  })
+                ) : (
+                  <span className="text-gray-400 text-sm">No meals selected</span>
+                )}
+              </div>
             )}
           </div>
           {/* Meal Prep Time Limit */}
