@@ -54,9 +54,16 @@ export default function SchedulePage() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto px-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Meal Scheduling</h1>
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Meal Scheduling
+          </h1>
+          <p className="text-gray-500 dark:text-gray-300 mb-2">
+            Set your meal times and get a personalized plan tailored to your lifestyle and diet
+          </p>
+        </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="flex items-center gap-2">
             <Printer className="h-4 w-4" />
