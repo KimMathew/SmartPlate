@@ -21,12 +21,24 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const getSession = async () => {
       const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Error fetching session:", error);
+      } else if (!data.session) {
+        console.warn("No session found. User might need to log in again.");
+      } else {
+        console.log("Session retrieved successfully:", data.session);
+      }
       setSession(data.session);
       setUser(data.session?.user ?? null);
       setIsLoading(false);
     };
     getSession();
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (!newSession) {
+        console.warn("Auth state changed but no new session found.");
+      } else {
+        console.log("Auth state changed. New session:", newSession);
+      }
       setSession(newSession);
       setUser(newSession?.user ?? null);
     });
