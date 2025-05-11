@@ -14,7 +14,7 @@ export default function SchedulePage() {
     setMealPlan([]);
   }, []);
 
-  // Load meal plan on mount if user is logged in
+  // Auto-load meal plan on mount if user is logged in
   useEffect(() => {
     (async () => {
       const { createClient } = await import("@/lib/supabase");
@@ -267,7 +267,7 @@ export default function SchedulePage() {
             setMealPlan(formattedPlan);
           }}
         >
-          Seve the Generated Plan
+          Save the Generated Plan
         </Button>
       </div>
 
