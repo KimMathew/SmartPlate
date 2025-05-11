@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import OnboardingLayout from "@/components/onboarding/onboarding-layout";
-import BasicInformation from "@/components/onboarding/steps/basic-information";
-import PhysicalData from "@/components/onboarding/steps/physical-data";
-import HealthGoals from "@/components/onboarding/steps/health-goals";
-import DietaryPreferences from "@/components/onboarding/steps/dietary-preferences";
-import CompletionStep from "@/components/onboarding/steps/completion-step";
+import OnboardingLayout from "@/app/onboarding/components/onboarding-layout";
+import BasicInformation from "@/app/onboarding/components/steps/basic-information";
+import PhysicalData from "@/app/onboarding/components/steps/physical-data";
+import HealthGoals from "@/app/onboarding/components/steps/health-goals";
+import DietaryPreferences from "@/app/onboarding/components/steps/dietary-preferences";
+import CompletionStep from "@/app/onboarding/components/steps/completion-step";
 import { createClient } from "@/lib/supabase";
 import { useSearchParams } from "next/navigation";
 import Forbidden from "@/components/ui/forbidden";
@@ -27,7 +27,7 @@ export default function OnboardingPage() {
   const [forbidden, setForbidden] = useState(false);
 
   useEffect(() => {
-    // 1. Check sessionStorage for signup data
+    //1. Check sessionStorage for signup data
     const storedData = sessionStorage.getItem("tempSignupData");
 
     // 2. If no data exists, show forbidden
@@ -45,6 +45,19 @@ export default function OnboardingPage() {
       firstName: parsed.firstName || "User",
       lastName: parsed.lastName || "",
       email: parsed.email || "",
+
+    //BYPASS ONBOARDING FOR DEBUGGING
+    // setUserData({
+    //   firstName: "Debug",
+    //   lastName: "User",
+    //   email: "debug@example.com",
+    //   password: "password123"
+    // });
+    // setFormData((prev) => ({
+    //   ...prev,
+    //   firstName: "Debug",
+    //   lastName: "User",
+    //   email: "debug@example.com"
     }));
   }, [router]);
 
@@ -58,7 +71,7 @@ export default function OnboardingPage() {
   const [formData, setFormData] = useState({
     // Basic Information
     dateOfBirth: "",
-    gender: "",
+    gender: null,
 
     // Physical Data
     height: "",
@@ -68,14 +81,17 @@ export default function OnboardingPage() {
     // Health Goals
     goalType: "",
     weeklyGoal: "",
-    targetWeight: "",
+    targetWeight: null,
 
     // Dietary Preferences
     dietType: "",
+    dietTypeOther: "", // Added field for custom diet type
     allergens: [] as string[],
+    allergenOther: "", // Added for custom allergen(s)
     dislikedIngredients: [] as string[],
     preferredCuisines: [] as string[],
-    mealsPerDay: "",
+    cuisineOther: "", // Added for custom cuisine(s)
+    mealsPerDay: [] as string[],
     mealPrepTimeLimit: "",
 
     // User data from signup
@@ -166,6 +182,28 @@ export default function OnboardingPage() {
         userError
       );
     }
+
+    // Prepare allergens and cuisines for DB: replace 'other' with custom values if present
+    let allergens = formData.allergens;
+    if (Array.isArray(allergens) && allergens.includes("other") && formData.allergenOther) {
+      const customAllergens = typeof formData.allergenOther === "string"
+        ? formData.allergenOther.split(",").map(s => s.trim()).filter(Boolean)
+        : formData.allergenOther;
+      allergens = [
+        ...allergens.filter(a => a !== "other"),
+        ...customAllergens
+      ];
+    }
+    let preferredCuisines = formData.preferredCuisines;
+    if (Array.isArray(preferredCuisines) && preferredCuisines.includes("other") && formData.cuisineOther) {
+      const customCuisines = Array.isArray(formData.cuisineOther)
+        ? formData.cuisineOther
+        : String(formData.cuisineOther).split(",").map(s => s.trim()).filter(Boolean);
+      preferredCuisines = [
+        ...preferredCuisines.filter(c => c !== "other"),
+        ...customCuisines
+      ];
+    }
     const { data, error } = await supabase
       .from("Users")
       .insert({
@@ -180,11 +218,11 @@ export default function OnboardingPage() {
         'activity_level': formData.activityLevel,
         'goal_type': formData.goalType,
         'target_weight': formData.targetWeight,
-        'diet_type': formData.dietType,
-        'allergens': formData.allergens,
+        'diet_type': (formData.dietType === "other" && formData.dietTypeOther) ? formData.dietTypeOther : formData.dietType,
+        'allergens': allergens,
         'disliked_ingredients': formData.dislikedIngredients,
-        'preferred_cuisines': formData.preferredCuisines,
-        'meals_per_day': formData.mealsPerDay,
+        'preferred_cuisines': preferredCuisines,
+        'meals_perday': formData.mealsPerDay,
         'prep_time_limit': formData.mealPrepTimeLimit,
       })
       .eq("id", userData.user?.id);
@@ -207,7 +245,7 @@ export default function OnboardingPage() {
       <Forbidden
         message="Access Forbidden: Please sign up first to access onboarding."
         actionHref="/"
-        actionText="Go to Signup"
+        actionText="Go to Landing Page"
       />
     );
   }

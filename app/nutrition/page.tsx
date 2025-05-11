@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import NutritionSummaryCard from "@/components/NutritionSummaryCard";
-import NutritionVisualizationCard from "@/components/NutritionVisualizationCard";
-import MealLogCard from "@/components/MealLogCard";
+import NutritionSummaryCard from "@/app/nutrition/components/NutritionSummaryCard";
+import NutritionVisualizationCard from "@/app/nutrition/components/NutritionVisualizationCard";
+import MealLogCard from "@/app/nutrition/components/MealLogCard";
 
 // TODO: Replace this with data from the backend/database
 const nutritionData = {
@@ -65,7 +65,7 @@ export default function NutritionPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-gray-900">
           Nutritional Tracking
         </h1>
         <p className="text-gray-500 dark:text-gray-300 mb-2">
