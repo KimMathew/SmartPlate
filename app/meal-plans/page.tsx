@@ -87,7 +87,7 @@ const MealCard = ({ meal }: { meal: Meal }) => {
         className="p-5 border rounded-lg  hover:border-emerald-200 transition-colors cursor-pointer hover:bg-emerald-50"
       >
         <div className="flex items-center gap-2 mb-3">
-          <div className="bg-emerald-50 p-1.5 rounded-full text-emerald-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors duration-200">
+          <div className="bg-emerald-50 p-1.5 rounded-full text-emerald-500">
             {meal.type.toLowerCase() === "breakfast" && <Coffee className="h-4 w-4" />}
             {meal.type.toLowerCase() === "lunch" && <Utensils className="h-4 w-4" />}
             {meal.type.toLowerCase() === "dinner" && <ChefHat className="h-4 w-4" />}
