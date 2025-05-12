@@ -715,6 +715,9 @@ export default function MealPlansPage() {
         plan_id: number;
         recipe_id: number | null;
         nutrition_id: number | null;
+        meal_name: string;
+        meal_date: string;
+        meal_type: string;
       }[] = [];
       mealPlan.forEach((dayPlan) => {
         dayPlan.meals.forEach((meal) => {
@@ -739,7 +742,10 @@ export default function MealPlansPage() {
               user_id: user.id,
               plan_id: planRecord.plan_id,
               recipe_id: planRecord.recipe_id || null,
-              nutrition_id: planRecord.nutrition_id || null
+              nutrition_id: planRecord.nutrition_id || null,
+              meal_name: planRecord.plan_name || (Array.isArray(planRecord.recipe) && planRecord.recipe[0]?.title) || meal.name,
+              meal_date: dayPlan.start_date || '', // fallback to empty string if undefined
+              meal_type: planRecord.plan_type || meal.type
             });
           }
         });
