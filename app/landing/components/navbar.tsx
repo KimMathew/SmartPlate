@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 
 export default function Navbar({
   openLoginModal,
@@ -12,6 +13,15 @@ export default function Navbar({
   openSignupModal: () => void;
 }) {
   const router = useRouter();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleSignup = (userData: any) => {
     // Here you would typically store user data in context or state
@@ -20,7 +30,9 @@ export default function Navbar({
 
   return (
     <>
-      <header className="w-full py-4">
+      <header
+        className={`w-full py-4 sticky top-0 z-50 transition-colors duration-300 ${scrolled ? "bg-white/90 shadow-md backdrop-blur" : "bg-white"}`}
+      >
         <div className="container max-w-screen-2xl mx-auto px-6 lg:px-8 flex items-center justify-between">
           <Link href="/" className="text-2xl max-sm:text-lg font-bold text-gray-900 ">
             SmartPlate
@@ -35,7 +47,6 @@ export default function Navbar({
               Login
             </Button>
             <Button
-
               onClick={openSignupModal}
               className="max-sm:text-xs max-sm:px-3"
             >

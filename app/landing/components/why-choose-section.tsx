@@ -48,7 +48,7 @@ function WhyChooseImage() {
       ref={ref}
       className={`rounded-full overflow-hidden aspect-square bg-[#E2E3E1] max-w-lg mx-auto flex items-center justify-center shadow-2xl shadow-black/35 transition-all duration-1000 ${
         inView ? "opacity-100 scale-100" : "opacity-0 scale-90"
-      }`}
+      } hover:scale-105 hover:shadow-3xl`}
     >
       <Image
         src="/images/plate.png"
