@@ -242,9 +242,9 @@ export async function POST(req: Request) {
         For each day:
         - Meal type (breakfast/lunch/dinner/snack)
         - Name, description, ingredients (with amounts), instructions (steps)
-        - Nutrition: calories, protein, carbs, fats
+        - Nutrition: calories, protein, carbs, fats, vitamins
         - Prep time, difficulty
-        - Daily totals: calories, protein, carbs, fats
+        - Daily totals: calories, protein, carbs, fats, vitamins
 
         ### Constraints:
         - Exclude allergens: ${user.allergens?.join(", ") || "none"}
@@ -266,7 +266,8 @@ export async function POST(req: Request) {
                   "calories": 300,
                   "protein": 20,
                   "carbs": 30,
-                  "fats": 10
+                  "fats": 10,
+                  "vitamins": "Vitamin A, Vitamin C, Iron"
                 },
                 "prepTime": 15,
                 "difficulty": "easy",
@@ -277,7 +278,8 @@ export async function POST(req: Request) {
               "calories": 2000,
               "protein": 100,
               "carbs": 200,
-              "fats": 70
+              "fats": 70,
+              "vitamins": "Vitamin A, Vitamin C, Iron"
             }
           }
         }
@@ -514,7 +516,7 @@ export async function POST(req: Request) {
             protein_g: meal.nutrition.protein || 0,
             carbs_g: meal.nutrition.carbs || 0,
             fats_g: meal.nutrition.fats || 0,
-            vitamins: null,
+            vitamins: meal.nutrition.vitamins || null,
             day: dayNumber // Add day number to nutrition info
           };
 
