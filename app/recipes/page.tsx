@@ -1,4 +1,6 @@
 "use client";
+import React from "react";
+import ReactDOM from "react-dom";
 import { createClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
@@ -7,8 +9,10 @@ import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FaRegClock, FaRegStar, FaStar, FaHeart, FaRegHeart, FaUser } from "react-icons/fa";
+import { Clock, Globe, Loader2, Search, X } from "lucide-react";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Use server-side environment variables for API credentials
 const createSupabaseClient = (authToken?: string, useServiceRole = false) => {
@@ -54,6 +58,7 @@ interface MealNutrition {
 }
 
 interface Meal {
+  id?: number;
   name: string;
   type?: string;
   description?: string;
@@ -66,6 +71,16 @@ interface Meal {
   difficulty?: string;
   image_url?: string;
   source_url?: string;
+  title?: string;
+  time?: number;
+  level?: string;
+  tags?: string[];
+  calories?: number;
+  protein?: number;
+  fat?: number;
+  rating?: number;
+  reviews?: number;
+  favorite?: boolean;
 }
 
 // Utility function to check if a table exists
@@ -117,66 +132,223 @@ function findBestMatchingTable(tables: string[], baseName: string) {
   return null;
 }
 
-const mockRecipes = [
-  {
-    id: 1,
-    title: "Mediterranean Quinoa Bowl",
-    time: 25,
-    level: "Beginner",
-    tags: ["Vegetarian", "High Protein", "Lunch"],
-    calories: 420,
-    protein: 18,
-    fat: 15,
-    rating: 4,
-    reviews: 42,
-    favorite: false,
-    description: "A healthy Mediterranean quinoa bowl.",
-    ingredients: ["Quinoa", "Tomatoes", "Olives", "Feta Cheese"],
-    instructions: ["Cook quinoa", "Mix ingredients", "Serve with dressing"],
-  },
-  {
-    id: 2,
-    title: "Grilled Chicken with Avocado Salsa",
-    time: 30,
-    level: "Intermediate",
-    tags: ["High Protein", "Gluten Free", "Dinner"],
-    calories: 380,
-    protein: 32,
-    fat: 12,
-    rating: 5,
-    reviews: 78,
-    favorite: true,
-    description: "Grilled chicken topped with fresh avocado salsa.",
-    ingredients: ["Chicken", "Avocado", "Tomatoes", "Onions", "Cilantro"],
-    instructions: ["Grill chicken", "Prepare salsa", "Serve together"],
-  },
-];
-
 const filters = [
   { label: "Diet:", value: "Vegetarian" },
   { label: "Meal:", value: "Lunch" },
   { label: "Time:", value: "Under 30 min" },
 ];
 
+// Recipe Details Modal Component
+function RecipeDetailsModal({ recipe, onClose }: { recipe: any; onClose: () => void }) {
+  const [visible, setVisible] = React.useState(true);
+  const [animate, setAnimate] = React.useState(false);
+
+  React.useEffect(() => {
+    setVisible(true);
+    setTimeout(() => setAnimate(true), 10);
+    return () => {
+      setAnimate(false);
+      setVisible(false);
+    };
+  }, []);
+
+  const handleClose = () => {
+    setAnimate(false);
+    setTimeout(() => setVisible(false), 200);
+    setTimeout(onClose, 200);
+  };
+
+  if (!visible) return null;
+
+  return ReactDOM.createPortal(
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-200 ${animate ? 'opacity-100' : 'opacity-0'}`} onClick={handleClose}>
+      <div
+        className={`bg-white w-full max-w-xl rounded-xl shadow-2xl transition-all duration-200 overflow-hidden max-h-[90vh] overflow-y-auto relative mx-auto ${animate ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        onClick={e => e.stopPropagation()}
+      >
+        <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 absolute top-5 right-4 z-10">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <div className="p-6">
+          <div className="mb-4">
+            <h2 className="text-2xl font-semibold mb-2">{recipe.title}</h2>
+            <p className="mb-4 text-gray-600">{recipe.description}</p>
+          </div>
+          <div className="mb-6">
+            <h3 className="font-semibold mb-1">Ingredients:</h3>
+            <ul className="mb-4 list-disc list-inside space-y-1">
+              {recipe.ingredients?.map((ingredient: string, idx: number) => (
+                <li key={idx}>{ingredient}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="mb-6">
+            <h3 className="font-semibold mb-1">Instructions:</h3>
+            <ol className="list-decimal list-inside space-y-1">
+              {recipe.instructions?.map((step: string, idx: number) => (
+                <li key={idx}>{step}</li>
+              ))}
+            </ol>
+          </div>
+          <div className="mt-6">
+            <Button onClick={handleClose} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">Close</Button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// Error Modal Component
+function ErrorModal({ message, onClose }: { message: string; onClose: () => void }) {
+  const [visible, setVisible] = React.useState(true);
+  const [animate, setAnimate] = React.useState(false);
+
+  React.useEffect(() => {
+    setVisible(true);
+    setTimeout(() => setAnimate(true), 10);
+    return () => {
+      setAnimate(false);
+      setVisible(false);
+    };
+  }, []);
+
+  const handleClose = () => {
+    setAnimate(false);
+    setTimeout(() => setVisible(false), 200);
+    setTimeout(onClose, 200);
+  };
+
+  if (!visible) return null;
+
+  return ReactDOM.createPortal(
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-200 ${animate ? 'opacity-100' : 'opacity-0'}`} onClick={handleClose}>
+      <div
+        className={`bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto relative transition-all duration-200 mx-auto ${animate ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Close (X) button */}
+        <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 absolute top-5 right-4 z-10">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <div className="p-0">
+          <div className="flex items-center gap-3 px-6 pt-6 pb-2">
+            <div className="bg-rose-100 rounded-full p-2 flex items-center justify-center">
+              <svg className="h-7 w-7 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01" />
+              </svg>
+            </div>
+            <div className="text-left">
+              <div className="font-semibold text-lg text-gray-900">Search Error</div>
+              <div className="text-gray-600 text-sm mt-1">
+                {message || "Please provide at least one search criteria (ingredient, preparation time, or cuisine)."}
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 px-6 py-4">
+            <Button onClick={handleClose} className="min-w-[90px] bg-emerald-500 hover:bg-emerald-600 text-white">OK</Button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function RecipesPage() {
   const [search, setSearch] = useState("");
-  const [recipes, setRecipes] = useState(mockRecipes);
+  const [recipes, setRecipes] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<any | null>(null); // For storing the selected recipe details
   const [recipeDetailsLoading, setRecipeDetailsLoading] = useState(false); // For loading the recipe details
 
+  const [ingredients, setIngredients] = useState<string[]>([])
+  const [inputValue, setInputValue] = useState("")
+  const [prepTime, setPrepTime] = useState("")
+  const [cuisine, setCuisine] = useState("")
+
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleAddIngredient = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && inputValue.trim()) {
+      e.preventDefault()
+      setIngredients([...ingredients, inputValue.trim()])
+      setInputValue("")
+    }
+  }
+
+  const handleRemoveIngredient = (ingredient: string) => {
+    setIngredients(ingredients.filter((item) => item !== ingredient))
+  }
+
+  const handleReset = () => {
+    setIngredients([])
+    setInputValue("")
+    setPrepTime("")
+    setCuisine("")
+  }
+
+  const difficultyColors = {
+    easy: {
+      bg: "bg-emerald-50",
+      border: "border-emerald-100",
+      text: "text-emerald-700",
+      hover: "hover:bg-emerald-50",
+      emoji: "👌",
+    },
+    medium: {
+      bg: "bg-amber-50",
+      border: "border-amber-100",
+      text: "text-amber-700",
+      hover: "hover:bg-amber-50",
+      emoji: "👍",
+    },
+    hard: {
+      bg: "bg-rose-50",
+      border: "border-rose-100",
+      text: "text-rose-700",
+      hover: "hover:bg-rose-50",
+      emoji: "💪",
+    },
+  }
+
+  // Helper function to get a valid difficulty key
+  function getDifficultyKey(level: any): keyof typeof difficultyColors {
+    if (typeof level === 'string') {
+      const key = level.toLowerCase();
+      if (key === 'easy' || key === 'medium' || key === 'hard') return key as keyof typeof difficultyColors;
+    }
+    return 'easy';
+  }
+
   // Fetch recipes when the user submits the search
-  async function handleSearch(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!search.trim()) return;
+  async function handleSearch(e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) {
+    if (e) e.preventDefault?.();
+    // Validate at least one search criteria
+    if (ingredients.length === 0 && !prepTime && !cuisine) {
+      setErrorMessage("Please provide at least one search criteria.");
+      setShowErrorModal(true);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/gemini", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ search }),
+        body: JSON.stringify({
+          ingredients,
+          prepTime,
+          cuisine
+        }),
       });
       const data = await res.json();
       if (data.success && data.mealPlan) {
@@ -209,6 +381,8 @@ export default function RecipesPage() {
     }
   }
 
+  
+
   // Fetch recipe details when the user clicks "View Recipe"
 // inside your React component
 
@@ -235,83 +409,217 @@ const handleViewRecipe = async (recipeId: number) => {
 
 
   return (
-    <div className="px-8 py-6">
-      <h1 className="text-3xl font-bold mb-6">Recipe Recommendations</h1>
-
-      {/* Search Bar */}
-      <div className="bg-white rounded-xl shadow p-6 mb-8">
-        <form className="flex items-center gap-4 mb-4" onSubmit={handleSearch}>
-          <Input
-            className="flex-1"
-            placeholder="Search by ingredient or recipe name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <Button variant="outline" className="flex items-center gap-2" type="submit" disabled={loading}>
-            {loading ? 'Searching...' : 'Search'}
-          </Button>
-        </form>
-        <div className="flex gap-2 flex-wrap">
-          {filters.map((f, i) => (
-            <Badge key={i} variant="outline" className="bg-green-100 text-green-700 font-medium px-3 py-1 rounded-full">
-              {f.label} <span className="ml-1 font-semibold">{f.value}</span> <span className="ml-2 cursor-pointer">×</span>
-            </Badge>
-          ))}
-        </div>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Recipe Recommendations
+        </h1>
+        <p className="text-gray-500 dark:text-gray-300 mb-2">
+          Discover delicious, tailored recipes that inspire your meals
+        </p>
       </div>
 
+      <Card>
+        <CardHeader className="text-center space-y-1">
+          <CardTitle className="text-gray-900 font-bold text-2xl">Search Recipes</CardTitle>
+          <CardDescription className="text-base">
+            Find delicious recipes by ingredient, preparation time, and cuisine
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Ingredients */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="bg-emerald-50 p-1.5 rounded-full">
+                  <Search className="h-4 w-4 text-emerald-600" />
+                </div>
+                <label htmlFor="ingredients" className="text-sm font-medium text-gray-700">
+                  Ingredients
+                </label>
+              </div>
+              <div className="relative">
+                <Input
+                  id="ingredients"
+                  placeholder="e.g., chicken, tomato, pasta"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleAddIngredient}
+                />
+                {inputValue && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                    onClick={() => setInputValue("")}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              {ingredients.length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {ingredients.map((ingredient) => (
+                    <Badge
+                      key={ingredient}
+                      variant="outline"
+                      className="inline-flex items-center px-3 py-1 mr-2 mb-1 rounded-full bg-emerald-100 text-emerald-800 text-sm font-medium border-0"
+                    >
+                      {ingredient}
+                      <button
+                        className="ml-1 text-emerald-600 hover:text-red-500"
+                        onClick={() => handleRemoveIngredient(ingredient)}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Preparation Time */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="bg-emerald-50 p-1.5 rounded-full">
+                  <Clock className="h-4 w-4 text-emerald-600" />
+                </div>
+                <label htmlFor="prep-time" className="text-sm font-medium text-gray-700">
+                  Preparation Time
+                </label>
+              </div>
+              <Select value={prepTime} onValueChange={setPrepTime}>
+                <SelectTrigger
+                  id="prep-time"
+                  className="px-3 py-2 border-gray-300 focus:outline-none focus:ring-emerald-500 focus:ring-1 [&>span]:flex [&>span]:items-center [&>span]:gap-2"
+                >
+                  <SelectValue placeholder="Select time" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="15">Under 15 minutes</SelectItem>
+                    <SelectItem value="30">Under 30 minutes</SelectItem>
+                    <SelectItem value="45">Under 45 minutes</SelectItem>
+                    <SelectItem value="60">Under 1 hour</SelectItem>
+                    <SelectItem value="120">1-2 hours</SelectItem>
+                    <SelectItem value="180">Over 2 hours</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Cuisine */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="bg-emerald-50 p-1.5 rounded-full">
+                  <Globe className="h-4 w-4 text-emerald-600" />
+                </div>
+                <label htmlFor="cuisine" className="text-sm font-medium text-gray-700">
+                  Cuisine
+                </label>
+              </div>
+              <Select value={cuisine} onValueChange={setCuisine}>
+                <SelectTrigger
+                  id="cuisine"
+                  className="px-3 py-2 border-gray-300 focus:outline-none focus:ring-emerald-500 focus:ring-1 [&>span]:flex [&>span]:items-center [&>span]:gap-2"
+                >
+                  <SelectValue placeholder="Select cuisine" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="african">African</SelectItem>
+                    <SelectItem value="american">American</SelectItem>
+                    <SelectItem value="asian">Asian</SelectItem>
+                    <SelectItem value="european">European</SelectItem>
+                    <SelectItem value="mediterranean">Mediterranean</SelectItem>
+                    <SelectItem value="middle-eastern">Middle Eastern</SelectItem>
+                    <SelectItem value="south-american">South American</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex justify-between pt-2">
+            <Button
+              variant="outline"
+              onClick={handleReset}
+              className="text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-800"
+            >
+              Reset
+            </Button>
+            <Button
+              className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 md:ml-auto"
+              onClick={handleSearch}
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Searching...
+                </span>
+              ) : (
+                <>
+                  <Search className="h-4 w-4" />
+                  Search Recipes
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Loading and error handling */}
-      {loading && <div className="text-gray-500 mb-4">Loading recipes...</div>}
+      {/* {loading && <div className="text-gray-500 mb-4">Loading recipes...</div>} */}
       {error && <div className="text-red-500 mb-4">{error}</div>}
 
       {/* Recipe Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {recipes.map((r) => (
-          <Card key={r.id} className="p-6 shadow-md rounded-xl">
-            <div className="flex justify-between items-start mb-2">
-              <h2 className="text-xl font-semibold">{r.title}</h2>
-              <button
-                className="text-xl text-gray-400 hover:text-red-500"
-                onClick={() => handleViewRecipe(r.id)}
-              >
-                {r.favorite ? <FaHeart className="text-red-500" /> : <FaRegHeart />}
-              </button>
+        {recipes.map((r: any) => {
+          const difficultyKey = getDifficultyKey(r.level);
+          return (
+            <div key={r.id} className="p-5 border rounded-lg hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="text-emerald-500">
+                  <Globe className="h-4 w-4" />
+                </div>
+                <span className="text-sm font-medium text-emerald-500 capitalize">
+                  {r.cuisine_type || r.tags[0]}
+                </span>
+              </div>
+              <h4 className="font-semibold text-gray-800 mb-2 leading-tight">{r.title}</h4>
+              <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-1">{r.description}</p>
+              <div className="mt-auto">
+                <div className="flex flex-wrap gap-2 items-center mb-3">
+                  <Badge
+                    variant="outline"
+                    className="bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-50 flex items-center gap-1"
+                  >
+                    <Clock className="h-3 w-3" /> {r.time} min
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={`${difficultyColors[difficultyKey].bg} ${difficultyColors[difficultyKey].border} ${difficultyColors[difficultyKey].text} ${difficultyColors[difficultyKey].hover} flex items-center gap-1`}
+                  >
+                    {difficultyColors[difficultyKey].emoji} {difficultyKey.charAt(0).toUpperCase() + difficultyKey.slice(1)}
+                  </Badge>
+                </div>
+                <Button onClick={() => handleViewRecipe(r.id)} className="w-full">View Recipe</Button>
+              </div>
             </div>
-            <div className="flex items-center gap-4 text-gray-500 text-sm mb-2">
-              <span className="flex items-center gap-1"><FaRegClock /> {r.time} min</span>
-              <span className="flex items-center gap-1"><FaUser /> {r.level}</span>
-            </div>
-            <div className="flex gap-2 mb-2 flex-wrap">
-              {r.tags.map((tag, idx) => (
-                <Badge key={idx} variant="secondary" className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">{tag}</Badge>
-              ))}
-            </div>
-            <Button onClick={() => handleViewRecipe(r.id)} className="w-full">View Recipe</Button>
-          </Card>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Recipe Modal */}
+      {/* Recipe Modal rendered outside main content for full overlay */}
       {selectedRecipe && (
-        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
-          <div className="bg-white p-8 rounded-xl w-96">
-            <h2 className="text-2xl font-semibold mb-4">{selectedRecipe.title}</h2>
-            <p className="mb-4">{selectedRecipe.description}</p>
-            <h3 className="font-semibold">Ingredients:</h3>
-            <ul className="mb-4">
-              {selectedRecipe.ingredients?.map((ingredient, idx) => (
-                <li key={idx}>{ingredient}</li>
-              ))}
-            </ul>
-            <h3 className="font-semibold">Instructions:</h3>
-            <ul>
-              {selectedRecipe.instructions?.map((step, idx) => (
-                <li key={idx}>{step}</li>
-              ))}
-            </ul>
-            <Button onClick={() => setSelectedRecipe(null)} className="mt-4 w-full">Close</Button>
-          </div>
-        </div>
+        <RecipeDetailsModal recipe={selectedRecipe} onClose={() => setSelectedRecipe(null)} />
+      )}
+
+      {/* Error Modal rendered outside main content for full overlay */}
+      {showErrorModal && (
+        <ErrorModal message={errorMessage} onClose={() => setShowErrorModal(false)} />
       )}
     </div>
   );
