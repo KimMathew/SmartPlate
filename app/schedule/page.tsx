@@ -70,7 +70,7 @@ export default function SchedulePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col space-y-4 justify-between items-start lg:flex-row lg:space-y-0 lg:items-center">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-gray-900">
             Meal Scheduling
