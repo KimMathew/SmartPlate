@@ -70,7 +70,7 @@ export default function SchedulePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col space-y-4 justify-between items-start lg:flex-row lg:space-y-0 lg:items-center">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-gray-900">
             Meal Scheduling
@@ -153,7 +153,7 @@ export default function SchedulePage() {
                 <span className="hidden lg:block bg-emerald-50 p-1.5 rounded-full text-emerald-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors duration-200 mr-2">
                   {getMealTypeIcon(mealType)}
                 </span>
-                <span className="capitalize max-sm:text-xs text-gray-600 font-medium text-base overflow-x-hidden">{mealType}</span>
+                <span className="capitalize max-md:text-xs max-sm:text-xs text-gray-600 font-medium text-base overflow-x-hidden">{mealType}</span>
               </div>
               {weekDays.map((day, dayIndex) => {
                 const meal = getMealForDateAndType(day, mealType);
@@ -175,8 +175,8 @@ export default function SchedulePage() {
                         variant="outline"
                         className="max-sm:p-1 w-full h-full min-h-[60px] border-dashed text-xs flex items-center justify-center"
                       >
-                        <span className="hidden lg:inline-block md:inline-block lg:text-xs md:text-[10px]">+ Add {mealType}</span>
-                        <span className="text-lg font-extralight inline-block lg:hidden md:hidden text-center w-full">+</span>
+                        <span className="hidden lg:inline-block lg:text-xs md:text-[10px]">+ Add {mealType}</span>
+                        <span className="text-lg font-extralight inline-block lg:hidden text-center w-full">+</span>
                       </Button>
                     )}
                   </div>

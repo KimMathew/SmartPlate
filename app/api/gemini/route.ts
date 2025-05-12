@@ -59,6 +59,47 @@ function buildMealPlanPrompt({ days = 3, user = {} as UserPreferences, search = 
     `;
 }
 
+// Helper: Generate the recipe search prompt
+function buildRecipeSearchPrompt({ ingredients = [], prepTime = '', cuisine = '', user = {} as UserPreferences }) {
+  // Compose constraints for Gemini
+  let constraints = [];
+  if (ingredients.length > 0) constraints.push(`ONLY use these ingredients: ${ingredients.join(", ")}`);
+  if (prepTime) constraints.push(`Prep time must be under ${prepTime} minutes`);
+  if (cuisine) constraints.push(`Cuisine type must be: ${cuisine}`);
+
+  return `
+    Recommend 6 recipes in JSON format. Each recipe should have:
+    - name, description, ingredients (with amounts), instructions (steps)
+    - nutrition: calories, protein, carbs, fats
+    - prepTime, difficulty, cuisine_type
+    User preferences:
+    - Gender: ${user.gender || "unspecified"}, Age: ${user.age || "unspecified"}
+    - Height: ${user.height || "unspecified"}cm, Weight: ${user.weight || "unspecified"}kg
+    - Activity Level: ${user.activity_level || "moderate"}, Goal: ${user.goal_type || "balanced"} (Target: ${user.target_weight || "not specified"}kg)
+    - Diet: ${user.diet_type || "balanced"}, Meals/day: ${user.meals_per_day || 3}
+    - Allergies: ${user.allergens?.join(", ") || "none"}, Dislikes: ${user.disliked_ingredients?.join(", ") || "none"}
+    - Cuisines: ${user.preferred_cuisines?.join(", ") || "any"}
+    - Prep Time Limit: ${user.prep_time_limit || "no limit"} mins, Budget: ${user.budget_preference || "moderate"}
+    - Calories/day: ${user.target_calories || "auto"}, Protein: ${user.protein_preference || "moderate"}, Carbs: ${user.carb_preference || "moderate"}, Fats: ${user.fat_preference || "moderate"}
+    ${constraints.length > 0 ? `STRICTLY enforce these constraints: ${constraints.join('; ')}` : ''}
+    Output JSON only, no markdown or explanation.
+    Example:
+    [
+      {
+        "name": "Oatmeal Bowl",
+        "description": "A healthy oatmeal breakfast...",
+        "ingredients": ["1 cup oats", "1 banana", "1 tbsp honey"],
+        "instructions": ["Cook oats", "Add banana", "Drizzle honey"],
+        "nutrition": { "calories": 300, "protein": 8, "carbs": 50, "fats": 5 },
+        "prepTime": 10,
+        "difficulty": "easy",
+        "cuisine_type": "american"
+      },
+      // ...5 more recipes
+    ]
+    `;
+}
+
 // Helper: Clean and parse Gemini's response
 function cleanAndParseGeminiResponse(responseText: string) {
   let cleaned = responseText.trim();
@@ -96,8 +137,8 @@ function cleanAndParseGeminiResponse(responseText: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { days = 3, userId, search = "" } = await req.json();
-    // Fetch user preferences from Supabase Users table
+    const { ingredients = [], prepTime = '', cuisine = '', userId } = await req.json();
+    // Fetch user preferences from Supabase Users table if userId is provided
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -109,7 +150,7 @@ export async function POST(req: NextRequest) {
         user = data;
       }
     }
-    const prompt = buildMealPlanPrompt({ days, user, search });
+    const prompt = buildRecipeSearchPrompt({ ingredients, prepTime, cuisine, user });
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY!);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const result = await model.generateContent(prompt);
@@ -117,7 +158,7 @@ export async function POST(req: NextRequest) {
     let mealPlan;
     try {
       mealPlan = cleanAndParseGeminiResponse(text);
-      console.log('Parsed Gemini meal plan JSON:', mealPlan);
+      console.log('Parsed Gemini recipe JSON:', mealPlan);
     } catch (e) {
       return NextResponse.json({ success: false, error: "Failed to parse AI response", details: String(e), raw: text }, { status: 500 });
     }

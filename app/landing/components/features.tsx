@@ -15,7 +15,7 @@ function FeatureCard({
   return (
     <div
       ref={ref}
-      className={`feature-card transition-all duration-1000 ${
+      className={`feature-card transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg ${
         inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       }`}
     >

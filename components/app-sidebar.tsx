@@ -108,8 +108,9 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex justify-center">
-          <h1 className="text-xl font-bold text-emerald-600">SmartPlate</h1>
+        <div className="flex justify-center items-center space-x-2">
+          <img src="/images/logo.png" alt="SmartPlate Logo" className="h-8 w-8" />
+          <h1 className="text-xl font-bold text-emerald-800">SmartPlate</h1>
         </div>
       </SidebarHeader>
       <SidebarContent>
