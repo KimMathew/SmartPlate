@@ -242,9 +242,9 @@ export async function POST(req: Request) {
         For each day:
         - Meal type (breakfast/lunch/dinner/snack)
         - Name, description, ingredients (with amounts), instructions (steps)
-        - Nutrition: calories, protein, carbs, fats, vitamins
+        - Nutrition: calories, protein, carbs, fats
         - Prep time, difficulty
-        - Daily totals: calories, protein, carbs, fats, vitamins
+        - Daily totals: calories, protein, carbs, fats
 
         ### Constraints:
         - Exclude allergens: ${user.allergens?.join(", ") || "none"}
@@ -261,25 +261,23 @@ export async function POST(req: Request) {
                 "name": "Meal name",
                 "description": "Description",
                 "ingredients": ["ingredient 1", "ingredient 2"],
-                "instructions": ["step 1", "step 2"],
-                "nutrition": {
+                "instructions": ["step 1", "step 2"],                "nutrition": {
                   "calories": 300,
                   "protein": 20,
                   "carbs": 30,
                   "fats": 10,
-                  "vitamins": "Vitamin A, Vitamin C, Iron"
+                  "vitamins": "Vitamin A, Vitamin C, Vitamin D, Iron"
                 },
                 "prepTime": 15,
                 "difficulty": "easy",
                 "cuisine_type": "mediterranean"
               }
-            ],
-            "totals": {
+            ],            "totals": {
               "calories": 2000,
               "protein": 100,
               "carbs": 200,
               "fats": 70,
-              "vitamins": "Vitamin A, Vitamin C, Iron"
+              "vitamins": "Vitamin A, Vitamin C, Vitamin D, Iron"
             }
           }
         }
@@ -504,11 +502,14 @@ export async function POST(req: Request) {
         }
 
         const recipe_id = recipe.recipe_id;
-        console.log('Inserted recipe:', recipe);
-
-        // 2. Insert nutrition_info linked to the recipe with day column
+        console.log('Inserted recipe:', recipe);        // 2. Insert nutrition_info linked to the recipe with day column
         let nutrition_id = null;
         if (meal.nutrition) {
+          // Get daily totals for calories and protein
+          const dailyTotals = (dayData as any).totals || {};
+            // Log the daily totals for debugging
+          console.log(`Day ${dayNumber} totals:`, dailyTotals);
+          
           const nutritionPayload = {
             created_at: new Date().toISOString(),
             recipe_id: recipe_id,
@@ -517,8 +518,12 @@ export async function POST(req: Request) {
             carbs_g: meal.nutrition.carbs || 0,
             fats_g: meal.nutrition.fats || 0,
             vitamins: meal.nutrition.vitamins || null,
-            day: dayNumber // Add day number to nutrition info
+            day: dayNumber, // Add day number to nutrition info
+            total_calorie_count: dailyTotals.calories || 0, // Add total calories from day totals
+            total_protein_count: dailyTotals.protein || 0   // Add total protein from day totals
           };
+          
+          console.log('Nutrition payload with totals:', nutritionPayload);
 
           const { data: nutrition, error: nutritionError } = await supabaseAdmin
             .from('nutrition_info')

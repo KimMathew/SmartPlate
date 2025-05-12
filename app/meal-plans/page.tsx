@@ -44,37 +44,44 @@ function formatDate(dateString?: string) {
 }
 
 // Component for the meal plan day card
-const MealPlanDayCard = ({ dayPlan }: { dayPlan: DayPlan }) => (
-  <Card>
-    <CardHeader className="pb-3 border-b">
-      <div className="flex items-center justify-between flex-col space-y-2 md:space-y-0 md:flex-row">
-        <div className="flex items-center gap-2">
-          <div className="bg-emerald-100 p-1.5 rounded-full">
-            <Calendar className="h-5 w-5 text-emerald-600" />
+const MealPlanDayCard = ({ dayPlan }: { dayPlan: DayPlan }) => {
+  // Calculate total calories and protein for the day using total_calorie_count and total_protein_count if available
+  // Fallback to summing meals if not present (for backward compatibility)
+  const totalCalories = (dayPlan as any).total_calorie_count ?? dayPlan.meals.reduce((sum, meal) => sum + (meal.calories || 0), 0);
+  const totalProtein = (dayPlan as any).total_protein_count ?? dayPlan.meals.reduce((sum, meal) => sum + (meal.protein || 0), 0);
+
+  return (
+    <Card>
+      <CardHeader className="pb-3 border-b">
+        <div className="flex items-center justify-between flex-col space-y-2 md:space-y-0 md:flex-row">
+          <div className="flex items-center gap-2">
+            <div className="bg-emerald-100 p-1.5 rounded-full">
+              <Calendar className="h-5 w-5 text-emerald-600" />
+            </div>
+            <CardTitle className="text-xl font-medium">{dayPlan.day}</CardTitle>
           </div>
-          <CardTitle className="text-xl font-medium">{dayPlan.day}</CardTitle>
+          <div className="flex items-center gap-3 text-sm">
+            <Badge variant="outline" className="bg-amber-50 border-amber-100 text-amber-700 hover:bg-amber-50 text-sm">
+              {/* Insert Total Calorie Here */}
+              🔥 {totalCalories} cal
+            </Badge>
+            <Badge variant="outline" className="bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-50 text-sm">
+              {/* Insert Total Grams of Protein Here */}
+              💪 {totalProtein}g protein
+            </Badge>
+          </div>
         </div>
-        <div className="flex items-center gap-3 text-sm">
-          <Badge variant="outline" className="bg-amber-50 border-amber-100 text-amber-700 hover:bg-amber-50 text-sm">
-            {/* Insert Total Calorie Here */}
-            🔥 cal
-          </Badge>
-          <Badge variant="outline" className="bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-50 text-sm">
-            {/* Insert Total Grams of Protein Here */}
-            💪 g protein
-          </Badge>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {dayPlan.meals.map((meal, index) => (
+            <MealCard key={index} meal={meal} />
+          ))}
         </div>
-      </div>
-    </CardHeader>
-    <CardContent className="p-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {dayPlan.meals.map((meal, index) => (
-          <MealCard key={index} meal={meal} />
-        ))}
-      </div>
-    </CardContent>
-  </Card>
-);
+      </CardContent>
+    </Card>
+  );
+};
 
 // Meal card component
 const MealCard = ({ meal }: { meal: Meal }) => {
@@ -668,6 +675,7 @@ export default function MealPlansPage() {
       let { data: mealPlans, error: mealPlanError } = await supabase
         .from('meal_plan')
         .select(`plan_id, day, start_date, plan_type, plan_name, recipe_id, nutrition_id, recipe:recipe_id (title)`)
+
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(selectedDays * 4);
