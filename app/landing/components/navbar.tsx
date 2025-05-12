@@ -33,9 +33,10 @@ export default function Navbar({
       <header
         className={`w-full py-4 sticky top-0 z-50 transition-colors duration-300 ${scrolled ? "bg-white/90 shadow-md backdrop-blur" : "bg-white"}`}
       >
-        <div className="container max-w-screen-2xl mx-auto px-6 lg:px-8 flex items-center justify-between">
-          <Link href="/" className="text-2xl max-sm:text-lg font-bold text-gray-900 ">
-            SmartPlate
+        <div className="container max-w-screen-2xl mx-auto px-6 lg:px-40 md:px-20 flex items-center justify-between">
+          <Link href="/" className="flex items-center space-x-2 text-2xl max-sm:text-lg font-bold text-emerald-900 ">
+            <img src="/images/logo.png" alt="SmartPlate Logo" className="h-8 w-8 max-sm:h-6 max-sm:w-6" />
+            <span>SmartPlate</span>
           </Link>
 
           <div className="flex items-center space-x-4 max-sm:space-x-3">

@@ -5,9 +5,9 @@ import Image from "next/image";
 import { useInView } from "@/hooks/use-in-view";
 
 export default function Hero({
-  openLoginModal,
+  openSignupModal,
 }: {
-  openLoginModal: () => void;
+  openSignupModal: () => void;
 }) {
   // Use a single ref and inView for both text and button
   const { ref: contentRef, inView: contentInView } = useInView({
@@ -40,7 +40,7 @@ export default function Hero({
         <Button
           size="lg"
           className="py-3 text-lg max-sm:text-base"
-          onClick={openLoginModal}
+          onClick={openSignupModal}
         >
           Plan Your First Meal
         </Button>

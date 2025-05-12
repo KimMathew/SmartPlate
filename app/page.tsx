@@ -35,7 +35,7 @@ export default function Home() {
         openLoginModal={openLoginModal}
         openSignupModal={openSignupModal}
       />
-      <Hero openLoginModal={openLoginModal} />
+      <Hero openSignupModal={openSignupModal} />
       <Features />
       <WhyChooseSection />
       <Footer />
