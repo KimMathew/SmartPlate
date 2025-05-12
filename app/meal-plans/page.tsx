@@ -28,10 +28,6 @@ type Meal = {
   instructions?: string[];
   prepTime?: number;
   difficulty?: string;
-  // Add these fields for DB mapping
-  plan_id?: number;
-  recipe_id?: number;
-  nutrition_id?: number;
 };
 
 type DayPlan = {
@@ -430,39 +426,6 @@ export default function MealPlansPage() {
     }
   }, [user, isLoading]);
 
-  // After fetching mealPlans from Supabase, map IDs to mealPlan in state
-  useEffect(() => {
-    if (!user?.id) return;
-    (async () => {
-      const { data: maxBatchData } = await supabase
-        .from('meal_plan')
-        .select('batch_number')
-        .eq('user_id', user.id)
-        .order('batch_number', { ascending: false })
-        .limit(1);
-      const batchNumberFilter = maxBatchData?.[0]?.batch_number;
-      if (!batchNumberFilter) return;
-      const { data: mealPlans } = await supabase
-        .from('meal_plan')
-        .select('plan_id, plan_type, plan_name, start_date, recipe_id, nutrition_id')
-        .eq('user_id', user.id)
-        .eq('batch_number', batchNumberFilter);
-      if (!mealPlans) return;
-      setMealPlan((prev) => prev.map(dayPlan => ({
-        ...dayPlan,
-        meals: dayPlan.meals.map(meal => {
-          const match = mealPlans.find(p =>
-            p.plan_name?.toLowerCase() === meal.name?.toLowerCase() &&
-            p.plan_type?.toLowerCase() === meal.type?.toLowerCase() &&
-            p.start_date === dayPlan.start_date
-          );
-          return match ? { ...meal, plan_id: match.plan_id, recipe_id: match.recipe_id, nutrition_id: match.nutrition_id } : meal;
-        })
-      })));
-    })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, generatedPlanExists]);
-
   // Check authentication on component mount
   useEffect(() => {
     if (!sessionLoading && !session) {
@@ -700,48 +663,101 @@ export default function MealPlansPage() {
     }
     setIsLoading(true);
     try {
-      // Prepare inserts for meal_schedule
-      const inserts: any[] = [];
-      mealPlan.forEach((dayPlan) => {
-        dayPlan.meals.forEach((meal) => {
-          // Try to find the matching plan/recipe/nutrition IDs if available
-          let planId = null, recipeId = null, nutritionId = null;
-          if (meal.plan_id) planId = meal.plan_id;
-          if (meal.recipe_id) recipeId = meal.recipe_id;
-          if (meal.nutrition_id) nutritionId = meal.nutrition_id;
-          inserts.push({
-            user_id: user.id,
-            meal_name: meal.name,
-            meal_date: dayPlan.start_date,
-            meal_type: meal.type, 
-            plan_id: planId,
-            recipe_id: recipeId,
-            nutrition_id: nutritionId,
+      console.log('Saving meal plan:', mealPlan);
+      // 1. Try to fetch meal_plan records for this user and plan
+      let { data: mealPlans, error: mealPlanError } = await supabase
+        .from('meal_plan')
+        .select(`plan_id, day, start_date, plan_type, plan_name, recipe_id, nutrition_id, recipe:recipe_id (title)`)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(selectedDays * 4);
+
+      // 2. If not found, insert the plan/meals into meal_plan
+      if (!mealPlans || mealPlans.length === 0) {
+        // Insert each meal as a meal_plan row
+        const mealPlanRows: {
+          user_id: string;
+          plan_type: string;
+          plan_name: string;
+          description: string;
+          days_covered: number;
+          day: number;
+          start_date?: string;
+          recipe_id: number | null;
+          nutrition_id: number | null;
+        }[] = [];
+        mealPlan.forEach((dayPlan, dayIdx) => {
+          dayPlan.meals.forEach((meal, mealIdx) => {
+            mealPlanRows.push({
+              user_id: user.id,
+              plan_type: meal.type,
+              plan_name: meal.name,
+              description: meal.description,
+              days_covered: selectedDays,
+              day: dayIdx + 1,
+              start_date: dayPlan.start_date,
+              recipe_id: null,
+              nutrition_id: null
+            });
           });
         });
-      });
-      // Prevent duplicates: fetch existing for this user/date/name
-      const { data: existing, error: existingError } = await supabase
-        .from('meal_schedule')
-        .select('meal_name, meal_date')
-        .eq('user_id', user.id);
-      if (existingError) throw new Error("Failed to check for existing meals: " + existingError.message);
-      const existingSet = new Set((existing || []).map(e => `${e.meal_name}|${e.meal_date}`));
-      const filteredInserts = inserts.filter(
-        i => !existingSet.has(`${i.meal_name}|${i.meal_date}`)
-      );
-      if (filteredInserts.length === 0) {
-        toast({
-          title: "Already Saved",
-          description: "All meals in this plan are already saved to your schedule.",
-          variant: "default"
-        });
-        return;
+        const { data: insertedPlans, error: insertError } = await supabase
+          .from('meal_plan')
+          .insert(mealPlanRows)
+          .select();
+        if (insertError) throw new Error("Failed to insert meal plan: " + insertError.message);
+        mealPlans = insertedPlans;
       }
-      const { error: insertError } = await supabase
+
+      // 3. Now, match each meal in the local plan to a meal_plan record
+      const inserts: {
+        user_id: string;
+        plan_id: number;
+        recipe_id: number | null;
+        nutrition_id: number | null;
+      }[] = [];
+      mealPlan.forEach((dayPlan) => {
+        dayPlan.meals.forEach((meal) => {
+          const planRecord = mealPlans.find((p) => {
+            const planStartDate = p.start_date ? new Date(p.start_date).toISOString().slice(0, 10) : null;
+            const dayStartDate = dayPlan.start_date ? new Date(dayPlan.start_date).toISOString().slice(0, 10) : null;
+            let recipeTitle = '';
+            if (Array.isArray(p.recipe) && p.recipe.length > 0 && p.recipe[0].title) {
+              recipeTitle = p.recipe[0].title;
+            }
+            const nameMatch = (p.plan_name && meal.name && p.plan_name.toLowerCase() === meal.name.toLowerCase()) ||
+              (recipeTitle && meal.name && recipeTitle.toLowerCase() === meal.name.toLowerCase());
+            const typeMatch = p.plan_type && meal.type && p.plan_type.toLowerCase() === meal.type.toLowerCase();
+            return (
+              planStartDate === dayStartDate &&
+              nameMatch &&
+              typeMatch
+            );
+          });
+          if (planRecord) {
+            inserts.push({
+              user_id: user.id,
+              plan_id: planRecord.plan_id,
+              recipe_id: planRecord.recipe_id || null,
+              nutrition_id: planRecord.nutrition_id || null
+            });
+          }
+        });
+      });
+
+      if (inserts.length === 0) {
+        throw new Error("No matching meal plan records found to schedule. Please regenerate your plan or contact support.");
+      }
+
+      // 4. Insert all into meal_schedule
+      const { error: scheduleError } = await supabase
         .from('meal_schedule')
-        .insert(filteredInserts);
-      if (insertError) throw new Error("Failed to save to meal_schedule: " + insertError.message);
+        .insert(inserts);
+
+      if (scheduleError) {
+        throw new Error("Failed to save meal schedule: " + scheduleError.message);
+      }
+
       toast({
         title: "Meal plan saved!",
         description: "Your meal plan has been added to your schedule.",
