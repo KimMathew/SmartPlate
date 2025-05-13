@@ -251,7 +251,7 @@ export default function BasicInformation({
       {/* Right side - Green panel, hidden on small screens */}
       <div className="hidden md:flex w-[35%] bg-emerald-500 h-full items-center justify-center">
         <img
-          src="/step-1.png"
+          src="/images/step-1.png"
           alt="Illustration of a calendar and silhouette for personal info"
           className={`max-w-[80%] max-h-[80%] object-contain transition-opacity duration-700 fade-in-illustration${imageVisible ? " opacity-100" : " opacity-0"
             }`}

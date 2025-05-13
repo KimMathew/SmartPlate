@@ -143,7 +143,7 @@ export default function HealthGoals({
       {/* Right side - Green panel, hidden on small screens */}
       <div className="hidden md:flex w-[35%] bg-emerald-500 h-full items-center justify-center">
         <img
-          src="/step-3.png"
+          src="/images/step-3.png"
           alt="Illustration of health goals"
           className={`max-w-[80%] max-h-[80%] object-contain transition-opacity duration-700 fade-in-illustration${
             imageVisible ? " opacity-100" : " opacity-0"

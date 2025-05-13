@@ -15,7 +15,7 @@ function FeatureCard({
   return (
     <div
       ref={ref}
-      className={`feature-card transition-all duration-1000 ${
+      className={`feature-card transition-all duration-300 transform hover:-translate-y-2 hover:shadow-lg ${
         inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       }`}
     >
@@ -69,7 +69,7 @@ export default function Features() {
           <FeatureCard
             icon={FeatureIcons.nutritionTracking}
             title="Precise Nutrition Tracking"
-            description="Track your nutritional intake with accurate data from the USDA FoodData Central API."
+            description="Monitor your nutritional intake with accurate data powered by the Gemini API."
           />
         </div>
       </div>

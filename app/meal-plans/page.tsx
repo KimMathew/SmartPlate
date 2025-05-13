@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import ReactDOM from "react-dom";
 
 // Types
 type Meal = {
@@ -127,15 +128,39 @@ const MealCard = ({ meal }: { meal: Meal }) => {
   );
 };
 
-// Meal Details Modal Component
+// Meal Details Modal Component (with Portal, animation, scroll lock)
 const MealDetailsModal = ({ meal, onClose }: { meal: Meal; onClose: () => void }) => {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+  const [visible, setVisible] = useState(false);
+
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    setVisible(true);
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
+  // Handle fade-out before unmount
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 200); // match transition duration
+  };
+
+  // Modal content
+  const modalContent = (
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      aria-modal="true"
+      role="dialog"
+      tabIndex={-1}
+      onClick={handleClose}
+    >
       <div
-        className="bg-white w-full max-w-xl rounded-xl shadow-2xl transition-all duration-200 overflow-hidden max-h-[90vh] overflow-y-auto relative"
-        onClick={(e) => e.stopPropagation()}
+        className={`bg-white w-full max-w-xl rounded-xl shadow-2xl transition-all duration-200 overflow-hidden max-h-[90vh] overflow-y-auto relative transform ${visible ? 'scale-100' : 'scale-95'}`}
+        onClick={e => e.stopPropagation()}
       >
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 absolute top-5 right-4 z-10">
+        <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 absolute top-5 right-4 z-10" aria-label="Close modal">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -174,23 +199,23 @@ const MealDetailsModal = ({ meal, onClose }: { meal: Meal; onClose: () => void }
           </div>
 
           <div className="grid grid-cols-4 gap-4 mb-6">
-            <div className="bg-gray-50 p-3 rounded-lg text-center">
+            <div className="bg-emerald-50 p-3 rounded-lg text-center">
               <p className="text-lg font-bold text-emerald-600">{meal.calories}</p>
               <p className="text-xs text-gray-500">Calories</p>
             </div>
-            <div className="bg-gray-50 p-3 rounded-lg text-center">
-              <p className="text-lg font-bold text-emerald-600">{meal.protein}g</p>
+            <div className="bg-blue-50 p-3 rounded-lg text-center">
+              <p className="text-lg font-bold text-blue-700">{meal.protein}g</p>
               <p className="text-xs text-gray-500">Protein</p>
             </div>
             {meal.carbs !== undefined && (
-              <div className="bg-gray-50 p-3 rounded-lg text-center">
-                <p className="text-lg font-bold text-emerald-600">{meal.carbs}g</p>
+              <div className="bg-amber-50 p-3 rounded-lg text-center">
+                <p className="text-lg font-bold text-amber-700">{meal.carbs}g</p>
                 <p className="text-xs text-gray-500">Carbs</p>
               </div>
             )}
             {meal.fats !== undefined && (
-              <div className="bg-gray-50 p-3 rounded-lg text-center">
-                <p className="text-lg font-bold text-emerald-600">{meal.fats}g</p>
+              <div className="bg-rose-50 p-3 rounded-lg text-center">
+                <p className="text-lg font-bold text-rose-700">{meal.fats}g</p>
                 <p className="text-xs text-gray-500">Fats</p>
               </div>
             )}
@@ -221,12 +246,16 @@ const MealDetailsModal = ({ meal, onClose }: { meal: Meal; onClose: () => void }
           )}
 
           <div className="mt-6">
-            <Button onClick={onClose} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">Close</Button>
+            <Button onClick={handleClose} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">Close</Button>
           </div>
         </div>
       </div>
     </div>
   );
+
+  // Use portal to render modal at the end of body
+  if (typeof window === 'undefined') return null;
+  return ReactDOM.createPortal(modalContent, document.body);
 };
 
 // Main component
