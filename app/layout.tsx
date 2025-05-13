@@ -21,6 +21,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/images/logo.png" type="image/png" />
+      </head>
       <body suppressHydrationWarning className={`${inter.className} bg-background text-foreground antialiased`}>
         <SessionProvider>
           <ToastToasterProvider>
