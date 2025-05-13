@@ -169,8 +169,8 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
                 style={{ height: 200, width: 200 }}
               >
                 {(getMacronutrientSplit(nutritionData).length === 0) ? (
-                  <div className="text-center text-gray-500 py-12">
-                    No macronutrient data available.
+                  <div className="text-center text-gray-500 text-sm py-12">
+                    No data available.
                   </div>
                 ) : (
                   <PieChart width={170} height={170}>
