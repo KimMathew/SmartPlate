@@ -121,8 +121,8 @@ export default function NutritionPage() {
 
   // Helper: get Date object in GMT+8
   function getDateInGMT8(date = new Date()) {
-    // Get UTC time, then add 8 hours
-    return new Date(date.getTime() + (8 - date.getTimezoneOffset() / 60) * 60 * 60 * 1000);
+    // Always convert from UTC to GMT+8
+    return new Date(date.getTime() + (8 * 60 * 60 * 1000));
   }
 
   // Calculate consumed nutrients for today (sum all meals for today in GMT+8)
@@ -142,7 +142,17 @@ export default function NutritionPage() {
     const total = { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
     // Filter and process meals for today
-    const mealsToday = mealSchedule.filter(meal => meal.meal_date === todayStr);
+    console.log(`TodayStr: ${todayStr}`);
+    console.log('mealSchedule dates:', mealSchedule.map(m => m.meal_date));
+    const mealsToday = mealSchedule.filter(meal => {
+      let mealDateStr = meal.meal_date;
+      if (mealDateStr instanceof Date) {
+        mealDateStr = mealDateStr.toISOString().slice(0, 10);
+      } else if (typeof mealDateStr === 'string' && mealDateStr.length > 10) {
+        mealDateStr = mealDateStr.slice(0, 10);
+      }
+      return mealDateStr === todayStr;
+    });
     console.log(`Meals for today (${todayStr}):`, mealsToday);
     mealsToday.forEach(meal => {
       const nut = nutritionMap[meal.nutrition_id];
@@ -258,6 +268,84 @@ export default function NutritionPage() {
   // Use correct consumed values for daily/weekly
   const consumed = summaryView === "Weekly" ? weeklyConsumed : dailyConsumed;
 
+// --- Micronutrient Calculation ---
+// Recommended Daily Intake (RDI) values for adults (example values, adjust as needed)
+const RDI: Record<string, number> = {
+  "Vitamin A": 900, // mcg
+  "Vitamin C": 90,  // mg
+  "Vitamin D": 20,  // mcg
+  "Iron": 18,       // mg
+};
+
+// Helper to normalize units (convert mg to mcg if needed, etc.)
+function parseAmount(amount: string, vitamin: string): number {
+  if (!amount) return 0;
+  const num = parseFloat(amount);
+  if (vitamin === "Vitamin A" || vitamin === "Vitamin D") {
+    // mcg
+    return num;
+  } else if (vitamin === "Vitamin C" || vitamin === "Iron") {
+    // mg
+    return num;
+  }
+  return num;
+}
+
+// Aggregate consumed micronutrients for the selected period
+function getMicronutrientTotals(nutritionInfo: any[], mealSchedule: any[], period: "Daily" | "Weekly") {
+  const today = getDateInGMT8();
+  const todayStr = today.toISOString().slice(0, 10);
+  let relevantMeals: any[] = [];
+  if (period === "Daily") {
+    relevantMeals = mealSchedule.filter(meal => meal.meal_date === todayStr);
+  } else {
+    // Weekly: from start of week (Sunday) to today
+    const startOfWeek = getDateInGMT8();
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    const startStr = startOfWeek.toISOString().slice(0, 10);
+    relevantMeals = mealSchedule.filter(meal => meal.meal_date >= startStr && meal.meal_date <= todayStr);
+  }
+  // Map nutrition_id to nutritionInfo
+  const nutritionMap: Record<string, any> = {};
+  nutritionInfo.forEach(item => {
+    if (item.nutrition_id) nutritionMap[item.nutrition_id] = item;
+  });
+  // Sum vitamins
+  const micronutrientTotals: Record<string, number> = {};
+  relevantMeals.forEach(meal => {
+    const nut = nutritionMap[meal.nutrition_id];
+    if (nut && nut.vitamins) {
+      let vitaminsArr: any[] = [];
+      try {
+        vitaminsArr = typeof nut.vitamins === 'string' ? JSON.parse(nut.vitamins) : nut.vitamins;
+      } catch {
+        vitaminsArr = [];
+      }
+      if (Array.isArray(vitaminsArr)) {
+        vitaminsArr.forEach((v: any) => {
+          if (v.name && v.amount) {
+            const amt = parseAmount(v.amount, v.name);
+            micronutrientTotals[v.name] = (micronutrientTotals[v.name] || 0) + amt;
+          }
+        });
+      }
+    }
+  });
+  return micronutrientTotals;
+}
+
+const micronutrientTotals = getMicronutrientTotals(nutritionInfo, mealSchedule, summaryView);
+const micronutrients = Object.keys(RDI).map(name => {
+  const consumed = micronutrientTotals[name] || 0;
+  const percent = Math.round((consumed / RDI[name]) * 100);
+  return {
+    name,
+    percent: percent > 100 ? 100 : percent,
+    color: "#10B981"
+  };
+});
+
   const nutritionData = {
     calories: {
       consumed: consumed.calories,
@@ -269,23 +357,7 @@ export default function NutritionPage() {
       protein: { consumed: consumed.protein, goal: goalNutrients.protein * (summaryView === "Weekly" ? 7 : 1), color: "#10B981" },
       fat: { consumed: consumed.fat, goal: goalNutrients.fat * (summaryView === "Weekly" ? 7 : 1), color: "#059669" },
     },
-    micronutrients: [
-      {
-        name: "Vitamin A",
-        percent: 83,
-        color: "#10B981", // Emerald 500 for consistency
-      },
-      {
-        name: "Vitamin C",
-        percent: 94,
-        color: "#10B981", // Emerald 500 for consistency
-      },
-      {
-        name: "Vitamin D",
-        percent: 25,
-        color: "#10B981", // Emerald 500 for consistency
-      },
-    ],
+    micronutrients,
     macronutrientSplit: [
       { name: "Carbs", percent: 51, color: "#34D399" }, // Emerald 400
       { name: "Protein", percent: 36, color: "#10B981" }, // Emerald 500

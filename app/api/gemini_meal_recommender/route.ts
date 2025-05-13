@@ -305,7 +305,12 @@ export async function POST(req: Request) {
                   "protein": 20,
                   "carbs": 30,
                   "fats": 10,
-                  "vitamins": "Vitamin A, Vitamin C, Vitamin D, Iron"
+                  "vitamins": [
+                    { "name": "Vitamin A", "amount": "700mcg" },
+                    { "name": "Vitamin C", "amount": "60mg" },
+                    { "name": "Vitamin D", "amount": "10mcg" },
+                    { "name": "Iron", "amount": "8mg" }
+                  ]
                 },
                 "prepTime": 15,
                 "difficulty": "easy",
@@ -316,7 +321,7 @@ export async function POST(req: Request) {
               "protein": 100,
               "carbs": 200,
               "fats": 70,
-              "vitamins": "Vitamin A, Vitamin C, Vitamin D, Iron"
+              "vitamins": { "Vitamin A": "700mcg", "Vitamin C": "60mg", "Vitamin D": "10mcg", "Iron": "8mg" }
             }
           }
         }
@@ -549,6 +554,12 @@ export async function POST(req: Request) {
             // Log the daily totals for debugging
           console.log(`Day ${dayNumber} totals:`, dailyTotals);
           
+          let vitamins = meal.nutrition.vitamins;
+          if (vitamins && typeof vitamins === 'object' && !Array.isArray(vitamins)) {
+            vitamins = JSON.stringify(Object.entries(vitamins).map(([name, amount]) => ({ name, amount: String(amount) })));
+          }
+          const vitaminsString = vitamins ? JSON.stringify(vitamins) : null;
+
           const nutritionPayload = {
             created_at: new Date().toISOString(),
             recipe_id: recipe_id,
@@ -556,7 +567,7 @@ export async function POST(req: Request) {
             protein_g: meal.nutrition.protein || 0,
             carbs_g: meal.nutrition.carbs || 0,
             fats_g: meal.nutrition.fats || 0,
-            vitamins: meal.nutrition.vitamins || null,
+            vitamins: vitaminsString,
             day: dayNumber, // Add day number to nutrition info
             total_calorie_count: dailyTotals.calories || 0, // Add total calories from day totals
             total_protein_count: dailyTotals.protein || 0   // Add total protein from day totals
