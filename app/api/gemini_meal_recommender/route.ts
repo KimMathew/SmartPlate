@@ -265,7 +265,7 @@ export async function POST(req: Request) {
         - Activity Level: ${user.activity_level || "moderate"}, Goal: ${user.goal_type || "balanced"} (Target: ${user.target_weight || "not specified"}kg)
 
         ## Preferences:
-        - Diet: ${user.diet_type || "balanced"}, Meals/day: ${user.meals_per_day || 3}
+        - Diet: ${user.diet_type || "balanced"}, Meals/day: ${Array.isArray(user.meals_perday) ? user.meals_perday.join(", ") : "breakfast, lunch, dinner"}
         - Allergies: ${user.allergens?.join(", ") || "none"}, Dislikes: ${user.disliked_ingredients?.join(", ") || "none"}
         - Cuisines: ${user.preferred_cuisines?.join(", ") || "any"}
         - Prep Time Limit: ${user.prep_time_limit || "no limit"} mins, Budget: ${user.budget_preference || "moderate"}
