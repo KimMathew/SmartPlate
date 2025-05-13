@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Share, Printer, Trash2, Plus, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Share, Printer, Coffee, Utensils, ChefHat, Trash2, Plus, Loader2 } from "lucide-react";;
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function SchedulePage() {
   const [date, setDate] = useState<Date>(new Date());
@@ -31,6 +33,19 @@ export default function SchedulePage() {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  function getMealTypeIcon(type: string) {
+    switch (type.toLowerCase()) {
+      case "breakfast":
+        return <Coffee className="w-5 h-5" />;
+      case "lunch":
+        return <Utensils className="w-5 h-5" />;
+      case "dinner":
+        return <ChefHat className="w-5 h-5" />;
+      default:
+        return null;
+    }
+  }
 
   // Extracted fetch logic
   async function loadMealPlan() {
@@ -404,19 +419,6 @@ export default function SchedulePage() {
             Set your meal times and get a personalized plan tailored to your lifestyle and diet
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="flex items-center gap-2">
-            <Printer className="h-4 w-4" />
-            Print
-          </Button>
-          <Button variant="outline" size="sm" className="flex items-center gap-2">
-            <Share className="h-4 w-4" />
-            Share
-          </Button>
-          <Button variant="outline" size="sm" className="flex items-center gap-2" onClick={handleRefreshMeals} disabled={loading}>
-            Refresh
-          </Button>
-        </div>
       </div>
 
       <div className="flex items-center justify-between mb-4">
@@ -452,17 +454,21 @@ export default function SchedulePage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md">
+      <Card className="p-2 max-sm:p-1">
         <div className="grid grid-cols-8 border-b">
           <div className="p-4 border-r"></div>
-          {weekDayLabels.map((label, index) => (
+          {weekDays.map((day, index) => (
             <div
               key={index}
-              className="p-4 text-center border-r last:border-r-0"
+              className="p-4 max-sm:p-1 text-center border-r last:border-r-0"
             >
-              <div className="text-sm text-gray-500">{label}</div>
-              <div className={`text-lg font-semibold ${weekDays[index].toDateString() === new Date().toDateString() ? 'text-emerald-500' : ''}`}>{weekDays[index].getDate()}</div>
-              <div className="text-sm text-gray-500">{weekDays[index].toLocaleDateString('en-US', { month: 'short' })}</div>
+              <div className="text-sm text-gray-500 max-sm:text-xs">
+                {day.toLocaleDateString('en-US', { weekday: 'short' })}
+              </div>
+              <div className={`text-lg max-sm:text-sm font-semibold ${day.toDateString() === new Date().toDateString() ? 'text-emerald-500' : ''}`}>{day.getDate()}</div>
+              <div className="text-sm max-sm:text-xs text-gray-500">
+                {day.toLocaleDateString('en-US', { month: 'short' })}
+              </div>
             </div>
           ))}
         </div>
@@ -472,8 +478,11 @@ export default function SchedulePage() {
           <div className="grid grid-cols-8">
             {mealTypes.map((mealType) => (
               <React.Fragment key={mealType}>
-                <div className="p-4 border-r border-b flex items-center">
-                  <span className="capitalize text-sm text-gray-600">{mealType}</span>
+                <div className="w-auto lg:pl-4 md:p-2 p-0 border-r border-b flex items-center">
+                  <span className="hidden lg:block bg-emerald-50 p-1.5 rounded-full text-emerald-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors duration-200 mr-2">
+                    {getMealTypeIcon(mealType)}
+                  </span>
+                  <span className="capitalize max-md:text-xs max-sm:text-xs text-gray-600 font-medium text-base overflow-x-hidden">{mealType}</span>
                 </div>
                 {weekDays.map((day, dayIndex) => {
                   const meal = getMealForDateAndType(day, mealType);
@@ -481,31 +490,37 @@ export default function SchedulePage() {
                   return (
                     <div
                       key={`${mealType}-${dayIndex}`}
-                      className="p-4 border-r border-b last:border-r-0"
+                      className="lg:p-4 md:p-2 p-[4px] border-r border-b last:border-r-0"
                     >
                       {meal ? (
-                        <div
-                          className="bg-emerald-50 rounded-lg p-2 text-center relative cursor-pointer hover:bg-emerald-100 transition"
+                        <div className="bg-emerald-50 rounded-lg p-2 max-sm:p-1 text-center space-y-2 border border-emerald-300 relative cursor-pointer hover:bg-emerald-100 transition"
                           onClick={() => handleMealClick(meal)}
                         >
-                          <div className="font-semibold text-emerald-700">{meal.name}</div>
+                          <div className="overflow-hidden font-semibold text-emerald-700 text-sm max-sm:text-xs">{meal.name}</div>
+                          {meal.calories && (
+                            <Badge variant="outline" className="bg-amber-50 hidden lg:block border-amber-100 text-amber-700">
+                              🔥 {meal.calories} cal
+                            </Badge>
+                          )}
                           <button
                             className="absolute top-1 right-1 text-gray-400 hover:text-red-500"
                             title="Delete meal"
                             onClick={e => { e.stopPropagation(); handleDeleteMeal(meal, dateStr, mealType); }}
                             disabled={loading}
                           >
-                            <Trash2 size={16} />
+                            {/* Trash2 icon, keep as in current code if imported */}
+                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m5 0V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
                           </button>
                         </div>
                       ) : (
                         <Button
                           variant="outline"
-                          className="w-full h-full min-h-[60px] border-dashed flex items-center justify-center gap-1"
+                          className="max-sm:p-1 w-full h-full min-h-[60px] border-dashed text-xs flex items-center justify-center"
                           onClick={() => setAddMealDialog({ open: true, date: day, type: mealType })}
                           disabled={loading}
                         >
-                          <Plus size={16} /> Add {mealType}
+                          <span className="hidden lg:inline-block lg:text-xs md:text-[10px]">+ Add {mealType}</span>
+                          <span className="text-lg font-extralight inline-block lg:hidden text-center w-full">+</span>
                         </Button>
                       )}
                     </div>
@@ -525,8 +540,8 @@ export default function SchedulePage() {
             </span>
           </div>
         )}
-      </div>
-      
+      </Card>
+
       {/* Add Meal Dialog */}
       <Dialog open={addMealDialog.open} onOpenChange={open => setAddMealDialog(v => ({ ...v, open }))}>
         <DialogContent>
