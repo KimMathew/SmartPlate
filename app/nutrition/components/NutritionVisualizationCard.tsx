@@ -24,20 +24,49 @@ import {
   CartesianGrid,
 } from "recharts";
 
+type Weekday = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+
+// Helper to aggregate calories by weekday from meals array
+function getBarChartDataFromMeals(meals: Array<{ meal_date: string; calories: number }>, calorieGoal: number) {
+  const weekData: Record<Weekday, number> = {
+    Monday: 0,
+    Tuesday: 0,
+    Wednesday: 0,
+    Thursday: 0,
+    Friday: 0,
+    Saturday: 0,
+    Sunday: 0,
+  };
+  meals.forEach(meal => {
+    const date = new Date(meal.meal_date);
+    const weekday = date.toLocaleDateString('en-US', { weekday: 'long' }) as Weekday;
+    if (weekData[weekday] !== undefined) {
+      weekData[weekday] += meal.calories;
+    }
+  });
+  return (Object.keys(weekData) as Weekday[]).map(day => ({
+    day,
+    consumed: weekData[day],
+    goal: calorieGoal,
+  }));
+}
+
 type NutritionVisualizationCardProps = {
   visualizationTab: "Macronutrient Split" | "Weekly Calories";
   setVisualizationTab: (tab: "Macronutrient Split" | "Weekly Calories") => void;
   nutritionData: any;
   weeklyCalories: any[];
   weeklyAvg: number;
+  meals?: Array<{ meal_date: string; calories: number }>;
 };
 
 const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
   visualizationTab,
   setVisualizationTab,
   nutritionData,
-  weeklyCalories,
+  weeklyCalories, // not used for bar chart anymore
   weeklyAvg,
+  meals, // required for bar chart
 }) => (
   <Card>
     <CardHeader className="pb-0">
@@ -47,8 +76,8 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
         <div className="flex bg-[#f3f6fa] rounded-lg p-1 shadow-sm w-full">
           <button
             className={`flex-1 px-5 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none ${visualizationTab === "Macronutrient Split"
-                ? "bg-white text-gray-900 shadow font-bold"
-                : "bg-transparent text-gray-500"
+              ? "bg-white text-gray-900 shadow font-bold"
+              : "bg-transparent text-gray-500"
               }`}
             type="button"
             style={{ minWidth: 0 }}
@@ -58,8 +87,8 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
           </button>
           <button
             className={`flex-1 px-5 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none ${visualizationTab === "Weekly Calories"
-                ? "bg-white text-gray-900 shadow font-bold"
-                : "bg-transparent text-gray-500"
+              ? "bg-white text-gray-900 shadow font-bold"
+              : "bg-transparent text-gray-500"
               }`}
             type="button"
             style={{ minWidth: 0 }}
@@ -229,7 +258,11 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
               style={{ height: 180, aspectRatio: "unset" }}
             >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyCalories} barGap={2} barCategoryGap={10}>
+                <BarChart
+                  data={getBarChartDataFromMeals(meals || [], nutritionData.calories.goal)}
+                  barGap={2}
+                  barCategoryGap={10}
+                >
                   <CartesianGrid stroke="#222a" vertical={false} />
                   <XAxis
                     dataKey="day"
@@ -238,7 +271,7 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
                     stroke="#b3b3b3"
                     fontSize={13}
                   />
-                  <YAxis hide domain={[0, 2400]} />
+                  <YAxis hide domain={[0, Math.max(nutritionData.calories.goal, 2400)]} />
                   <Bar
                     dataKey="goal"
                     fill="#A7F3D0" // Emerald 200
