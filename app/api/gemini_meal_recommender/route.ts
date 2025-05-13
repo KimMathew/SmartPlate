@@ -220,6 +220,41 @@ export async function POST(req: Request) {
     const user = users[0];
     console.log("User found:", user.email || "unknown email");
 
+    // --- Calculate daily nutrition targets using BMR, activity, and goal ---
+    const weight = Number(user.weight) || 70; // kg
+    const height = Number(user.height) || 170; // cm
+    const age = Number(user.age) || 30;
+    const gender = (user.gender || '').toLowerCase();
+    // 1. BMR
+    let bmr = 0;
+    if (gender === 'male' || gender === 'm') {
+      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+    } else if (gender === 'female' || gender === 'f') {
+      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    } else {
+      bmr = 10 * weight + 6.25 * height - 5 * age;
+    }
+    // 2. Activity factor
+    const activityMap: Record<string, number> = {
+      sedentary: 1.2,
+      lightly_active: 1.375,
+      moderately_active: 1.55,
+      very_active: 1.725,
+      extra_active: 1.9
+    };
+    const activity = (user.activity_level || '').toLowerCase();
+    const activityFactor = activityMap[activity] || 1.2;
+    let tdee = bmr * activityFactor;
+    // 3. Adjust for goal
+    const goal = (user.goal_type || '').toLowerCase();
+    if (goal.includes('lose')) tdee -= 500;
+    else if (goal.includes('gain')) tdee += 500;
+    // 4. Macronutrient split
+    const calories = Math.round(tdee);
+    const carbs = Math.round((calories * 0.5) / 4);
+    const protein = Math.round((calories * 0.2) / 4);
+    const fat = Math.round((calories * 0.3) / 9);
+
     // 2. Create the prompt for meal plan generation
     const prompt = `
         Create a ${days}-day personalized meal plan based on the user's profile and preferences.
@@ -235,8 +270,9 @@ export async function POST(req: Request) {
         - Cuisines: ${user.preferred_cuisines?.join(", ") || "any"}
         - Prep Time Limit: ${user.prep_time_limit || "no limit"} mins, Budget: ${user.budget_preference || "moderate"}
 
-        ## Nutrition Goals:
-        - Calories/day: ${user.target_calories || "auto"}, Protein: ${user.protein_preference || "moderate"}, Carbs: ${user.carb_preference || "moderate"}, Fats: ${user.fat_preference || "moderate"}
+        ## Nutrition Goals (approximate):
+        - Calories/day: around ${calories} (can be a little higher or lower)
+        - Protein: around ${protein}g, Carbs: around ${carbs}g, Fats: around ${fat}g (flexible, not strict)
 
         ## Output (JSON format):
         For each day:
@@ -249,8 +285,7 @@ export async function POST(req: Request) {
         ### Constraints:
         - Exclude allergens: ${user.allergens?.join(", ") || "none"}
         - Avoid disliked ingredients: ${user.disliked_ingredients?.join(", ") || "none"}
-        - Prioritize cuisines: ${user.preferred_cuisines?.join(", ") || "any"
-        }
+        - Prioritize cuisines: ${user.preferred_cuisines?.join(", ") || "any"}
         
         Format the JSON as follows:
         {

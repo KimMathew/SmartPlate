@@ -87,39 +87,31 @@ export default function NutritionPage() {
         setLoading(false);
         return;
       }
-      // Fetch nutrition_info
-      const { data, error } = await supabase
+      // Fetch nutrition_info (no user_id filter, just get all for this user)
+      const { data: nutritionData, error: nutritionError } = await supabase
         .from("nutrition_info")
         .select("*")
-        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-      if (error) {
-        setNutritionInfo([]);
-      } else {
-        setNutritionInfo(data || []);
-      }
       // Fetch meal_schedule for this user
       const { data: mealData, error: mealError } = await supabase
         .from("meal_schedule")
         .select("*")
         .eq("user_id", user.id)
         .order("meal_date", { ascending: true });
-      if (!mealError) {
-        setMealSchedule(mealData || []);
-      } else {
-        setMealSchedule([]);
-      }
       // Fetch Users table
       const { data: userData, error: userError } = await supabase
         .from("Users")
         .select("*")
         .eq("id", user.id)
         .single();
-      if (!userError) {
-        setUserProfile(userData);
-      } else {
-        setUserProfile(null);
-      }
+      // Log all fetched data as JSON for debugging
+      console.log('Fetched nutrition_info:', JSON.stringify(nutritionData, null, 2));
+      console.log('Fetched meal_schedule:', JSON.stringify(mealData, null, 2));
+      console.log('Fetched user profile:', JSON.stringify(userData, null, 2));
+      // Set state as before
+      setNutritionInfo(nutritionData || []);
+      setMealSchedule(mealData || []);
+      setUserProfile(userData || null);
       setLoading(false);
     }
     fetchNutritionInfo();
@@ -127,41 +119,62 @@ export default function NutritionPage() {
 
   const goalNutrients = calculateGoalNutrients(userProfile);
 
-  // Calculate consumed nutrients for today
+  // Helper: get Date object in GMT+8
+  function getDateInGMT8(date = new Date()) {
+    // Get UTC time, then add 8 hours
+    return new Date(date.getTime() + (8 - date.getTimezoneOffset() / 60) * 60 * 60 * 1000);
+  }
+
+  // Calculate consumed nutrients for today (sum all meals for today in GMT+8)
   function getTodayConsumed() {
-    const today = new Date();
+    const today = getDateInGMT8();
     const todayStr = today.toISOString().slice(0, 10);
-    const now = today.getHours() + today.getMinutes() / 60;
-    // Filter meals for today and only those whose time has passed
-    const mealsToday = mealSchedule.filter((meal) => {
-      if (meal.meal_date !== todayStr) return false;
-      if (meal.meal_type === 'breakfast' && now < 8) return false;
-      if (meal.meal_type === 'lunch' && now < 12) return false;
-      if (meal.meal_type === 'dinner' && now < 19) return false;
-      return true;
-    });
-    // Sum nutrients from nutrition_info for each meal
-    let total = { calories: 0, protein: 0, carbs: 0, fat: 0 };
-    for (const meal of mealsToday) {
-      const nut = nutritionInfo.find((n) => n.nutrition_id === meal.nutrition_id);
-      if (nut) {
-        // Use the new field names with fallbacks to the old names
-        total.calories += nut.total_calorie_count ?? nut.calories ?? nut.calories_g ?? 0;
-        total.protein += nut.total_protein_count ?? nut.protein_g ?? 0;
-        total.carbs += nut.carbs_g ?? 0;
-        total.fat += nut.fats_g ?? 0;
+    
+    // Create a map for faster nutrition info lookups (by nutrition_id only)
+    const nutritionMap: Record<string, any> = {};
+    nutritionInfo.forEach(item => {
+      if (item.nutrition_id) {
+        nutritionMap[item.nutrition_id] = item;
       }
-    }
+    });
+    
+    // Define total nutrients with proper typing
+    const total = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    
+    // Filter and process meals for today
+    const mealsToday = mealSchedule.filter(meal => meal.meal_date === todayStr);
+    console.log(`Meals for today (${todayStr}):`, mealsToday);
+    mealsToday.forEach(meal => {
+      const nut = nutritionMap[meal.nutrition_id];
+      if (nut) {
+        // Extract nutrient values with fallbacks (do NOT use total_calorie_count or total_protein_count for per-meal sum)
+        const calories = nut.calories ?? nut.calories_g ?? 0;
+        const protein = nut.protein_g ?? 0;
+        const carbs = nut.carbs_g ?? 0;
+        const fat = nut.fats_g ?? 0;
+        // Add to totals
+        total.calories += Number(calories);
+        total.protein += Number(protein);
+        total.carbs += Number(carbs);
+        total.fat += Number(fat);
+        console.log(`Matched nutrition for meal (nutrition_id=${meal.nutrition_id}):`, nut);
+      } else {
+        console.log(`No nutrition info found for meal (nutrition_id=${meal.nutrition_id})`);
+      }
+    });
+    console.log(`DAILY CONSUMED (${todayStr}):`, total);
     return total;
   }
 
   // Calculate consumed nutrients for the current week
   function getWeekConsumed() {
-    const today = new Date();
+    const today = getDateInGMT8();
     const nowHour = today.getHours() + today.getMinutes() / 60;
-  
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday
+
+    // Get start of week in GMT+8 (Sunday)
+    const startOfWeek = getDateInGMT8();
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
     const startStr = startOfWeek.toISOString().slice(0, 10);
     const todayStr = today.toISOString().slice(0, 10);
     
@@ -204,11 +217,9 @@ export default function NutritionPage() {
       const nut = nutritionInfo.find(n => n.nutrition_id === meal.nutrition_id);
       
       if (nut) {
-        // Use the new field names (total_calorie_count and total_protein_count) with fallbacks to the old names
-        const calories = nut.total_calorie_count ?? nut.calories ?? nut.calories_g ?? 0;
-        const protein = nut.total_protein_count ?? nut.protein_g ?? 0;
-        
-        console.log(`DEBUG - FOUND MATCH: meal.nutrition_id=${meal.nutrition_id}, calories=${calories}, protein=${protein}`);
+        // Use only per-meal values (do NOT use total_calorie_count or total_protein_count)
+        const calories = nut.calories ?? nut.calories_g ?? 0;
+        const protein = nut.protein_g ?? 0;
         total.calories += calories;
         total.protein += protein;
         total.carbs += nut.carbs_g ?? 0;
