@@ -557,126 +557,15 @@ export default function SchedulePage() {
 
       {/* Meal Details Modal */}
       {modalOpen && (
-        <Dialog open={modalOpen} onOpenChange={open => { if (!open) setModalOpen(false); }}>
-          <DialogContent className="w-full max-w-xl max-h-[90vh] overflow-y-auto p-0">
-            <DialogTitle className="sr-only">Meal Details</DialogTitle>
-            {modalLoading ? (
-              <div className="flex flex-col items-center justify-center p-8">
-                <Loader2 className="animate-spin h-8 w-8 text-emerald-500 mb-4" />
-                <span>Loading meal details...</span>
-              </div>            ) : (
-              <div className="p-5">
-                {/* Modal content remains unchanged, but now scrolls if too tall */}
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-emerald-100 text-emerald-600 p-3 rounded-full text-2xl">
-                      {modalMeal?.type?.toLowerCase() === 'breakfast' && '🍳'}
-                      {modalMeal?.type?.toLowerCase() === 'lunch' && '🥗'}
-                      {modalMeal?.type?.toLowerCase() === 'dinner' && '🍽️'}
-                      {!['breakfast', 'lunch', 'dinner'].includes(modalMeal?.type?.toLowerCase()) && '🍲'}
-                    </div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900">{modalMealPlan?.plan_name || modalMeal?.name}</h2>
-                  </div>
-                  {/* Removed custom close button to avoid duplicate X icon */}
-                </div>
-                <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 pb-3 mb-4">
-                  <span className="text-emerald-600 font-semibold uppercase tracking-wide text-base">{modalMeal?.type}</span>
-                  {modalRecipe?.prepTime && (
-                    <span className="flex items-center gap-1 text-gray-500 text-sm">
-                      <svg className="inline h-4 w-4 mr-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" /></svg>
-                      {modalRecipe.prepTime} mins
-                    </span>
-                  )}
-                  {modalRecipe?.difficulty && (
-                    <span className="flex items-center gap-1 text-gray-500 text-sm">
-                      ⭐ {modalRecipe.difficulty.charAt(0).toUpperCase() + modalRecipe.difficulty.slice(1)}
-                    </span>
-                  )}
-                </div>
-                {/* Show mealPlan description above nutrition info if present */}
-                {modalMealPlan?.description && (
-                  <div className="mb-6 text-gray-700 text-base">{modalMealPlan.description}</div>
-                )}
-                {modalRecipe?.description && !modalMealPlan?.description && (
-                  <div className="mb-6 text-gray-700 text-base">{modalRecipe.description}</div>
-                )}
-                {/* Nutrition info from nutrition_info table */}
-                {modalNutrition && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-gray-50 rounded-lg p-4 text-center">
-                      <div className="text-emerald-600 text-2xl font-bold">{modalNutrition.calories ?? 0}</div>
-                      <div className="text-gray-500 text-xs">Calories</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4 text-center">
-                      <div className="text-emerald-600 text-2xl font-bold">{modalNutrition.protein_g ?? 0}g</div>
-                      <div className="text-gray-500 text-xs">Protein</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4 text-center">
-                      <div className="text-emerald-600 text-2xl font-bold">{modalNutrition.carbs_g ?? 0}g</div>
-                      <div className="text-gray-500 text-xs">Carbs</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4 text-center">
-                      <div className="text-emerald-600 text-2xl font-bold">{modalNutrition.fats_g ?? 0}g</div>
-                      <div className="text-gray-500 text-xs">Fats</div>
-                    </div>
-                  </div>
-                )}
-                {modalRecipe?.ingredients && (
-                  <>
-                    <div className="font-bold text-lg mb-2">Ingredients</div>
-                    <ul className="list-disc pl-5 space-y-1 text-gray-700 mb-6">
-                      {(() => {
-                        let ingredients = modalRecipe.ingredients;
-                        if (typeof ingredients === 'string' && ingredients.trim().startsWith('[')) {
-                          try {
-                            ingredients = JSON.parse(ingredients);
-                          } catch { }
-                        }
-                        if (Array.isArray(ingredients)) {
-                          return ingredients.map((ing: string, idx: number) => (
-                            <li key={idx} className="break-words whitespace-pre-line">{ing}</li>
-                          ));
-                        }
-                        return String(ingredients)
-                          .split('\n')
-                          .map((ing: string, idx: number) => (
-                            <li key={idx} className="break-words whitespace-pre-line">{ing}</li>
-                          ));
-                      })()}
-                    </ul>
-                  </>
-                )}
-                {/* Show instructions below ingredients, supporting both 'instruction' and 'instructions' fields */}
-                {(modalRecipe?.instruction || modalRecipe?.instructions) && (
-                  <>
-                    <div className="font-bold text-lg mb-2">Instructions</div>
-                    <ol className="list-decimal pl-5 space-y-2 text-gray-700">
-                      {(() => {
-                        let instructions = modalRecipe.instruction || modalRecipe.instructions;
-                        if (typeof instructions === 'string' && instructions.trim().startsWith('[')) {
-                          try {
-                            instructions = JSON.parse(instructions);
-                          } catch { }
-                        }
-                        if (Array.isArray(instructions)) {
-                          return instructions.map((step: string, idx: number) => (
-                            <li key={idx} className="break-words whitespace-pre-line">{step}</li>
-                          ));
-                        }
-                        return String(instructions)
-                          .split('\n')
-                          .filter((s: string) => s.trim() !== '')
-                          .map((step: string, idx: number) => (
-                            <li key={idx} className="break-words whitespace-pre-line">{step}</li>
-                          ));
-                      })()}
-                    </ol>
-                  </>
-                )}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        <MealDetailsModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          meal={modalMeal}
+          mealPlan={modalMealPlan}
+          recipe={modalRecipe}
+          nutrition={modalNutrition}
+          loading={modalLoading}
+        />
       )}
 
       {/* Delete Meal Modal */}
@@ -764,4 +653,176 @@ function DeleteMealModal({ open, onClose, onDelete, loading, meal, dateStr, type
     </div>,
     document.body
   );
+}
+
+// Meal Details Modal (portal-based, animated, scroll lock, matches meal-plans)
+function MealDetailsModal({ open, onClose, meal, mealPlan, recipe, nutrition, loading }: {
+  open: boolean;
+  onClose: () => void;
+  meal: any;
+  mealPlan: any;
+  recipe: any;
+  nutrition: any;
+  loading: boolean;
+}) {
+  const [visible, setVisible] = React.useState(false);
+
+  // Prevent background scroll when modal is open
+  React.useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+      setVisible(true);
+    } else {
+      setVisible(false);
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
+  // Handle fade-out before unmount
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 200); // match transition duration
+  };
+
+  if (!open) return null;
+  if (typeof window === 'undefined') return null;
+
+  const modalContent = (
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      aria-modal="true"
+      role="dialog"
+      tabIndex={-1}
+      onClick={handleClose}
+    >
+      <div
+        className={`bg-white w-full max-w-xl rounded-xl shadow-2xl transition-all duration-200 overflow-hidden max-h-[90vh] overflow-y-auto relative transform ${visible ? 'scale-100' : 'scale-95'}`}
+        onClick={e => e.stopPropagation()}
+      >
+        <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 absolute top-5 right-4 z-10" aria-label="Close modal">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <div className="p-5">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center p-8">
+              <Loader2 className="animate-spin h-8 w-8 text-emerald-500 mb-4" />
+              <span>Loading meal details...</span>
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-emerald-100 text-emerald-600 p-3 rounded-full text-2xl">
+                    {meal?.type?.toLowerCase() === 'breakfast' && '🍳'}
+                    {meal?.type?.toLowerCase() === 'lunch' && '🥗'}
+                    {meal?.type?.toLowerCase() === 'dinner' && '🍽️'}
+                    {!['breakfast', 'lunch', 'dinner'].includes(meal?.type?.toLowerCase()) && '🍲'}
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900 max-sm:text-lg pr-2 max-sm:pr-4">{mealPlan?.plan_name || meal?.name}</h2>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 pb-3 mb-4">
+                <span className="text-emerald-600 font-semibold uppercase tracking-wide text-base">{meal?.type}</span>
+                {recipe?.prepTime && (
+                  <span className="flex items-center gap-1 text-gray-500 text-sm">
+                    <svg className="inline h-4 w-4 mr-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" /></svg>
+                    {recipe.prepTime} mins
+                  </span>
+                )}
+                {recipe?.difficulty && (
+                  <span className="flex items-center gap-1 text-gray-500 text-sm">
+                    ⭐ {recipe.difficulty.charAt(0).toUpperCase() + recipe.difficulty.slice(1)}
+                  </span>
+                )}
+              </div>
+              {mealPlan?.description && (
+                <div className="mb-6 text-gray-700 text-base">{mealPlan.description}</div>
+              )}
+              {recipe?.description && !mealPlan?.description && (
+                <div className="mb-6 text-gray-700 text-base">{recipe.description}</div>
+              )}
+              {nutrition && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                  <Badge variant="outline" className="bg-amber-50 border-amber-100 text-amber-700 hover:bg-amber-50 flex flex-col items-center py-4">
+                    <div className="text-lg font-bold">{nutrition.calories ?? 0}</div>
+                    <div className="text-xs font-medium">Calories</div>
+                  </Badge>
+                  <Badge variant="outline" className="bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-50 flex flex-col items-center py-4">
+                    <div className="text-lg font-bold">{nutrition.protein_g ?? 0}g</div>
+                    <div className="text-xs font-medium">Protein</div>
+                  </Badge>
+                  <Badge variant="outline" className="bg-emerald-50 border-emerald-100 text-emerald-700 hover:bg-emerald-50 flex flex-col items-center py-4">
+                    <div className="text-lg font-bold">{nutrition.carbs_g ?? 0}g</div>
+                    <div className="text-xs font-medium">Carbs</div>
+                  </Badge>
+                  <Badge variant="outline" className="bg-rose-50 border-rose-100 text-rose-700 hover:bg-rose-50 flex flex-col items-center py-4">
+                    <div className="text-lg font-bold">{nutrition.fats_g ?? 0}g</div>
+                    <div className="text-xs font-medium">Fats</div>
+                  </Badge>
+                </div>
+              )}
+              {recipe?.ingredients && (
+                <>
+                  <div className="font-bold text-lg mb-2">Ingredients</div>
+                  <ul className="list-disc pl-5 space-y-1 text-gray-700 mb-6">
+                    {(() => {
+                      let ingredients = recipe.ingredients;
+                      if (typeof ingredients === 'string' && ingredients.trim().startsWith('[')) {
+                        try {
+                          ingredients = JSON.parse(ingredients);
+                        } catch { }
+                      }
+                      if (Array.isArray(ingredients)) {
+                        return ingredients.map((ing: string, idx: number) => (
+                          <li key={idx} className="break-words whitespace-pre-line">{ing}</li>
+                        ));
+                      }
+                      return String(ingredients)
+                        .split('\n')
+                        .map((ing: string, idx: number) => (
+                          <li key={idx} className="break-words whitespace-pre-line">{ing}</li>
+                        ));
+                    })()}
+                  </ul>
+                </>
+              )}
+              {(recipe?.instruction || recipe?.instructions) && (
+                <>
+                  <div className="font-bold text-lg mb-2">Instructions</div>
+                  <ol className="list-decimal pl-5 space-y-2 text-gray-700">
+                    {(() => {
+                      let instructions = recipe.instruction || recipe.instructions;
+                      if (typeof instructions === 'string' && instructions.trim().startsWith('[')) {
+                        try {
+                          instructions = JSON.parse(instructions);
+                        } catch { }
+                      }
+                      if (Array.isArray(instructions)) {
+                        return instructions.map((step: string, idx: number) => (
+                          <li key={idx} className="break-words whitespace-pre-line">{step}</li>
+                        ));
+                      }
+                      return String(instructions)
+                        .split('\n')
+                        .filter((s: string) => s.trim() !== '')
+                        .map((step: string, idx: number) => (
+                          <li key={idx} className="break-words whitespace-pre-line">{step}</li>
+                        ));
+                    })()}
+                  </ol>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 }
