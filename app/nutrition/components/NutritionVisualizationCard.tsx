@@ -28,6 +28,9 @@ type Weekday = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Sat
 
 // Helper to aggregate calories by weekday from meals array
 function getBarChartDataFromMeals(meals: Array<{ meal_date: string; calories: number }>, calorieGoal: number) {
+  const weekOrder: Weekday[] = [
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+  ];
   const weekData: Record<Weekday, number> = {
     Monday: 0,
     Tuesday: 0,
@@ -41,10 +44,12 @@ function getBarChartDataFromMeals(meals: Array<{ meal_date: string; calories: nu
     const date = new Date(meal.meal_date);
     const weekday = date.toLocaleDateString('en-US', { weekday: 'long' }) as Weekday;
     if (weekData[weekday] !== undefined) {
-      weekData[weekday] += meal.calories;
+      weekData[weekday] += Number(meal.calories) || 0;
     }
   });
-  return (Object.keys(weekData) as Weekday[]).map(day => ({
+  // Always use the daily calorie goal for each day, not the weekly goal
+  // Ensure the order is always Monday-Sunday
+  return weekOrder.map(day => ({
     day,
     consumed: weekData[day],
     goal: calorieGoal,
@@ -58,6 +63,7 @@ type NutritionVisualizationCardProps = {
   weeklyCalories: any[];
   weeklyAvg: number;
   meals?: Array<{ meal_date: string; calories: number }>;
+  dailyCalorieGoal: number;
 };
 
 const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
@@ -67,6 +73,7 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
   weeklyCalories, // not used for bar chart anymore
   weeklyAvg,
   meals, // required for bar chart
+  dailyCalorieGoal,
 }) => (
   <Card>
     <CardHeader className="pb-0">
@@ -259,7 +266,7 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
             >
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={getBarChartDataFromMeals(meals || [], nutritionData.calories.goal)}
+                  data={getBarChartDataFromMeals(meals || [], dailyCalorieGoal)}
                   barGap={2}
                   barCategoryGap={10}
                 >
