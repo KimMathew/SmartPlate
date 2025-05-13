@@ -395,13 +395,6 @@ export default function SchedulePage() {
         .single();
       nutrition = nutritionData;
     }
-    // Show all fetched data in an alert for debugging
-    alert(
-      '[handleMealClick] meal: ' + JSON.stringify(meal, null, 2) + '\n' +
-      '[handleMealClick] mealPlan: ' + JSON.stringify(mealPlan, null, 2) + '\n' +
-      '[handleMealClick] recipe: ' + JSON.stringify(recipe, null, 2) + '\n' +
-      '[handleMealClick] nutrition: ' + JSON.stringify(nutrition, null, 2)
-    );
     setModalMealPlan(mealPlan);
     setModalRecipe(recipe);
     setModalNutrition(nutrition);
