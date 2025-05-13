@@ -173,7 +173,7 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
                   Carbs
                 </span>
                 <span className="font-normal" style={{ color: "#333333" }}>
-                  180g / 250g
+                  {nutritionData.macronutrients.carbs.consumed}g / {nutritionData.macronutrients.carbs.goal}g
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
@@ -188,7 +188,7 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
                   Protein
                 </span>
                 <span className="font-normal" style={{ color: "#333333" }}>
-                  125g / 150g
+                  {nutritionData.macronutrients.protein.consumed}g / {nutritionData.macronutrients.protein.goal}g
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
@@ -203,16 +203,16 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
                   Fat
                 </span>
                 <span className="font-normal" style={{ color: "#333333" }}>
-                  45g / 60g
+                  {nutritionData.macronutrients.fat.consumed}g / {nutritionData.macronutrients.fat.goal}g
                 </span>
               </div>
             </div>
             <div className="mt-2 text-sm" style={{ color: "#333333" }}>
               You're currently at{" "}
               <span className="font-bold" style={{ color: "#333333" }}>
-                73%
+                {Math.round((nutritionData.calories.consumed / nutritionData.calories.goal) * 100)}%
               </span>{" "}
-              of your daily calorie goal (1450 / 2000 kcal)
+              of your daily calorie goal ({nutritionData.calories.consumed} / {nutritionData.calories.goal} kcal)
             </div>
           </div>
         </>
