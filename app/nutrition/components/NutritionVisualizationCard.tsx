@@ -212,7 +212,7 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
               <span className="font-bold" style={{ color: "#333333" }}>
                 {Math.round((nutritionData.calories.consumed / nutritionData.calories.goal) * 100)}%
               </span>{" "}
-              of your daily calorie goal ({nutritionData.calories.consumed} / {nutritionData.calories.goal} kcal)
+              of your {visualizationTab === "Macronutrient Split" ? (nutritionData.calories.goal > 5000 ? "weekly" : "daily") : "daily"} goal ({nutritionData.calories.consumed} / {nutritionData.calories.goal} kcal)
             </div>
           </div>
         </>

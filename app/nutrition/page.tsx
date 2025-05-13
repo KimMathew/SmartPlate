@@ -255,13 +255,6 @@ export default function NutritionPage() {
     .slice(0, 5);
   console.log('recentMeals:', recentMeals);
 
-  // Alert the weekly consumed calories for debugging
-  useEffect(() => {
-    if (summaryView === "Weekly") {
-      alert(`Weekly consumed calories: ${weeklyConsumed.calories}`);
-    }
-  }, [summaryView, weeklyConsumed.calories]);
-
   // Use correct consumed values for daily/weekly
   const consumed = summaryView === "Weekly" ? weeklyConsumed : dailyConsumed;
 
@@ -304,6 +297,7 @@ export default function NutritionPage() {
   let weeklyCaloriesData = weeklyCalories;
   let weeklyAvgData = weeklyAvg;
   let weeklyGoal = goalNutrients;
+  let userNutritionInfo: any[] = nutritionInfo;
   if (summaryView === "Weekly") {
     // Always multiply all goals by 7 for weekly view, even if no nutritionInfo
     weeklyGoal = {
@@ -314,7 +308,13 @@ export default function NutritionPage() {
     };
     // Group by day (assuming nutritionInfo has a created_at date)
     const daysMap: Record<string, { consumed: number; goal: number }> = {};
-    nutritionInfo.forEach((entry: any) => {
+    // Only include nutritionInfo entries that belong to the logged-in user
+    userNutritionInfo = nutritionInfo.filter((entry: any) => {
+      if (entry.user_id && userProfile?.id) return entry.user_id === userProfile.id;
+      const meal = mealSchedule.find((m: any) => m.nutrition_id === entry.nutrition_id);
+      return meal && meal.user_id === userProfile?.id;
+    });
+    userNutritionInfo.forEach((entry: any) => {
       const date = new Date(entry.created_at);
       const day = date.toLocaleDateString("en-US", { weekday: "short" });
       if (!daysMap[day]) {
@@ -343,12 +343,16 @@ export default function NutritionPage() {
           color: "#10B981",
         },
         macronutrients: {
-          carbs: { consumed: nutritionInfo.reduce((acc, n) => acc + (n.carbs_g || 0), 0), goal: weeklyGoal.carbs, color: "#34D399" },
-          protein: { consumed: nutritionInfo.reduce((acc, n) => acc + (n.protein_g || 0), 0), goal: weeklyGoal.protein, color: "#10B981" },
-          fat: { consumed: nutritionInfo.reduce((acc, n) => acc + (n.fats_g || 0), 0), goal: weeklyGoal.fat, color: "#059669" },
+          carbs: { consumed: userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0), goal: weeklyGoal.carbs, color: "#34D399" },
+          protein: { consumed: userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0), goal: weeklyGoal.protein, color: "#10B981" },
+          fat: { consumed: userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g || 0), 0), goal: weeklyGoal.fat, color: "#059669" },
         },
         micronutrients: nutritionData.micronutrients,
-        macronutrientSplit: nutritionData.macronutrientSplit,
+        macronutrientSplit: [
+          { name: "Carbs", percent: Math.round((userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) / (userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g || 0), 0))) * 100) || 0, color: "#34D399" },
+          { name: "Protein", percent: Math.round((userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) / (userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g || 0), 0))) * 100) || 0, color: "#10B981" },
+          { name: "Fat", percent: Math.round((userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g || 0), 0) / (userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g || 0), 0))) * 100) || 0, color: "#059669" },
+        ]
       }
     : nutritionData;
 
