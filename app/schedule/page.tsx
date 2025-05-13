@@ -519,20 +519,7 @@ export default function SchedulePage() {
           </div>
         )}
       </div>
-
-      {/* Debug: Show modal meal data as JSON below the calendar */}
-      <div className="bg-yellow-50 rounded-lg p-4 mt-6 border border-yellow-200">
-        <div className="font-bold mb-2 text-yellow-700">Debug: Modal Meal Data (what is shown in modal)</div>
-        <pre className="text-xs overflow-x-auto whitespace-pre-wrap break-all text-yellow-900">
-          {JSON.stringify({
-            meal: modalMeal,
-            mealPlan: modalMealPlan,
-            recipe: modalRecipe,
-            nutrition: modalNutrition
-          }, null, 2)}
-        </pre>
-      </div>
-
+      
       {/* Add Meal Dialog */}
       <Dialog open={addMealDialog.open} onOpenChange={open => setAddMealDialog(v => ({ ...v, open }))}>
         <DialogContent>
@@ -639,21 +626,31 @@ export default function SchedulePage() {
                       })()}
                     </ul>
                   </>
-                )}                
-                {modalRecipe?.instructions && (
+                )}
+                {/* Show instructions below ingredients, supporting both 'instruction' and 'instructions' fields */}
+                {(modalRecipe?.instruction || modalRecipe?.instructions) && (
                   <>
                     <div className="font-bold text-lg mb-2">Instructions</div>
                     <ol className="list-decimal pl-5 space-y-2 text-gray-700">
-                      {Array.isArray(modalRecipe.instructions)
-                        ? modalRecipe.instructions.map((step: string, index: number) => (
-                            <li key={index} className="break-words whitespace-pre-line">{step}</li>
-                          ))
-                        : typeof modalRecipe.instructions === 'string' 
-                            ? modalRecipe.instructions.split('\n').filter((s: string) => s.trim() !== '').map((step: string, index: number) => (
-                                <li key={index} className="break-words whitespace-pre-line">{step}</li>
-                              ))
-                            : modalRecipe.instructions ? <li className="break-words whitespace-pre-line">{String(modalRecipe.instructions)}</li> : null
-                      }
+                      {(() => {
+                        let instructions = modalRecipe.instruction || modalRecipe.instructions;
+                        if (typeof instructions === 'string' && instructions.trim().startsWith('[')) {
+                          try {
+                            instructions = JSON.parse(instructions);
+                          } catch { }
+                        }
+                        if (Array.isArray(instructions)) {
+                          return instructions.map((step: string, idx: number) => (
+                            <li key={idx} className="break-words whitespace-pre-line">{step}</li>
+                          ));
+                        }
+                        return String(instructions)
+                          .split('\n')
+                          .filter((s: string) => s.trim() !== '')
+                          .map((step: string, idx: number) => (
+                            <li key={idx} className="break-words whitespace-pre-line">{step}</li>
+                          ));
+                      })()}
                     </ol>
                   </>
                 )}

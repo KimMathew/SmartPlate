@@ -89,32 +89,32 @@ const MealCard = ({ meal }: { meal: Meal }) => {
 
   return (
     <>      <div
-        onClick={() => setShowDetails(true)}
-        className="p-5 border rounded-lg  hover:border-emerald-200 transition-colors cursor-pointer hover:bg-emerald-50"
-      >
-        <div className="flex items-center gap-2 mb-3">
-          <div className="bg-emerald-50 p-1.5 rounded-full text-emerald-500">
-            {meal.type.toLowerCase() === "breakfast" && <Coffee className="h-4 w-4" />}
-            {meal.type.toLowerCase() === "lunch" && <Utensils className="h-4 w-4" />}
-            {meal.type.toLowerCase() === "dinner" && <ChefHat className="h-4 w-4" />}
-          </div>
-          <h3 className="text-emerald-500 font-medium capitalize group-hover:text-emerald-600 transition-colors duration-200">
-            {meal.type}
-          </h3>
+      onClick={() => setShowDetails(true)}
+      className="p-5 border rounded-lg  hover:border-emerald-200 transition-colors cursor-pointer hover:bg-emerald-50"
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <div className="bg-emerald-50 p-1.5 rounded-full text-emerald-500">
+          {meal.type.toLowerCase() === "breakfast" && <Coffee className="h-4 w-4" />}
+          {meal.type.toLowerCase() === "lunch" && <Utensils className="h-4 w-4" />}
+          {meal.type.toLowerCase() === "dinner" && <ChefHat className="h-4 w-4" />}
         </div>
-
-        <h4 className="font-semibold text-gray-800 mb-2 leading-tight">{meal.name}</h4>
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{meal.description}</p>
-
-        <div className="flex justify-between items-center pt-1">
-          <Badge variant="outline" className="bg-amber-50 border-amber-100 text-amber-700 hover:bg-amber-50">
-            🔥 {meal.calories} cal
-          </Badge>
-          <Badge variant="outline" className="bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-50">
-            💪 {meal.protein}g protein
-          </Badge>
-        </div>
+        <h3 className="text-emerald-500 font-medium capitalize group-hover:text-emerald-600 transition-colors duration-200">
+          {meal.type}
+        </h3>
       </div>
+
+      <h4 className="font-semibold text-gray-800 mb-2 leading-tight">{meal.name}</h4>
+      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{meal.description}</p>
+
+      <div className="flex justify-between items-center pt-1">
+        <Badge variant="outline" className="bg-amber-50 border-amber-100 text-amber-700 hover:bg-amber-50">
+          🔥 {meal.calories} cal
+        </Badge>
+        <Badge variant="outline" className="bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-50">
+          💪 {meal.protein}g protein
+        </Badge>
+      </div>
+    </div>
 
       {/* Meal Details Modal */}
       {showDetails && (
@@ -152,7 +152,7 @@ const MealDetailsModal = ({ meal, onClose }: { meal: Meal; onClose: () => void }
               </div>
               <h3 className="text-xl font-bold text-gray-900 max-sm:text-lg pr-2 max-sm:pr-4">{meal.name}</h3>
             </div>
-            
+
           </div>
 
           <div className="border-b border-gray-200 mb-4 pb-2">
@@ -271,37 +271,37 @@ export default function MealPlansPage() {
     return userId ? `smartPlate_batchNumber_${userId}` : 'smartPlate_batchNumber';
   }
   useEffect(() => {
-  const key = getMealPlanKey(user?.id);
-  const savedPlan = localStorage.getItem(key);
-  const batchKey = getBatchNumberKey(user?.id);
-  const savedBatchNumber = localStorage.getItem(batchKey);
-  
-  if (savedBatchNumber) {
-    try {
-      const batchNumber = parseInt(savedBatchNumber);
-      setCurrentBatchNumber(batchNumber);
-    } catch (err) {
-      console.error("Error parsing batch number from localStorage", err);
-    }
-  }
-  
-  if (savedPlan) {
-    try {
-      const parsedPlan: DayPlan[] = JSON.parse(savedPlan);
-      if (Array.isArray(parsedPlan) && parsedPlan.length > 0) {
-        // Filter out duplicate meals based on name+type or a unique ID if present
-        const dedupedPlan = parsedPlan.map(day => ({
-          ...day,
-          meals: Array.from(new Map(day.meals.map(m => [m.name + m.type, m])).values()),
-        }));
-        setMealPlan(dedupedPlan);
-        setGeneratedPlanExists(true);
+    const key = getMealPlanKey(user?.id);
+    const savedPlan = localStorage.getItem(key);
+    const batchKey = getBatchNumberKey(user?.id);
+    const savedBatchNumber = localStorage.getItem(batchKey);
+
+    if (savedBatchNumber) {
+      try {
+        const batchNumber = parseInt(savedBatchNumber);
+        setCurrentBatchNumber(batchNumber);
+      } catch (err) {
+        console.error("Error parsing batch number from localStorage", err);
       }
-    } catch (err) {
-      console.error("Error parsing meal plan from localStorage", err);
     }
-  }
-}, [user?.id]);
+
+    if (savedPlan) {
+      try {
+        const parsedPlan: DayPlan[] = JSON.parse(savedPlan);
+        if (Array.isArray(parsedPlan) && parsedPlan.length > 0) {
+          // Filter out duplicate meals based on name+type or a unique ID if present
+          const dedupedPlan = parsedPlan.map(day => ({
+            ...day,
+            meals: Array.from(new Map(day.meals.map(m => [m.name + m.type, m])).values()),
+          }));
+          setMealPlan(dedupedPlan);
+          setGeneratedPlanExists(true);
+        }
+      } catch (err) {
+        console.error("Error parsing meal plan from localStorage", err);
+      }
+    }
+  }, [user?.id]);
 
 
   // Load meal plans from Supabase when user is authenticated
@@ -316,7 +316,7 @@ export default function MealPlansPage() {
           .eq('user_id', user.id)
           .order('batch_number', { ascending: false })
           .limit(1);
-          
+
         if (maxBatchError) {
           console.error("Error fetching max batch number:", maxBatchError);
         } else if (maxBatchData && maxBatchData.length > 0) {
@@ -325,10 +325,10 @@ export default function MealPlansPage() {
           // Save to localStorage
           localStorage.setItem(getBatchNumberKey(user?.id), maxBatchNumber.toString());
         }
-        
+
         // Fetch the most recent meal plan for this user with the max batch_number
         let batchNumberFilter = maxBatchData?.[0]?.batch_number;
-        
+
         const { data: mealPlans, error: fetchError } = await supabase
           .from('meal_plan')
           .select(`
@@ -561,7 +561,7 @@ export default function MealPlansPage() {
         }
 
         throw new Error(errorData.error || `Server error: ${response.status}`);
-      }      const data = await response.json();
+      } const data = await response.json();
 
       if (!data.success) {
         throw new Error(data.error || "Failed to generate meal plan");
@@ -609,13 +609,13 @@ export default function MealPlansPage() {
             difficulty: meal.difficulty
           }))
         };
-      });      setMealPlan(formattedPlan);
+      }); setMealPlan(formattedPlan);
       setGeneratedPlanExists(true);
-      
+
       // Save the meal plan to localStorage
       localStorage.setItem(getMealPlanKey(user?.id), JSON.stringify(formattedPlan));
       localStorage.setItem(getSelectedDaysKey(user?.id), selectedDays.toString());
-      
+
       // Batch number was already saved earlier from the API response
 
       toast({
@@ -800,7 +800,7 @@ export default function MealPlansPage() {
           Tailored nutrition for your unique lifestyle
         </p>
       </div>
-      
+
       {error && !isServiceDown && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -823,7 +823,7 @@ export default function MealPlansPage() {
       {/* For Plan Your Meals Card */}
       <Card className="overflow-hidden ">
         <CardHeader className="text-center space-y-1">
-          <CardTitle  className="text-gray-900 font-bold text-2xl">
+          <CardTitle className="text-gray-900 font-bold text-2xl">
             Plan Your Meals
           </CardTitle>
           <CardDescription className="text-base">
@@ -837,11 +837,10 @@ export default function MealPlansPage() {
               <Button
                 key={days}
                 variant={selectedDays === days ? "default" : "outline"}
-                className={`h-16 ${
-                  selectedDays === days
+                className={`h-16 ${selectedDays === days
                     ? "bg-emerald-500 hover:bg-emerald-600"
                     : "hover:border-emerald-200 hover:bg-emerald-50"
-                }`}
+                  }`}
                 onClick={() => handleDaySelection(days)}
               >
                 <div className="flex items-center justify-center">
@@ -853,10 +852,10 @@ export default function MealPlansPage() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-center pt-2 pb-6">
-          <Button 
-          onClick={handleGenerateMealPlan}
-          size="lg" className="px-6 py-3 text-base"
-          disabled={isLoading}
+          <Button
+            onClick={handleGenerateMealPlan}
+            size="lg" className="px-6 py-3 text-base"
+            disabled={isLoading}
           >
             {isLoading ? (
               <>
@@ -914,15 +913,15 @@ export default function MealPlansPage() {
           )}
 
           <div className="text-center mt-6 flex flex-col items-center">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 flex gap-2"
               onClick={() => {/* Implement export functionality */ }}
             >
               <Download className="h-4 w-4" />
               Export {selectedDays}-Day Plan
             </Button>
-            
+
           </div>
         </div>
       )}
