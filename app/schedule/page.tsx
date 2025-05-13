@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import ReactDOM from "react-dom";
 
 export default function SchedulePage() {
   const [date, setDate] = useState<Date>(new Date());
@@ -28,6 +29,8 @@ export default function SchedulePage() {
   const [modalRecipe, setModalRecipe] = useState<any>(null);
   const [modalNutrition, setModalNutrition] = useState<any>(null);
   const [modalLoading, setModalLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ meal: any, dateStr: string, type: string } | null>(null);
 
   // Set isClient to true after mount
   useEffect(() => {
@@ -211,13 +214,16 @@ export default function SchedulePage() {
     }
   }
 
-  // Update delete handler to only delete from Supabase
+  // Replace window.confirm with modal logic
   async function handleDeleteMeal(meal: any, dateStr: string, type: string) {
-    if (!window.confirm(`Are you sure you want to delete the meal '${meal.name}' for ${type} on ${dateStr}?`)) {
-      return;
-    }
+    setDeleteTarget({ meal, dateStr, type });
+    setShowDeleteModal(true);
+  }
+
+  async function confirmDeleteMeal() {
+    if (!deleteTarget) return;
     setLoading(true);
-    // Only delete from Supabase
+    const { meal, dateStr, type } = deleteTarget;
     const { createClient } = await import("@/lib/supabase");
     const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
@@ -225,9 +231,10 @@ export default function SchedulePage() {
     if (!user?.id) {
       setLoading(false);
       alert("You must be logged in to delete a meal.");
+      setShowDeleteModal(false);
+      setDeleteTarget(null);
       return;
     }
-    // Remove scheduleId check, delete by meal_name, meal_date, meal_type
     const { error: delError } = await supabase
       .from('meal_schedule')
       .delete()
@@ -235,11 +242,12 @@ export default function SchedulePage() {
       .eq('meal_date', dateStr)
       .eq('meal_type', type);
     setLoading(false);
+    setShowDeleteModal(false);
+    setDeleteTarget(null);
     if (delError) {
       alert("Failed to delete meal from meal_schedule: " + delError.message);
       return;
     }
-    // Refresh meal plan after deletion
     await loadMealPlan();
   }
 
@@ -489,12 +497,8 @@ export default function SchedulePage() {
                         <div className="bg-emerald-50 rounded-lg p-2 max-sm:p-1 text-center space-y-2 border border-emerald-300 relative cursor-pointer hover:bg-emerald-100 transition"
                           onClick={() => handleMealClick(meal)}
                         >
-                          <div className="overflow-hidden font-semibold text-emerald-700 text-sm max-sm:text-xs">{meal.name}</div>
-                          {meal.calories && (
-                            <Badge variant="outline" className="bg-amber-50 hidden lg:block border-amber-100 text-amber-700">
-                              🔥 {meal.calories} cal
-                            </Badge>
-                          )}
+                          <div className="overflow-hidden font-semibold text-emerald-700 text-sm max-sm:text-xs text-ellipsis whitespace-nowrap pr-6" title={meal.name}>{meal.name}</div>
+                          
                           <button
                             className="absolute top-1 right-1 text-gray-400 hover:text-red-500"
                             title="Delete meal"
@@ -512,7 +516,7 @@ export default function SchedulePage() {
                           onClick={() => setAddMealDialog({ open: true, date: day, type: mealType })}
                           disabled={loading}
                         >
-                          <span className="hidden lg:inline-block lg:text-xs md:text-[10px]">+ Add {mealType}</span>
+                          <span className="hidden lg:inline-block lg:text-xs md:text-[10px]">+ Add</span>
                           <span className="text-lg font-extralight inline-block lg:hidden text-center w-full">+</span>
                         </Button>
                       )}
@@ -674,6 +678,90 @@ export default function SchedulePage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Delete Meal Modal */}
+      <DeleteMealModal
+        open={showDeleteModal && !!deleteTarget}
+        onClose={() => { setShowDeleteModal(false); setDeleteTarget(null); }}
+        onDelete={confirmDeleteMeal}
+        loading={loading}
+        meal={deleteTarget?.meal}
+        dateStr={deleteTarget?.dateStr || ''}
+        type={deleteTarget?.type || ''}
+      />
     </div>
+  );
+}
+
+// Delete Meal Modal Component
+function DeleteMealModal({ open, onClose, onDelete, loading, meal, dateStr, type }: {
+  open: boolean;
+  onClose: () => void;
+  onDelete: () => void;
+  loading: boolean;
+  meal: any;
+  dateStr: string;
+  type: string;
+}) {
+  const [visible, setVisible] = React.useState(open);
+  const [animate, setAnimate] = React.useState(false);
+
+  React.useEffect(() => {
+    if (open) {
+      setVisible(true);
+      setTimeout(() => setAnimate(true), 10);
+    } else {
+      setAnimate(false);
+      setTimeout(() => setVisible(false), 200);
+    }
+  }, [open]);
+
+  if (!visible) return null;
+
+  const handleClose = () => {
+    setAnimate(false);
+    setTimeout(() => {
+      setVisible(false);
+      onClose();
+    }, 200);
+  };
+
+  // Use ReactDOM.createPortal to render modal at document.body
+  if (typeof window === 'undefined' || !document.body) return null;
+  return ReactDOM.createPortal(
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-200 ${animate ? 'opacity-100' : 'opacity-0'}`} onClick={handleClose}>
+      <div
+        className={`bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto relative transition-all duration-200 mx-auto ${animate ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Close (X) button */}
+        <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 absolute top-5 right-4 z-10">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <div className="p-0">
+          <div className="flex items-center gap-3 px-6 pt-6 pb-2">
+            <div className="bg-rose-100 rounded-full p-2 flex items-center justify-center">
+              <svg className="h-7 w-7 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01" />
+              </svg>
+            </div>
+            <div className="text-left">
+              <div className="font-semibold text-lg text-gray-900">Delete Meal?</div>
+              <div className="text-gray-600 text-sm mt-1">
+                Are you sure you want to delete the meal '<b>{meal?.name}</b>'?
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 px-6 py-4">
+            <Button onClick={handleClose} variant="outline" className="min-w-[90px]">Cancel</Button>
+            <Button onClick={onDelete} className="min-w-[90px] bg-rose-500 hover:bg-rose-600 text-white" disabled={loading}>{loading ? 'Deleting...' : 'Delete'}</Button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
