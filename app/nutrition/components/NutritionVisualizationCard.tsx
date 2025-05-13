@@ -46,11 +46,10 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
       <div className="w-full flex mt-4 mb-2 py-6">
         <div className="flex bg-[#f3f6fa] rounded-lg p-1 shadow-sm w-full">
           <button
-            className={`flex-1 px-5 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none ${
-              visualizationTab === "Macronutrient Split"
+            className={`flex-1 px-5 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none ${visualizationTab === "Macronutrient Split"
                 ? "bg-white text-gray-900 shadow font-bold"
                 : "bg-transparent text-gray-500"
-            }`}
+              }`}
             type="button"
             style={{ minWidth: 0 }}
             onClick={() => setVisualizationTab("Macronutrient Split")}
@@ -58,11 +57,10 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
             Macronutrient Split
           </button>
           <button
-            className={`flex-1 px-5 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none ${
-              visualizationTab === "Weekly Calories"
+            className={`flex-1 px-5 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none ${visualizationTab === "Weekly Calories"
                 ? "bg-white text-gray-900 shadow font-bold"
                 : "bg-transparent text-gray-500"
-            }`}
+              }`}
             type="button"
             style={{ minWidth: 0 }}
             onClick={() => setVisualizationTab("Weekly Calories")}
@@ -212,7 +210,7 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
               <span className="font-bold" style={{ color: "#333333" }}>
                 {Math.round((nutritionData.calories.consumed / nutritionData.calories.goal) * 100)}%
               </span>{" "}
-              of your {visualizationTab === "Macronutrient Split" ? (nutritionData.calories.goal > 5000 ? "weekly" : "daily") : "daily"} goal ({nutritionData.calories.consumed} / {nutritionData.calories.goal} kcal)
+              of your {nutritionData.calories.goal > 5000 ? "weekly" : "daily"} goal ({nutritionData.calories.consumed} / {nutritionData.calories.goal} kcal)
             </div>
           </div>
         </>
@@ -259,10 +257,9 @@ const NutritionVisualizationCard: React.FC<NutritionVisualizationCardProps> = ({
                     content={
                       <ChartTooltipContent
                         formatter={(value, name) =>
-                          `${
-                            name === "consumed"
-                              ? "Calories Consumed"
-                              : "Calorie Goal"
+                          `${name === "consumed"
+                            ? "Calories Consumed"
+                            : "Calorie Goal"
                           }: ${value} kcal`
                         }
                         indicator="dot"
