@@ -256,6 +256,9 @@ export async function POST(req: Request) {
     const fat = Math.round((calories * 0.3) / 9);
 
     // 2. Create the prompt for meal plan generation
+    const mealTypes = Array.isArray(user.meals_perday) && user.meals_perday.length > 0
+      ? user.meals_perday.join(", ")
+      : "breakfast, lunch, dinner";
     const prompt = `
         Create a ${days}-day personalized meal plan based on the user's profile and preferences.
 
@@ -265,7 +268,7 @@ export async function POST(req: Request) {
         - Activity Level: ${user.activity_level || "moderate"}, Goal: ${user.goal_type || "balanced"} (Target: ${user.target_weight || "not specified"}kg)
 
         ## Preferences:
-        - Diet: ${user.diet_type || "balanced"}, Meals/day: ${Array.isArray(user.meals_perday) ? user.meals_perday.join(", ") : "breakfast, lunch, dinner"}
+        - Diet: ${user.diet_type || "balanced"}, Meals/day: ${mealTypes}
         - Allergies: ${user.allergens?.join(", ") || "none"}, Dislikes: ${user.disliked_ingredients?.join(", ") || "none"}
         - Cuisines: ${user.preferred_cuisines?.join(", ") || "any"}
         - Prep Time Limit: ${user.prep_time_limit || "no limit"} mins, Budget: ${user.budget_preference || "moderate"}
@@ -276,7 +279,8 @@ export async function POST(req: Request) {
 
         ## Output (JSON format):
         For each day:
-        - Meal type (breakfast/lunch/dinner/snack)
+        - Only generate the following meal types: ${mealTypes}.
+        - Meal type (must be one of: ${mealTypes})
         - Name, description, ingredients (with amounts), instructions (steps)
         - Nutrition: calories, protein, carbs, fats
         - Prep time, difficulty
