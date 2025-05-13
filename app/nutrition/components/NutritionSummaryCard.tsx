@@ -15,6 +15,10 @@ type NutritionSummaryCardProps = {
   caloriePercent: number;
 };
 
+function getProgressValue(percent: number) {
+  return percent > 100 ? 100 : percent;
+}
+
 const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
   summaryView,
   setSummaryView,
@@ -31,22 +35,20 @@ const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
         {/* Tab changer below title/desc on mobile and medium screens */}
         <div className="flex w-full bg-[#f3f6fa] rounded-lg p-1 mt-3 lg:mt-0 lg:hidden gap-x-2">
           <button
-            className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none shadow-sm ${
-              summaryView === "Daily"
-                ? "bg-white text-gray-900 shadow font-bold"
-                : "bg-transparent text-gray-500"
-            }`}
+            className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none shadow-sm ${summaryView === "Daily"
+              ? "bg-white text-gray-900 shadow font-bold"
+              : "bg-transparent text-gray-500"
+              }`}
             onClick={() => setSummaryView("Daily")}
             type="button"
           >
             Daily
           </button>
           <button
-            className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none ${
-              summaryView === "Weekly"
-                ? "bg-white text-gray-900 shadow font-bold"
-                : "bg-transparent text-gray-500"
-            }`}
+            className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none ${summaryView === "Weekly"
+              ? "bg-white text-gray-900 shadow font-bold"
+              : "bg-transparent text-gray-500"
+              }`}
             onClick={() => setSummaryView("Weekly")}
             type="button"
           >
@@ -57,11 +59,10 @@ const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
       {/* Tab changer on the right for lg+ */}
       <div className="hidden lg:flex bg-[#f3f6fa] rounded-lg p-1">
         <button
-          className={`px-5 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none shadow-sm ${
-            summaryView === "Daily"
-              ? "bg-white text-gray-900 shadow font-bold"
-              : "bg-transparent text-gray-500"
-          }`}
+          className={`px-5 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none shadow-sm ${summaryView === "Daily"
+            ? "bg-white text-gray-900 shadow font-bold"
+            : "bg-transparent text-gray-500"
+            }`}
           onClick={() => setSummaryView("Daily")}
           type="button"
           style={{ minWidth: 80 }}
@@ -69,11 +70,10 @@ const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
           Daily
         </button>
         <button
-          className={`px-5 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none ${
-            summaryView === "Weekly"
-              ? "bg-white text-gray-900 shadow font-bold"
-              : "bg-transparent text-gray-500"
-          }`}
+          className={`px-5 py-1.5 text-sm font-semibold rounded-md transition-colors duration-150 focus:outline-none ${summaryView === "Weekly"
+            ? "bg-white text-gray-900 shadow font-bold"
+            : "bg-transparent text-gray-500"
+            }`}
           onClick={() => setSummaryView("Weekly")}
           type="button"
           style={{ minWidth: 80 }}
@@ -98,7 +98,7 @@ const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
           </span>
         </div>
         <Progress
-          value={73}
+          value={getProgressValue(caloriePercent)}
           className="h-2 bg-gray-200 dark:bg-gray-800"
           progressBarColor={nutritionData.calories.color}
         />
@@ -133,7 +133,7 @@ const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
                     </span>
                   </div>
                   <Progress
-                    value={percent}
+                    value={getProgressValue(percent)}
                     className="h-2 bg-gray-200 dark:bg-gray-800"
                     progressBarColor={macro.color}
                   />
@@ -148,7 +148,7 @@ const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
         <div className="font-medium mb-2" style={{ color: "#333333" }}>
           Micronutrients Highlights
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           {nutritionData.micronutrients.map((micro: any) => (
             <div
               key={micro.name}
