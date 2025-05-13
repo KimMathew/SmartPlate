@@ -220,6 +220,41 @@ export async function POST(req: Request) {
     const user = users[0];
     console.log("User found:", user.email || "unknown email");
 
+    // --- Calculate daily nutrition targets using BMR, activity, and goal ---
+    const weight = Number(user.weight) || 70; // kg
+    const height = Number(user.height) || 170; // cm
+    const age = Number(user.age) || 30;
+    const gender = (user.gender || '').toLowerCase();
+    // 1. BMR
+    let bmr = 0;
+    if (gender === 'male' || gender === 'm') {
+      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+    } else if (gender === 'female' || gender === 'f') {
+      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    } else {
+      bmr = 10 * weight + 6.25 * height - 5 * age;
+    }
+    // 2. Activity factor
+    const activityMap: Record<string, number> = {
+      sedentary: 1.2,
+      lightly_active: 1.375,
+      moderately_active: 1.55,
+      very_active: 1.725,
+      extra_active: 1.9
+    };
+    const activity = (user.activity_level || '').toLowerCase();
+    const activityFactor = activityMap[activity] || 1.2;
+    let tdee = bmr * activityFactor;
+    // 3. Adjust for goal
+    const goal = (user.goal_type || '').toLowerCase();
+    if (goal.includes('lose')) tdee -= 500;
+    else if (goal.includes('gain')) tdee += 500;
+    // 4. Macronutrient split
+    const calories = Math.round(tdee);
+    const carbs = Math.round((calories * 0.5) / 4);
+    const protein = Math.round((calories * 0.2) / 4);
+    const fat = Math.round((calories * 0.3) / 9);
+
     // 2. Create the prompt for meal plan generation
     const prompt = `
         Create a ${days}-day personalized meal plan based on the user's profile and preferences.
@@ -235,8 +270,9 @@ export async function POST(req: Request) {
         - Cuisines: ${user.preferred_cuisines?.join(", ") || "any"}
         - Prep Time Limit: ${user.prep_time_limit || "no limit"} mins, Budget: ${user.budget_preference || "moderate"}
 
-        ## Nutrition Goals:
-        - Calories/day: ${user.target_calories || "auto"}, Protein: ${user.protein_preference || "moderate"}, Carbs: ${user.carb_preference || "moderate"}, Fats: ${user.fat_preference || "moderate"}
+        ## Nutrition Goals (approximate):
+        - Calories/day: around ${calories} (can be a little higher or lower)
+        - Protein: around ${protein}g, Carbs: around ${carbs}g, Fats: around ${fat}g (flexible, not strict)
 
         ## Output (JSON format):
         For each day:
@@ -260,23 +296,23 @@ export async function POST(req: Request) {
                 "name": "Meal name",
                 "description": "Description",
                 "ingredients": ["ingredient 1", "ingredient 2"],
-                "instructions": ["step 1", "step 2"],
-                "nutrition": {
+                "instructions": ["step 1", "step 2"],                "nutrition": {
                   "calories": 300,
                   "protein": 20,
                   "carbs": 30,
-                  "fats": 10
+                  "fats": 10,
+                  "vitamins": "Vitamin A, Vitamin C, Vitamin D, Iron"
                 },
                 "prepTime": 15,
                 "difficulty": "easy",
                 "cuisine_type": "mediterranean"
               }
-            ],
-            "totals": {
+            ],            "totals": {
               "calories": 2000,
               "protein": 100,
               "carbs": 200,
-              "fats": 70
+              "fats": 70,
+              "vitamins": "Vitamin A, Vitamin C, Vitamin D, Iron"
             }
           }
         }
@@ -418,17 +454,43 @@ export async function POST(req: Request) {
     // Create a separate client with service role key to bypass RLS
     const supabaseAdmin = createSupabaseClient(undefined, true);
 
+    // --- BATCH NUMBER LOGIC ---
+    // Get the next batch_number for this user
+    let nextBatchNumber = 1;
+    const { data: maxBatch, error: batchError } = await supabaseAdmin
+      .from(mealPlanTable)
+      .select('batch_number')
+      .eq('user_id', userId)
+      .order('batch_number', { ascending: false })
+      .limit(1);
+    if (!batchError && maxBatch && maxBatch.length > 0 && maxBatch[0].batch_number) {
+      nextBatchNumber = maxBatch[0].batch_number + 1;
+    }
+    console.log(`Using batch_number ${nextBatchNumber} for user ${userId}`);
+
     let mealPlanIds: any[] = [];
     let failedMeals: any[] = [];
+    
+    // Track processed meals to avoid duplicates
+    const processedMealKeys = new Set();
+    let duplicateCount = 0;
 
     for (const [dayKey, dayData] of Object.entries(parsedResponse)) {
       // Extract day number from the key (e.g., "day1" becomes 1)
       const dayNumber = parseInt(dayKey.replace(/\D/g, '')) || 1;
 
       // Calculate date for this specific day (day1 = today, day2 = tomorrow, etc.)
-      const dayDate = new Date(today);
-      dayDate.setDate(today.getDate() + dayNumber - 1); // -1 because day1 is today (0 days from now)
-      const formattedDate = dayDate.toISOString().slice(0, 10);
+      // Use GMT+8 for start_date
+      const now = new Date();
+      // Calculate the date in GMT+8 at midnight
+      const gmt8 = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+      gmt8.setUTCHours(0, 0, 0, 0); // Set to midnight GMT+8
+      gmt8.setUTCDate(gmt8.getUTCDate() + dayNumber - 1);
+      const year = gmt8.getUTCFullYear();
+      const month = String(gmt8.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(gmt8.getUTCDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
+      console.log("[DEBUG] GMT+8 formatted date:", formattedDate);
 
       // Insert each meal as a recipe, nutrition_info, and then meal_plan
       for (const meal of (dayData as { meals?: Meal[] }).meals || []) {
@@ -436,7 +498,19 @@ export async function POST(req: Request) {
         if (!meal.name || !meal.type) {
           failedMeals.push({ day: dayKey, reason: 'Missing name or type', meal });
           continue;
+        }        // Create a unique key for each meal to detect duplicates
+        // Use day, type, name, and ingredients (if available) to create a more robust unique key
+        const ingredientsHash = meal.ingredients ? 
+          meal.ingredients.slice(0, 3).map(i => typeof i === 'string' ? i.trim().toLowerCase().substring(0, 10) : '').join('-') : '';
+        const mealKey = `${dayNumber}-${meal.type}-${meal.name}-${ingredientsHash}`;
+        
+        if (processedMealKeys.has(mealKey)) {
+          console.log(`Skipping duplicate meal: ${mealKey}`);
+          duplicateCount++;
+          continue; // Skip this meal as it's a duplicate
         }
+        // Mark this meal as processed
+        processedMealKeys.add(mealKey);
 
         // 1. Insert recipe first with day column
         const recipePayload = {
@@ -463,11 +537,14 @@ export async function POST(req: Request) {
         }
 
         const recipe_id = recipe.recipe_id;
-        console.log('Inserted recipe:', recipe);
-
-        // 2. Insert nutrition_info linked to the recipe with day column
+        console.log('Inserted recipe:', recipe);        // 2. Insert nutrition_info linked to the recipe with day column
         let nutrition_id = null;
         if (meal.nutrition) {
+          // Get daily totals for calories and protein
+          const dailyTotals = (dayData as any).totals || {};
+            // Log the daily totals for debugging
+          console.log(`Day ${dayNumber} totals:`, dailyTotals);
+          
           const nutritionPayload = {
             created_at: new Date().toISOString(),
             recipe_id: recipe_id,
@@ -475,9 +552,13 @@ export async function POST(req: Request) {
             protein_g: meal.nutrition.protein || 0,
             carbs_g: meal.nutrition.carbs || 0,
             fats_g: meal.nutrition.fats || 0,
-            vitamins: null,
-            day: dayNumber // Add day number to nutrition info
+            vitamins: meal.nutrition.vitamins || null,
+            day: dayNumber, // Add day number to nutrition info
+            total_calorie_count: dailyTotals.calories || 0, // Add total calories from day totals
+            total_protein_count: dailyTotals.protein || 0   // Add total protein from day totals
           };
+          
+          console.log('Nutrition payload with totals:', nutritionPayload);
 
           const { data: nutrition, error: nutritionError } = await supabaseAdmin
             .from('nutrition_info')
@@ -506,7 +587,8 @@ export async function POST(req: Request) {
           start_date: formattedDate, // Use day-specific date
           end_date: formattedDate,   // Same as start_date
           days_covered: daysCovered,
-          day: dayNumber             // Add day number to meal plan
+          day: dayNumber,           // Add day number to meal plan
+          batch_number: nextBatchNumber // Set batch_number for this generation
         };
 
         const { data: mealPlanData, error: mealPlanError } = await supabaseAdmin
@@ -524,6 +606,16 @@ export async function POST(req: Request) {
           console.log('Inserted meal_plan:', mealPlanData);
         }
       }
+    }
+
+    console.log(`Total duplicate meals skipped: ${duplicateCount}`);
+
+    // Log deduplication summary
+    console.log(`Meal plan generation complete - Batch #${nextBatchNumber}`);
+    console.log(`Total meals processed: ${processedMealKeys.size}`);
+    console.log(`Duplicates skipped: ${duplicateCount}`);
+    if (failedMeals.length > 0) {
+      console.log(`Failed meals: ${failedMeals.length}`);
     }
 
     // 6. Process each day's meals for frontend only - skip database inserts for now
@@ -600,6 +692,8 @@ export async function POST(req: Request) {
       data: {
         message: "Meal plan created successfully",
         plan_id: mealPlanIds,
+        batch_number: nextBatchNumber, // Include batch_number in response
+        duplicates_skipped: duplicateCount, // Add info about skipped duplicates
         meal_plan: {
           days: formattedMealPlan
         }
