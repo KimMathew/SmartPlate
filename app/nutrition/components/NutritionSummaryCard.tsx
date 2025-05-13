@@ -15,6 +15,10 @@ type NutritionSummaryCardProps = {
   caloriePercent: number;
 };
 
+function getProgressValue(percent: number) {
+  return percent > 100 ? 100 : percent;
+}
+
 const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
   summaryView,
   setSummaryView,
@@ -98,7 +102,7 @@ const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
           </span>
         </div>
         <Progress
-          value={73}
+          value={getProgressValue(caloriePercent)}
           className="h-2 bg-gray-200 dark:bg-gray-800"
           progressBarColor={nutritionData.calories.color}
         />
@@ -133,7 +137,7 @@ const NutritionSummaryCard: React.FC<NutritionSummaryCardProps> = ({
                     </span>
                   </div>
                   <Progress
-                    value={percent}
+                    value={getProgressValue(percent)}
                     className="h-2 bg-gray-200 dark:bg-gray-800"
                     progressBarColor={macro.color}
                   />
