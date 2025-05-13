@@ -193,23 +193,23 @@ const MealDetailsModal = ({ meal, onClose }: { meal: Meal; onClose: () => void }
           </div>
 
           <div className="grid grid-cols-4 gap-4 mb-6">
-            <div className="bg-gray-50 p-3 rounded-lg text-center">
+            <div className="bg-emerald-50 p-3 rounded-lg text-center">
               <p className="text-lg font-bold text-emerald-600">{meal.calories}</p>
               <p className="text-xs text-gray-500">Calories</p>
             </div>
-            <div className="bg-gray-50 p-3 rounded-lg text-center">
-              <p className="text-lg font-bold text-emerald-600">{meal.protein}g</p>
+            <div className="bg-blue-50 p-3 rounded-lg text-center">
+              <p className="text-lg font-bold text-blue-700">{meal.protein}g</p>
               <p className="text-xs text-gray-500">Protein</p>
             </div>
             {meal.carbs !== undefined && (
-              <div className="bg-gray-50 p-3 rounded-lg text-center">
-                <p className="text-lg font-bold text-emerald-600">{meal.carbs}g</p>
+              <div className="bg-amber-50 p-3 rounded-lg text-center">
+                <p className="text-lg font-bold text-amber-700">{meal.carbs}g</p>
                 <p className="text-xs text-gray-500">Carbs</p>
               </div>
             )}
             {meal.fats !== undefined && (
-              <div className="bg-gray-50 p-3 rounded-lg text-center">
-                <p className="text-lg font-bold text-emerald-600">{meal.fats}g</p>
+              <div className="bg-rose-50 p-3 rounded-lg text-center">
+                <p className="text-lg font-bold text-rose-700">{meal.fats}g</p>
                 <p className="text-xs text-gray-500">Fats</p>
               </div>
             )}
