@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface FoodItem {
   name: string;
@@ -67,10 +68,10 @@ const MealLogRow: React.FC<MealLogRowProps> = ({
           <span className="font-semibold text-black text-base tracking-tight">
             {calories} kcal
           </span>
-          <span className="text-xs text-black mt-1 whitespace-nowrap flex gap-2">
-            <span>C: {carbs}g</span>
-            <span>P: {protein}g</span>
-            <span>F: {fat}g</span>
+          <span className="flex gap-2 mt-1">
+            <Badge variant="outline" className="bg-emerald-50 border-emerald-100 text-emerald-700 hover:bg-emerald-50 px-2 py-1 text-xs font-medium">C: {carbs}g</Badge>
+            <Badge variant="outline" className="bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-50 px-2 py-1 text-xs font-medium">P: {protein}g</Badge>
+            <Badge variant="outline" className="bg-rose-50 border-rose-100 text-rose-700 hover:bg-rose-50 px-2 py-1 text-xs font-medium">F: {fat}g</Badge>
           </span>
         </div>
       </div>
