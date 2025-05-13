@@ -349,7 +349,7 @@ export default function NutritionPage() {
       },
       micronutrients: nutritionData.micronutrients,
       macronutrientSplit: [
-        { name: "Carbs", percent: Math.round((userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) / (userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g || 0), 0))) * 100) || 0, color: "#34D399" },
+        { name: "Carbs", percent: Math.round((userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) / (userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g ?? 0), 0))) * 100) || 0, color: "#34D399" },
         { name: "Protein", percent: Math.round((userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) / (userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g ?? 0), 0))) * 100) || 0, color: "#10B981" },
         { name: "Fat", percent: Math.round((userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g ?? 0), 0) / (userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g ?? 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g ?? 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g ?? 0), 0))) * 100) || 0, color: "#059669" }
       ]
@@ -453,6 +453,7 @@ export default function NutritionPage() {
           weeklyCalories={vizWeeklyCaloriesData}
           weeklyAvg={vizWeeklyAvgData}
           meals={mealSchedule.map(meal => ({ meal_date: meal.meal_date, calories: (nutritionInfo.find(n => n.nutrition_id === meal.nutrition_id)?.calories ?? nutritionInfo.find(n => n.nutrition_id === meal.nutrition_id)?.calories_g ?? 0) }))}
+          dailyCalorieGoal={goalNutrients.calories}
         />
         <div className="lg:col-span-2">
           <MealLogCard recentMeals={recentMeals} />
