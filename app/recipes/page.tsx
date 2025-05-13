@@ -168,7 +168,7 @@ function RecipeDetailsModal({ recipe, onClose }: { recipe: any; onClose: () => v
   const fats = nutrition.fats ?? nutrition.fat ?? nutrition.fats_g ?? recipe.fats ?? 0;
 
   return ReactDOM.createPortal(
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-200 ${animate ? 'opacity-100' : 'opacity-0'}`} onClick={handleClose}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 transition-opacity duration-200 ${animate ? 'opacity-100' : 'opacity-0'}`} onClick={handleClose}>
       <div
         className={`bg-white w-full max-w-xl rounded-xl shadow-2xl transition-all duration-200 overflow-hidden max-h-[90vh] overflow-y-auto relative mx-auto ${animate ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
         onClick={e => e.stopPropagation()}
@@ -481,7 +481,7 @@ const handleViewRecipe = async (recipeId: number) => {
               <div className="relative">
                 <Input
                   id="ingredients"
-                  placeholder="e.g., chicken, tomato, pasta"
+                  placeholder="Enter an ingredient and press Enter to add"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleAddIngredient}
