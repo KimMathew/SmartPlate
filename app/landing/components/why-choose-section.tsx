@@ -119,8 +119,7 @@ export default function WhyChooseSection() {
                     Evidence-Based Nutrition
                   </h3>
                   <p className="text-gray-600 mt-1">
-                    Backed by reliable data from the USDA FoodData Central for
-                    accurate nutritional information.
+                    Supported by accurate nutritional data powered by the Gemini API for reliable insights.
                   </p>
                 </div>
               </WhyChooseFeature>
