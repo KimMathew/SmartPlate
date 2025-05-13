@@ -129,7 +129,7 @@ export default function NutritionPage() {
   function getTodayConsumed() {
     const today = getDateInGMT8();
     const todayStr = today.toISOString().slice(0, 10);
-    
+
     // Create a map for faster nutrition info lookups (by nutrition_id only)
     const nutritionMap: Record<string, any> = {};
     nutritionInfo.forEach(item => {
@@ -137,10 +137,10 @@ export default function NutritionPage() {
         nutritionMap[item.nutrition_id] = item;
       }
     });
-    
+
     // Define total nutrients with proper typing
     const total = { calories: 0, protein: 0, carbs: 0, fat: 0 };
-    
+
     // Filter and process meals for today
     const mealsToday = mealSchedule.filter(meal => meal.meal_date === todayStr);
     console.log(`Meals for today (${todayStr}):`, mealsToday);
@@ -177,25 +177,25 @@ export default function NutritionPage() {
     startOfWeek.setHours(0, 0, 0, 0);
     const startStr = startOfWeek.toISOString().slice(0, 10);
     const todayStr = today.toISOString().slice(0, 10);
-    
+
     console.log(`DEBUG - Week range: ${startStr} to ${todayStr}, current hour: ${nowHour}`);
     console.log(`DEBUG - Total meal schedule entries: ${mealSchedule.length}`);
     console.log(`DEBUG - Total nutrition info entries: ${nutritionInfo.length}`);
-    
+
     // Inspect nutrition_info IDs and the new field names
     console.log("Available nutrition_info entries with fields:");
     nutritionInfo.forEach(ni => {
       console.log(`nutrition_id: ${ni.nutrition_id}, calories: ${ni.total_calorie_count ?? ni.calories ?? ni.calories_g ?? 0}, protein: ${ni.total_protein_count ?? ni.protein_g ?? 0}`);
     });
-    
+
     let total = { calories: 0, protein: 0, carbs: 0, fat: 0 };
-  
+
     const mealsWeek = mealSchedule.filter(meal =>
       meal.meal_date >= startStr && meal.meal_date <= todayStr
     );
-    
+
     console.log(`DEBUG - Filtered meals for week: ${mealsWeek.length}`);
-    
+
     // For debugging only - show all meal details
     mealsWeek.forEach(meal => {
       console.log(`DEBUG - Meal: date=${meal.meal_date}, type=${meal.meal_type}, nutrition_id=${meal.nutrition_id}`);
@@ -206,16 +206,16 @@ export default function NutritionPage() {
       if (meal.meal_type === 'breakfast') scheduledHour = 8;
       else if (meal.meal_type === 'lunch') scheduledHour = 12;
       else if (meal.meal_type === 'dinner') scheduledHour = 19;
-      
+
       // Skip meals based on time
       if (meal.meal_date === todayStr && nowHour < scheduledHour) {
         console.log(`DEBUG - Skipping meal: Current time ${nowHour} is before scheduled time ${scheduledHour}`);
         continue;
       }
-      
+
       // Find nutrition info direct match
       const nut = nutritionInfo.find(n => n.nutrition_id === meal.nutrition_id);
-      
+
       if (nut) {
         // Use only per-meal values (do NOT use total_calorie_count or total_protein_count)
         const calories = nut.calories ?? nut.calories_g ?? 0;
@@ -228,7 +228,7 @@ export default function NutritionPage() {
         console.log(`DEBUG - NO MATCH FOUND: meal.nutrition_id=${meal.nutrition_id}`);
       }
     }
-    
+
     console.log(`DEBUG - Final weekly consumed calories: ${total.calories}, protein: ${total.protein}`);
     return total;
   }
@@ -337,28 +337,94 @@ export default function NutritionPage() {
   // Use weekly goals in nutritionData if summaryView is Weekly
   const nutritionDataToUse = summaryView === "Weekly"
     ? {
-        calories: {
-          consumed: weeklyCaloriesData.reduce((acc, d) => acc + d.consumed, 0),
-          goal: weeklyGoal.calories,
-          color: "#10B981",
-        },
-        macronutrients: {
-          carbs: { consumed: userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0), goal: weeklyGoal.carbs, color: "#34D399" },
-          protein: { consumed: userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0), goal: weeklyGoal.protein, color: "#10B981" },
-          fat: { consumed: userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g || 0), 0), goal: weeklyGoal.fat, color: "#059669" },
-        },
-        micronutrients: nutritionData.micronutrients,
-        macronutrientSplit: [
-          { name: "Carbs", percent: Math.round((userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) / (userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g || 0), 0))) * 100) || 0, color: "#34D399" },
-          { name: "Protein", percent: Math.round((userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) / (userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g || 0), 0))) * 100) || 0, color: "#10B981" },
-          { name: "Fat", percent: Math.round((userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g || 0), 0) / (userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g || 0), 0))) * 100) || 0, color: "#059669" },
-        ]
-      }
+      calories: {
+        consumed: weeklyCaloriesData.reduce((acc, d) => acc + d.consumed, 0),
+        goal: weeklyGoal.calories,
+        color: "#10B981",
+      },
+      macronutrients: {
+        carbs: { consumed: userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0), goal: weeklyGoal.carbs, color: "#34D399" },
+        protein: { consumed: userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0), goal: weeklyGoal.protein, color: "#10B981" },
+        fat: { consumed: userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g || 0), 0), goal: weeklyGoal.fat, color: "#059669" },
+      },
+      micronutrients: nutritionData.micronutrients,
+      macronutrientSplit: [
+        { name: "Carbs", percent: Math.round((userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) / (userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g ?? 0), 0))) * 100) || 0, color: "#34D399" },
+        { name: "Protein", percent: Math.round((userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) / (userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g || 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g ?? 0), 0))) * 100) || 0, color: "#10B981" },
+        { name: "Fat", percent: Math.round((userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g ?? 0), 0) / (userNutritionInfo.reduce((acc: number, n: any) => acc + (n.carbs_g ?? 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.protein_g ?? 0), 0) + userNutritionInfo.reduce((acc: number, n: any) => acc + (n.fats_g ?? 0), 0))) * 100) || 0, color: "#059669" }
+      ]
+    }
     : nutritionData;
 
   const caloriePercent = Math.round(
     (nutritionDataToUse.calories.consumed / nutritionDataToUse.calories.goal) * 100
   );
+
+  // --- Nutrition Visualization Data Calculation ---
+  // This is separate from the summary card and does NOT depend on summaryView
+  let vizWeeklyCaloriesData = weeklyCalories.map(day => ({
+    ...day,
+    goal: goalNutrients.calories // always daily goal for visualization
+  }));
+  let vizWeeklyAvgData = Math.round(
+    vizWeeklyCaloriesData.reduce((acc, d) => acc + d.consumed, 0) / vizWeeklyCaloriesData.length
+  );
+
+  // --- Macronutrient Split Calculation for Visualization ---
+  // Calculate total consumed for each macro from mealSchedule and nutritionInfo for each day of the week (Mon-Sun)
+  const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const nutritionMap = Object.fromEntries(nutritionInfo.map(item => [item.nutrition_id, item]));
+  // Map: { [weekday]: { carbs, protein, fat, consumed } }
+  const vizMacrosByDay: Record<string, { carbs: number; protein: number; fat: number; consumed: number }> = {};
+  weekDays.forEach(day => {
+    vizMacrosByDay[day] = { carbs: 0, protein: 0, fat: 0, consumed: 0 };
+  });
+  mealSchedule.forEach(meal => {
+    const date = new Date(meal.meal_date);
+    const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
+    if (weekDays.includes(weekday)) {
+      const nut = nutritionMap[meal.nutrition_id];
+      if (nut) {
+        vizMacrosByDay[weekday].carbs += Number(nut.carbs_g ?? 0);
+        vizMacrosByDay[weekday].protein += Number(nut.protein_g ?? 0);
+        vizMacrosByDay[weekday].fat += Number(nut.fats_g ?? 0);
+        vizMacrosByDay[weekday].consumed += Number(nut.calories ?? nut.calories_g ?? 0);
+      }
+    }
+  });
+  // vizMacrosByDay now contains the macro and calorie data for each weekday
+  // You can use vizMacrosByDay as needed for further visualization or debugging
+  console.log('Macros and calories by weekday:', vizMacrosByDay);
+
+  // Calculate total consumed for each macro from mealSchedule and nutritionInfo for today (in GMT+8)
+  const today = new Date(new Date().getTime() + (8 - new Date().getTimezoneOffset() / 60) * 60 * 60 * 1000);
+  const todayStr = today.toISOString().slice(0, 10);
+  const mealsToday = mealSchedule.filter(meal => meal.meal_date === todayStr);
+  let vizCarbs = 0, vizProtein = 0, vizFat = 0;
+  mealsToday.forEach(meal => {
+    const nut = nutritionMap[meal.nutrition_id];
+    if (nut) {
+      vizCarbs += Number(nut.carbs_g ?? 0);
+      vizProtein += Number(nut.protein_g ?? 0);
+      vizFat += Number(nut.fats_g ?? 0);
+    }
+  });
+  const vizMacroTotal = vizCarbs + vizProtein + vizFat;
+  const vizMacronutrientSplit = vizMacroTotal > 0 ? [
+    { name: "Carbs", percent: Math.round((vizCarbs / vizMacroTotal) * 100), color: "#34D399" },
+    { name: "Protein", percent: Math.round((vizProtein / vizMacroTotal) * 100), color: "#10B981" },
+    { name: "Fat", percent: Math.round((vizFat / vizMacroTotal) * 100), color: "#059669" }
+  ] : [
+    { name: "Carbs", percent: 0, color: "#34D399" },
+    { name: "Protein", percent: 0, color: "#10B981" },
+    { name: "Fat", percent: 0, color: "#059669" }
+  ];
+
+  // Log the nutritionData prop for NutritionVisualizationCard
+  console.log('NutritionVisualizationCard nutritionData:', {
+    ...nutritionDataToUse,
+    macronutrientSplit: vizMacronutrientSplit,
+  });
 
   return (
     <div className="space-y-6">
@@ -380,9 +446,14 @@ export default function NutritionPage() {
         <NutritionVisualizationCard
           visualizationTab={visualizationTab}
           setVisualizationTab={setVisualizationTab}
-          nutritionData={nutritionDataToUse}
-          weeklyCalories={weeklyCaloriesData}
-          weeklyAvg={weeklyAvgData}
+          nutritionData={{
+            ...nutritionDataToUse,
+            macronutrientSplit: vizMacronutrientSplit,
+          }}
+          weeklyCalories={vizWeeklyCaloriesData}
+          weeklyAvg={vizWeeklyAvgData}
+          meals={mealSchedule.map(meal => ({ meal_date: meal.meal_date, calories: (nutritionInfo.find(n => n.nutrition_id === meal.nutrition_id)?.calories ?? nutritionInfo.find(n => n.nutrition_id === meal.nutrition_id)?.calories_g ?? 0) }))}
+          dailyCalorieGoal={goalNutrients.calories}
         />
         <div className="lg:col-span-2">
           <MealLogCard recentMeals={recentMeals} />
