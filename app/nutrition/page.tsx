@@ -237,6 +237,24 @@ export default function NutritionPage() {
   const dailyConsumed = getTodayConsumed();
   const weeklyConsumed = getWeekConsumed();
 
+  // Get the 5 most recent meals from meal_plan joined with nutrition_info, sorted by date descending
+  const recentMeals = mealSchedule
+    .map(meal => {
+      // Find matching meal_plan and nutrition_info for this meal
+      const mealPlan = nutritionInfo.find(n => n.nutrition_id === meal.nutrition_id);
+      return {
+        ...meal,
+        calories: mealPlan?.calories ?? mealPlan?.calories_g ?? 0,
+        carbs: mealPlan?.carbs_g ?? 0,
+        protein: mealPlan?.protein_g ?? 0,
+        fat: mealPlan?.fats_g ?? 0,
+        item: meal.plan_name || meal.name || meal.meal_type || "Meal", // Use plan_name as the meal name
+      };
+    })
+    .sort((a, b) => new Date(b.meal_date).getTime() - new Date(a.meal_date).getTime())
+    .slice(0, 5);
+  console.log('recentMeals:', recentMeals);
+
   // Alert the weekly consumed calories for debugging
   useEffect(() => {
     if (summaryView === "Weekly") {
@@ -363,7 +381,7 @@ export default function NutritionPage() {
           weeklyAvg={weeklyAvgData}
         />
         <div className="lg:col-span-2">
-          <MealLogCard />
+          <MealLogCard recentMeals={recentMeals} />
         </div>
       </div>
     </div>
