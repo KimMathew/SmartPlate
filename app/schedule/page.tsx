@@ -423,8 +423,15 @@ export default function SchedulePage() {
       </div>
 
       <div className="flex items-center justify-between mb-4">
-        <Button variant="outline" size="sm" className="flex items-center gap-2" onClick={handleLoadMealPlan} disabled={loading}>
-          Load Meal Plan
+        <Button variant="default" onClick={handleLoadMealPlan} disabled={loading}>
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading...
+            </>
+          ) : (
+            "Load Meal Plan"
+          )}
         </Button>
         <div className="flex items-center gap-4">
           <Button
@@ -539,21 +546,18 @@ export default function SchedulePage() {
         )}
       </Card>
 
-      {/* Add Meal Dialog */}
-      <Dialog open={addMealDialog.open} onOpenChange={open => setAddMealDialog(v => ({ ...v, open }))}>
-        <DialogContent>
-          <DialogTitle>Add {addMealDialog.type} for {addMealDialog.date ? addMealDialog.date.toLocaleDateString() : ''}</DialogTitle>
-          <Input
-            placeholder="Meal name"
-            value={newMealName}
-            onChange={e => setNewMealName(e.target.value)}
-            disabled={loading}
-          />
-          <Button onClick={handleAddMeal} disabled={loading || !newMealName}>
-            Add Meal
-          </Button>
-        </DialogContent>
-      </Dialog>
+      {/* Add Meal Modal (portal-based, animated, consistent with other modals) */}
+      {addMealDialog.open && (
+        <AddMealModal
+          open={addMealDialog.open}
+          onClose={() => setAddMealDialog({ open: false, date: null, type: null })}
+          type={addMealDialog.type}
+          newMealName={newMealName}
+          setNewMealName={setNewMealName}
+          loading={loading}
+          onAddMeal={handleAddMeal}
+        />
+      )}
 
       {/* Meal Details Modal */}
       {modalOpen && (
@@ -825,4 +829,79 @@ function MealDetailsModal({ open, onClose, meal, mealPlan, recipe, nutrition, lo
   );
 
   return ReactDOM.createPortal(modalContent, document.body);
+}
+
+// Add Meal Modal Component (portal-based, animated, consistent with other modals)
+type AddMealModalProps = {
+  open: boolean;
+  onClose: () => void;
+  type: string | null;
+  newMealName: string;
+  setNewMealName: (name: string) => void;
+  loading: boolean;
+  onAddMeal: () => void;
+};
+function AddMealModal({ open, onClose, type, newMealName, setNewMealName, loading, onAddMeal }: AddMealModalProps) {
+  const [visible, setVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+      setVisible(true);
+    } else {
+      setVisible(false);
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 200);
+  };
+
+  if (!open || typeof window === 'undefined') return null;
+
+  return ReactDOM.createPortal(
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      aria-modal="true"
+      role="dialog"
+      tabIndex={-1}
+      onClick={handleClose}
+    >
+      <div
+        className={`bg-white w-full max-w-md rounded-xl shadow-2xl transition-all duration-200 overflow-hidden max-h-[90vh] overflow-y-auto relative transform ${visible ? 'scale-100' : 'scale-95'}`}
+        onClick={e => e.stopPropagation()}
+      >
+        <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 absolute top-5 right-4 z-10" aria-label="Close modal">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <div className="p-6">
+          <div className="text-xl font-bold mb-4">Add {type}</div>
+          <label htmlFor="meal-name-input" className="block text-sm font-medium text-gray-700 mb-1">Meal name</label>
+          <Input
+            id="meal-name-input"
+            placeholder="Meal name"
+            value={newMealName}
+            onChange={e => setNewMealName(e.target.value)}
+            disabled={loading}
+          />
+          <div className="flex justify-end gap-2 mt-6">
+            <Button variant="outline" onClick={handleClose} disabled={loading}>
+              Cancel
+            </Button>
+            <Button onClick={onAddMeal} disabled={loading || !newMealName}>
+              Add Meal
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
 }
