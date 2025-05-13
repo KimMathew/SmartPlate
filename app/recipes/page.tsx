@@ -160,41 +160,79 @@ function RecipeDetailsModal({ recipe, onClose }: { recipe: any; onClose: () => v
 
   if (!visible) return null;
 
+  // Extract nutrition info (handles both flat and nested)
+  const nutrition = recipe.nutrition || {};
+  const calories = nutrition.calories ?? recipe.calories ?? 0;
+  const protein = nutrition.protein ?? nutrition.protein_g ?? recipe.protein ?? 0;
+  const carbs = nutrition.carbs ?? nutrition.carbs_g ?? recipe.carbs ?? 0;
+  const fats = nutrition.fats ?? nutrition.fat ?? nutrition.fats_g ?? recipe.fats ?? 0;
+
   return ReactDOM.createPortal(
     <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-200 ${animate ? 'opacity-100' : 'opacity-0'}`} onClick={handleClose}>
       <div
         className={`bg-white w-full max-w-xl rounded-xl shadow-2xl transition-all duration-200 overflow-hidden max-h-[90vh] overflow-y-auto relative mx-auto ${animate ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
         onClick={e => e.stopPropagation()}
       >
-        <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 absolute top-5 right-4 z-10">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+        {/* Close button */}
+        <button
+          onClick={handleClose}
+          className="text-gray-400 hover:text-gray-600 absolute top-5 right-4 z-10"
+          aria-label="Close modal"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
         <div className="p-6">
-          <div className="mb-4">
-            <h2 className="text-2xl font-semibold mb-2">{recipe.title}</h2>
-            <p className="mb-4 text-gray-600">{recipe.description}</p>
-          </div>
+          {/* Title */}
+          <h2 className="text-2xl font-bold mb-2 text-gray-900">{recipe.title || recipe.name}</h2>
+          {/* Description */}
+          {recipe.description && <p className="text-gray-600 mb-4">{recipe.description}</p>}
+
+          {/* Nutrition Info (copied style from MealDetailsModal) */}
           <div className="mb-6">
-            <h3 className="font-semibold mb-1">Ingredients:</h3>
-            <ul className="mb-4 list-disc list-inside space-y-1">
-              {recipe.ingredients?.map((ingredient: string, idx: number) => (
-                <li key={idx}>{ingredient}</li>
-              ))}
-            </ul>
+            <h3 className="text-lg font-semibold mb-2 text-gray-800">Nutritional Information</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-emerald-50 rounded-lg p-3 flex flex-col items-center">
+                <span className="text-xs text-gray-500">Calories</span>
+                <span className="font-bold text-lg text-emerald-700">{calories}</span>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-3 flex flex-col items-center">
+                <span className="text-xs text-gray-500">Protein</span>
+                <span className="font-bold text-lg text-blue-700">{protein}g</span>
+              </div>
+              <div className="bg-amber-50 rounded-lg p-3 flex flex-col items-center">
+                <span className="text-xs text-gray-500">Carbs</span>
+                <span className="font-bold text-lg text-amber-700">{carbs}g</span>
+              </div>
+              <div className="bg-rose-50 rounded-lg p-3 flex flex-col items-center">
+                <span className="text-xs text-gray-500">Fats</span>
+                <span className="font-bold text-lg text-rose-700">{fats}g</span>
+              </div>
+            </div>
           </div>
-          <div className="mb-6">
-            <h3 className="font-semibold mb-1">Instructions:</h3>
-            <ol className="list-decimal list-inside space-y-1">
-              {recipe.instructions?.map((step: string, idx: number) => (
-                <li key={idx}>{step}</li>
-              ))}
-            </ol>
-          </div>
-          <div className="mt-6">
-            <Button onClick={handleClose} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">Close</Button>
-          </div>
+
+          {/* Ingredients */}
+          {recipe.ingredients && recipe.ingredients.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2 text-gray-800">Ingredients</h3>
+              <ul className="list-disc list-inside text-gray-700 space-y-1">
+                {recipe.ingredients.map((ing: string, idx: number) => (
+                  <li key={idx}>{ing}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Instructions */}
+          {recipe.instructions && recipe.instructions.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2 text-gray-800">Instructions</h3>
+              <ol className="list-decimal list-inside text-gray-700 space-y-1">
+                {recipe.instructions.map((step: string, idx: number) => (
+                  <li key={idx}>{step}</li>
+                ))}
+              </ol>
+            </div>
+          )}
         </div>
       </div>
     </div>,
@@ -360,7 +398,8 @@ export default function RecipesPage() {
           tags: [meal.cuisine_type || "", ...(meal.type ? [meal.type] : [])],
           calories: meal.nutrition?.calories || meal.calories || 0,
           protein: meal.nutrition?.protein || meal.protein || 0,
-          fat: meal.nutrition?.fats || meal.fats || 0,
+          carbs: meal.nutrition?.carbs || meal.carbs || 0, // <-- FIXED: map carbs
+          fats: meal.nutrition?.fats || meal.fats || meal.fat || 0, // <-- FIXED: map fats
           rating: 4,
           reviews: 0,
           favorite: false,
