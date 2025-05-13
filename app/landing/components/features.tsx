@@ -69,7 +69,7 @@ export default function Features() {
           <FeatureCard
             icon={FeatureIcons.nutritionTracking}
             title="Precise Nutrition Tracking"
-            description="Track your nutritional intake with accurate data from the USDA FoodData Central API."
+            description="Monitor your nutritional intake with accurate data powered by the Gemini API."
           />
         </div>
       </div>
