@@ -101,6 +101,15 @@ export function AppSidebar() {
   }, [user]);
 
   const handleLogout = async () => {
+    // Remove meal-plans related data from localStorage
+    try {
+      localStorage.removeItem("mealPlans");
+      localStorage.removeItem("mealPlanSelections");
+      localStorage.removeItem("selectedMealPlan");
+      // Add/remove keys as needed for your app
+    } catch (e) {
+      // Ignore errors (e.g., SSR)
+    }
     await supabase.auth.signOut();
     window.location.href = "/";
   };
