@@ -486,7 +486,7 @@ export default function DietaryPreferences({
                 htmlFor="mealsPerDay"
                 className="input-label"
               >
-                Meals per Day <span className="text-red-500">*</span>
+                Meals per Day (Choose at least 1) <span className="text-red-500">*</span>
               </Label>
               <MultiSelectCardGroup
                 options={mealsPerDayOptions2}
