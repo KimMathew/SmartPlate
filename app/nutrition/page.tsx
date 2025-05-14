@@ -97,6 +97,7 @@ export default function NutritionPage() {
         .from("meal_schedule")
         .select("*")
         .eq("user_id", user.id)
+        .lte("meal_date", new Date().toISOString().slice(0, 10)) // Only fetch meals up to and including today
         .order("meal_date", { ascending: true });
       // Fetch Users table
       const { data: userData, error: userError } = await supabase
@@ -248,9 +249,29 @@ export default function NutritionPage() {
   const weeklyConsumed = getWeekConsumed();
 
   // Get the 5 most recent meals from meal_plan joined with nutrition_info, sorted by date descending
-  const recentMeals = mealSchedule
-    .map(meal => {
-      // Find matching meal_plan and nutrition_info for this meal
+  const todayGMT8 = getDateInGMT8();
+  const todayStrGMT8 = todayGMT8.toISOString().slice(0, 10);
+  const nowHourGMT8 = todayGMT8.getHours() + todayGMT8.getMinutes() / 60;
+  const mealTypes = [
+    { type: 'dinner', hour: 20 },
+    { type: 'lunch', hour: 12 },
+    { type: 'breakfast', hour: 8 },
+  ];
+  const recentMeals = mealTypes
+    .map(({ type }) => {
+      // Find the most recent meal of this type for today
+      const mealsOfType = mealSchedule.filter(meal => {
+        let mealDateStr = meal.meal_date;
+        if (mealDateStr instanceof Date) {
+          mealDateStr = mealDateStr.toISOString().slice(0, 10);
+        } else if (typeof mealDateStr === 'string' && mealDateStr.length > 10) {
+          mealDateStr = mealDateStr.slice(0, 10);
+        }
+        return mealDateStr === todayStrGMT8 && meal.meal_type === type;
+      });
+      if (mealsOfType.length === 0) return null;
+      // Pick the most recent by meal_date
+      const meal = mealsOfType.sort((a, b) => new Date(b.meal_date).getTime() - new Date(a.meal_date).getTime())[0];
       const mealPlan = nutritionInfo.find(n => n.nutrition_id === meal.nutrition_id);
       return {
         ...meal,
@@ -258,11 +279,10 @@ export default function NutritionPage() {
         carbs: mealPlan?.carbs_g ?? 0,
         protein: mealPlan?.protein_g ?? 0,
         fat: mealPlan?.fats_g ?? 0,
-        item: meal.plan_name || meal.name || meal.meal_type || "Meal", // Use plan_name as the meal name
+        item: meal.plan_name || meal.name || meal.meal_type || "Meal",
       };
     })
-    .sort((a, b) => new Date(b.meal_date).getTime() - new Date(a.meal_date).getTime())
-    .slice(0, 5);
+    .filter(Boolean);
   console.log('recentMeals:', recentMeals);
 
   // Use correct consumed values for daily/weekly
