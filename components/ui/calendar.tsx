@@ -75,16 +75,16 @@ function Calendar({
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
-        caption: "flex justify-center pt-1 relative items-center px-10",
-        caption_label: "text-sm font-medium",
-        nav: "space-x-1 flex items-center absolute left-0 right-0",
+        month: "space-y-4 relative",
+        caption: "flex justify-center pt-1 relative items-center px-10 min-h-[32px]",
+        caption_label: "text-sm font-medium z-10",
+        nav: "absolute inset-x-0 top-0 flex items-center justify-between pointer-events-none px-1",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute"
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 pointer-events-auto z-20"
         ),
-        nav_button_previous: "!absolute left-1 top-0",
-        nav_button_next: "!absolute right-1 top-0",
+        nav_button_previous: "",
+        nav_button_next: "",
         table: "w-full border-collapse space-y-1",
         head_row: "flex justify-center",
         head_cell:
