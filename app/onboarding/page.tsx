@@ -246,9 +246,12 @@ export default function OnboardingPage() {
 
     if (error) {
       console.error("Error saving user profile:", error);
-      alert(`Error saving profile: ${error.message}. Please complete your profile after logging in.`);
-      // Continue to completion step even if profile save fails
-    } else if (data) {
+      alert(`Error saving profile: ${error.message}`);
+      // Don't continue if profile save fails
+      return;
+    }
+    
+    if (data) {
       console.log("Profile saved successfully:", data);
     }
 
