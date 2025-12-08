@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker, CaptionProps } from "react-day-picker";
+import { DayPicker } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -22,7 +22,7 @@ function Calendar({
   
   const years = Array.from(
     { length: toYear - fromYear + 1 },
-    (_, i) => fromYear + i
+    (_, i) => toYear - i  // Generate in descending order
   );
 
   // State to control the displayed month
@@ -36,46 +36,6 @@ function Calendar({
       setMonth(props.month);
     }
   }, [props.month]);
-
-  // Custom caption with year/month dropdown for react-day-picker v9
-  const CustomCaption = ({ displayMonth }: CaptionProps) => {
-    return (
-      <div className="flex items-center gap-2 justify-center py-2">
-        <select
-          className="border rounded px-2 py-1 text-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          value={displayMonth.getMonth()}
-          onChange={(e) => {
-            const newDate = new Date(displayMonth);
-            newDate.setMonth(Number(e.target.value));
-            setMonth(newDate);
-            props.onMonthChange?.(newDate);
-          }}
-        >
-          {Array.from({ length: 12 }, (_, i) => (
-            <option key={i} value={i}>
-              {new Date(0, i).toLocaleString("default", { month: "long" })}
-            </option>
-          ))}
-        </select>
-        <select
-          className="border rounded px-2 py-1 text-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          value={displayMonth.getFullYear()}
-          onChange={(e) => {
-            const newDate = new Date(displayMonth);
-            newDate.setFullYear(Number(e.target.value));
-            setMonth(newDate);
-            props.onMonthChange?.(newDate);
-          }}
-        >
-          {years.reverse().map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  };
 
   return (
     <DayPicker
@@ -121,9 +81,50 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
-        IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
-        Caption: CustomCaption,
+        Chevron: ({ orientation }) => {
+          if (orientation === "left") {
+            return <ChevronLeft className="h-4 w-4" />;
+          }
+          return <ChevronRight className="h-4 w-4" />;
+        },
+        CaptionLabel: () => {
+          return (
+            <div className="flex items-center gap-2 justify-center">
+              <select
+                className="border rounded px-2 py-1 text-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                value={month.getMonth()}
+                onChange={(e) => {
+                  const newDate = new Date(month);
+                  newDate.setMonth(Number(e.target.value));
+                  setMonth(newDate);
+                  props.onMonthChange?.(newDate);
+                }}
+              >
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {new Date(0, i).toLocaleString("default", { month: "long" })}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="border rounded px-2 py-1 text-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                value={month.getFullYear()}
+                onChange={(e) => {
+                  const newDate = new Date(month);
+                  newDate.setFullYear(Number(e.target.value));
+                  setMonth(newDate);
+                  props.onMonthChange?.(newDate);
+                }}
+              >
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+          );
+        },
       }}
       {...props}
     />
