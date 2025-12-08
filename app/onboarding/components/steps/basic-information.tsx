@@ -194,7 +194,7 @@ export default function BasicInformation({
                       />
                     </svg>
                   </div>
-                  <PopoverContent align="start" className="p-0 w-auto bg-white">
+                  <PopoverContent align="start" className="p-0 w-auto bg-white overflow-visible">
                     <Calendar
                       mode="single"
                       selected={parseDate(formData.dateOfBirth)}
