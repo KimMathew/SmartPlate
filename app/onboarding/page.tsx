@@ -191,6 +191,11 @@ export default function OnboardingPage() {
     const userId = signUpData.user.id;
     console.log("User created with ID:", userId);
 
+    // Verify the session was created
+    const { data: sessionCheck } = await supabase.auth.getSession();
+    console.log("Session after signUp:", sessionCheck);
+    console.log("auth.uid would be:", sessionCheck?.session?.user?.id);
+
     // Prepare allergens and cuisines for DB: replace 'other' with custom values if present
     let allergens = formData.allergens;
     if (Array.isArray(allergens) && allergens.includes("other") && formData.allergenOther) {
