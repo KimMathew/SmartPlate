@@ -168,41 +168,28 @@ export default function OnboardingPage() {
     console.log("firstname is: ", firstName);
     console.log("lastname is: ", lastname);
 
-    // Check if user is already authenticated (they should be after email confirmation)
-    const { data: sessionData } = await supabase.auth.getSession();
-    let userId = sessionData?.session?.user?.id;
-
-    // If no active session, try to sign up (for new users) or sign in
-    if (!userId) {
-      const { data: userData, error: userError } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      
-      if (userData && userData.user) {
-        console.log("User id is:", userData.user.id);
-        userId = userData.user.id;
-      } else {
-        console.error("User creation failed:", userError);
-        // If signUp fails, try signIn (user might already exist)
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        
-        if (signInData?.user) {
-          userId = signInData.user.id;
-        } else {
-          console.error("Sign in also failed:", signInError);
-          return;
-        }
+    // Sign up the user first (creates auth.users entry)
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/onboarding`,
       }
-    }
+    });
 
-    if (!userId) {
-      console.error("Could not get user ID");
+    if (signUpError) {
+      console.error("Sign up error:", signUpError);
+      alert(`Sign up failed: ${signUpError.message}`);
       return;
     }
+
+    if (!signUpData.user) {
+      console.error("No user returned from signUp");
+      return;
+    }
+
+    const userId = signUpData.user.id;
+    console.log("User created with ID:", userId);
 
     // Prepare allergens and cuisines for DB: replace 'other' with custom values if present
     let allergens = formData.allergens;
@@ -226,17 +213,7 @@ export default function OnboardingPage() {
       ];
     }
     
-    // Check if user already exists in Users table
-    const { data: existingUser, error: checkError } = await supabase
-      .from("Users")
-      .select("id")
-      .eq("id", userId)
-      .single();
-
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error("Error checking user existence:", checkError);
-    }
-
+    // Prepare user profile data (this will be inserted without authentication required)
     const userProfileData = {
       'id': userId,
       'first_name': firstName,
@@ -257,35 +234,28 @@ export default function OnboardingPage() {
       'prep_time_limit': formData.mealPrepTimeLimit || null,
     };
 
-    let data, error;
-    
-    if (existingUser) {
-      // User exists, update their profile
-      const result = await supabase
-        .from("Users")
-        .update(userProfileData)
-        .eq("id", userId);
-      data = result.data;
-      error = result.error;
-    } else {
-      // User doesn't exist, insert new profile
-      const result = await supabase
-        .from("Users")
-        .insert(userProfileData);
-      data = result.data;
-      error = result.error;
-    }
+    console.log("User profile data to save:", userProfileData);
 
-    console.log("data: ", data);
-    console.log("dbay:", formData.dateOfBirth);
-    console.log("error:", error);
+    // Insert the user profile (RLS should allow insert without authentication)
+    const { data, error } = await supabase
+      .from("Users")
+      .insert([userProfileData])
+      .select();
+
+    console.log("Insert result:", { data, error });
 
     if (error) {
       console.error("Error saving user profile:", error);
-      // Optionally show an error message to the user
+      alert(`Error saving profile: ${error.message}. Please complete your profile after logging in.`);
+      // Continue to completion step even if profile save fails
+    } else if (data) {
+      console.log("Profile saved successfully:", data);
     }
 
-    // Here you would typically send the data to your backend
+    // Clear the temp signup data
+    sessionStorage.removeItem("tempSignupData");
+
+    // Show completion step
     console.log("Onboarding completed with data:", formData);
     setCurrentStep(5);
   };
