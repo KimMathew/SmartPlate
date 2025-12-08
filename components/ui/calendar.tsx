@@ -32,10 +32,10 @@ function Calendar({
   const monthDropdownRef = React.useRef<HTMLDivElement>(null);
 
   // Generate all years
-  const allYears = Array.from(
+  const allYears = React.useMemo(() => Array.from(
     { length: toYear - fromYear + 1 },
     (_, i) => toYear - i
-  );
+  ), [toYear, fromYear]);
 
   // Sync internal month state with props
   React.useEffect(() => {
@@ -57,11 +57,10 @@ function Calendar({
 
     if (yearDropdownOpen || monthDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
   }, [yearDropdownOpen, monthDropdownOpen]);
 
   return (
