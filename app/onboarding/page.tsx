@@ -157,7 +157,6 @@ export default function OnboardingPage() {
 
   const handleFinish = async () => {
     if (!fetchData) {
-      // Optionally show an error or return early
       console.error("No signup data found.");
       return;
     }
@@ -169,18 +168,40 @@ export default function OnboardingPage() {
     console.log("firstname is: ", firstName);
     console.log("lastname is: ", lastname);
 
-    const { data: userData, error: userError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    if (userData && userData.user) {
-      console.log("User id is:", userData.user.id);
-    } else {
-      console.log(
-        "User creation failed or user is undefined:",
-        userData,
-        userError
-      );
+    // Check if user is already authenticated (they should be after email confirmation)
+    const { data: sessionData } = await supabase.auth.getSession();
+    let userId = sessionData?.session?.user?.id;
+
+    // If no active session, try to sign up (for new users) or sign in
+    if (!userId) {
+      const { data: userData, error: userError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      
+      if (userData && userData.user) {
+        console.log("User id is:", userData.user.id);
+        userId = userData.user.id;
+      } else {
+        console.error("User creation failed:", userError);
+        // If signUp fails, try signIn (user might already exist)
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        if (signInData?.user) {
+          userId = signInData.user.id;
+        } else {
+          console.error("Sign in also failed:", signInError);
+          return;
+        }
+      }
+    }
+
+    if (!userId) {
+      console.error("Could not get user ID");
+      return;
     }
 
     // Prepare allergens and cuisines for DB: replace 'other' with custom values if present
@@ -204,32 +225,65 @@ export default function OnboardingPage() {
         ...customCuisines
       ];
     }
-    const { data, error } = await supabase
+    
+    // Check if user already exists in Users table
+    const { data: existingUser, error: checkError } = await supabase
       .from("Users")
-      .insert({
-        'id': userData.user?.id,
-        'first_name': firstName,
-        'last_name': lastname,
-        'email': email,
-        "birth-date": formData.dateOfBirth,
-        'gender': formData.gender,
-        'height': formData.height,
-        'weight': formData.weight,
-        'activity_level': formData.activityLevel,
-        'goal_type': formData.goalType,
-        'target_weight': formData.targetWeight,
-        'diet_type': (formData.dietType === "other" && formData.dietTypeOther) ? formData.dietTypeOther : formData.dietType,
-        'allergens': allergens,
-        'disliked_ingredients': formData.dislikedIngredients,
-        'preferred_cuisines': preferredCuisines,
-        'meals_perday': formData.mealsPerDay,
-        'prep_time_limit': formData.mealPrepTimeLimit,
-      })
-      .eq("id", userData.user?.id);
+      .select("id")
+      .eq("id", userId)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error("Error checking user existence:", checkError);
+    }
+
+    const userProfileData = {
+      'id': userId,
+      'first_name': firstName,
+      'last_name': lastname,
+      'email': email,
+      "birth-date": formData.dateOfBirth || null,
+      'gender': formData.gender || null,
+      'height': formData.height ? Number(formData.height) : null,
+      'weight': formData.weight ? Number(formData.weight) : null,
+      'activity_level': formData.activityLevel || null,
+      'goal_type': formData.goalType || null,
+      'target_weight': formData.targetWeight ? Number(formData.targetWeight) : null,
+      'diet_type': (formData.dietType === "other" && formData.dietTypeOther) ? formData.dietTypeOther : formData.dietType || null,
+      'allergens': allergens.length > 0 ? allergens : null,
+      'disliked_ingredients': formData.dislikedIngredients.length > 0 ? formData.dislikedIngredients : null,
+      'preferred_cuisines': preferredCuisines.length > 0 ? preferredCuisines : null,
+      'meals_perday': formData.mealsPerDay.length > 0 ? formData.mealsPerDay : null,
+      'prep_time_limit': formData.mealPrepTimeLimit || null,
+    };
+
+    let data, error;
+    
+    if (existingUser) {
+      // User exists, update their profile
+      const result = await supabase
+        .from("Users")
+        .update(userProfileData)
+        .eq("id", userId);
+      data = result.data;
+      error = result.error;
+    } else {
+      // User doesn't exist, insert new profile
+      const result = await supabase
+        .from("Users")
+        .insert(userProfileData);
+      data = result.data;
+      error = result.error;
+    }
 
     console.log("data: ", data);
     console.log("dbay:", formData.dateOfBirth);
     console.log("error:", error);
+
+    if (error) {
+      console.error("Error saving user profile:", error);
+      // Optionally show an error message to the user
+    }
 
     // Here you would typically send the data to your backend
     console.log("Onboarding completed with data:", formData);
