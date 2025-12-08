@@ -87,19 +87,7 @@ export default function LoginModal({
       return;
     }
 
-    // Check if email exists before login
-    const { data: userData, error: userQueryError } = await supabase
-      .from("Users")
-      .select("email")
-      .eq("email", email)
-      .maybeSingle();
-
-    if (!userData) {
-      setEmailError("Account does not exist.");
-      setLoading(false);
-      return;
-    }
-
+    // Try to sign in first
     const { data, error: loginError } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
@@ -125,6 +113,29 @@ export default function LoginModal({
       setError("Authentication Failed.");
       setLoading(false);
       return;
+    }
+
+    // Check if user exists in Users table
+    const { data: userData, error: userQueryError } = await supabase
+      .from("Users")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    // If user exists in Auth but not in Users table, create a basic profile
+    if (!userData && !userQueryError) {
+      const { error: insertError } = await supabase
+        .from("Users")
+        .insert([{
+          id: user.id,
+          email: user.email,
+          created_at: new Date().toISOString()
+        }]);
+
+      if (insertError) {
+        console.error("Error creating user profile:", insertError);
+        // Continue with login even if profile creation fails
+      }
     }
 
     window.location.href = "/meal-plans";

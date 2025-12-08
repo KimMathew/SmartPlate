@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker } from "react-day-picker";
+import { DayPicker, CaptionProps } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -17,59 +17,74 @@ function Calendar({
 }: CalendarProps) {
   // Add year/month dropdown for quick navigation
   const currentYear = new Date().getFullYear();
+  const fromYear = props.fromYear ?? 1900;
+  const toYear = props.toYear ?? currentYear;
+  
   const years = Array.from(
-    { length: currentYear - 1900 + 1 },
-    (_, i) => 1900 + i
+    { length: toYear - fromYear + 1 },
+    (_, i) => fromYear + i
   );
 
   // State to control the displayed month
-  const [month, setMonth] = React.useState(
+  const [month, setMonth] = React.useState<Date>(
     props.month ?? props.defaultMonth ?? new Date()
   );
 
-  // Custom caption with year/month dropdown for react-day-picker v8+
-  function CustomCaption({ displayMonth }: any) {
+  // Sync internal month state with props
+  React.useEffect(() => {
+    if (props.month) {
+      setMonth(props.month);
+    }
+  }, [props.month]);
+
+  // Custom caption with year/month dropdown for react-day-picker v9
+  const CustomCaption = ({ displayMonth }: CaptionProps) => {
     return (
-      <div className="flex items-center gap-2 justify-center">
+      <div className="flex items-center gap-2 justify-center py-2">
         <select
-          className="border rounded px-1 py-0.5 text-sm"
-          value={displayMonth.getFullYear()}
-          onChange={(e) => {
-            const newDate = new Date(displayMonth);
-            newDate.setFullYear(Number(e.target.value));
-            setMonth(newDate);
-          }}
-        >
-          {years.map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
-        <select
-          className="border rounded px-1 py-0.5 text-sm"
+          className="border rounded px-2 py-1 text-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           value={displayMonth.getMonth()}
           onChange={(e) => {
             const newDate = new Date(displayMonth);
             newDate.setMonth(Number(e.target.value));
             setMonth(newDate);
+            props.onMonthChange?.(newDate);
           }}
         >
           {Array.from({ length: 12 }, (_, i) => (
             <option key={i} value={i}>
-              {new Date(0, i).toLocaleString("default", { month: "short" })}
+              {new Date(0, i).toLocaleString("default", { month: "long" })}
+            </option>
+          ))}
+        </select>
+        <select
+          className="border rounded px-2 py-1 text-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          value={displayMonth.getFullYear()}
+          onChange={(e) => {
+            const newDate = new Date(displayMonth);
+            newDate.setFullYear(Number(e.target.value));
+            setMonth(newDate);
+            props.onMonthChange?.(newDate);
+          }}
+        >
+          {years.reverse().map((year) => (
+            <option key={year} value={year}>
+              {year}
             </option>
           ))}
         </select>
       </div>
     );
-  }
+  };
 
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
       month={month}
-      onMonthChange={setMonth}
+      onMonthChange={(newMonth) => {
+        setMonth(newMonth);
+        props.onMonthChange?.(newMonth);
+      }}
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
