@@ -9,7 +9,7 @@ interface PersonalInfoTabProps {
   form: {
     firstName: string;
     lastName: string;
-    dob: string; // TODO: Backend should convert this to age for display and back to dob for storage
+    age: string;
     gender: string | null;
     height: string;
     weight: string;
@@ -17,7 +17,7 @@ interface PersonalInfoTabProps {
   };
   editMode: boolean;
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleSave: (form: { firstName: string; lastName: string; dob: string; gender: string | null; height: string; weight: string; activityLevel: string; }) => void;
+  handleSave: (form: { firstName: string; lastName: string; age: string; gender: string | null; height: string; weight: string; activityLevel: string; }) => void;
   handleCancel: () => void;
   handleEdit: () => void;
 }
@@ -32,27 +32,12 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
   const [weightError, setWeightError] = useState("");
   const [localForm, setLocalForm] = useState(form);
   const [formBackup, setFormBackup] = useState(form);
-  // TODO: Backend should calculate age from dob when fetching data
-  const [displayAge, setDisplayAge] = useState("");
 
   const nameRegex = /^[A-Za-z\s'-]+$/;
 
   useEffect(() => {
     setLocalForm(form);
     setFormBackup(form);
-    // TODO: Backend should send age directly, for now we calculate it from dob
-    if (form.dob) {
-      const birthDate = new Date(form.dob);
-      const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
-      setDisplayAge(age > 0 ? String(age) : "");
-    } else {
-      setDisplayAge("");
-    }
   }, [form]);
 
   function validateFirstName(value: string) {
@@ -133,10 +118,7 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
     if (name === "firstName") validateFirstName(value);
     if (name === "lastName") validateLastName(value);
     if (name === "age") {
-      setDisplayAge(value);
       if (ageError) setAgeError("");
-      // TODO: Backend should convert age to dob before saving
-      // For now, we keep the old dob value in localForm
     }
     if (name === "height") validateHeight(value);
     if (name === "weight") validateWeight(value);
@@ -157,18 +139,14 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
     e.preventDefault();
     const validFirst = validateFirstName(localForm.firstName);
     const validLast = validateLastName(localForm.lastName);
-    const validAge = validateAge(displayAge);
+    const validAge = validateAge(localForm.age);
     const validHeight = validateHeight(localForm.height);
     const validWeight = validateWeight(localForm.weight);
     if (!validFirst || !validLast || !validAge || !validHeight || !validWeight) return;
     
-    // TODO: Backend should convert age to dob before saving to database
-    // For now, we're keeping the old dob value
-    // Backend developer: Calculate dob as: new Date(new Date().getFullYear() - age, 0, 1)
     const formToSave = {
       ...localForm,
       gender: localForm.gender === "" ? null : localForm.gender,
-      // dob will be handled by backend based on displayAge
     };
     handleSave(formToSave);
   }
@@ -258,7 +236,7 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
             id="age"
             className={`w-full px-3 py-2 border ${ageError ? "border-red-500" : "border-gray-300"} rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white`}
             placeholder="Enter your age"
-            value={displayAge}
+            value={localForm.age}
             onChange={editMode ? onInputChange : undefined}
             onBlur={editMode ? (e) => validateAge(e.target.value) : undefined}
             disabled={!editMode}
@@ -267,7 +245,6 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
           {ageError && editMode && (
             <p className="text-xs text-red-500 mt-1">{ageError}</p>
           )}
-          {/* TODO: Backend note - This field displays age but stores dob in database */}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="gender">Gender (Optional)</label>

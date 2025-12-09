@@ -70,7 +70,7 @@ export default function OnboardingPage() {
 
   const [formData, setFormData] = useState({
     // Basic Information
-    dateOfBirth: "",
+    age: "",
     gender: null,
 
     // Physical Data
@@ -224,7 +224,7 @@ export default function OnboardingPage() {
       'first_name': firstName,
       'last_name': lastname,
       'email': email,
-      "birth-date": formData.dateOfBirth || null,
+      'age': formData.age ? Number(formData.age) : null,
       'gender': formData.gender || null,
       'height': formData.height ? Number(formData.height) : null,
       'weight': formData.weight ? Number(formData.weight) : null,

@@ -41,7 +41,7 @@ export default function ProfilePage() {
   const [form, setForm] = useState({
     firstName: "Jane",
     lastName: "Smith",
-    dob: "1990-01-01",
+    age: "",
     gender: "Female" as string | null,
     height: "165",
     weight: "65",
@@ -74,7 +74,7 @@ export default function ProfilePage() {
       if (user) {
         const { data, error } = await supabase
           .from("Users")
-          .select(`first_name, last_name, email, "birth-date", gender, height, weight, diet_type, allergens, disliked_ingredients, preferred_cuisines, meals_perday, prep_time_limit, activity_level, goal_type, target_weight`)
+          .select(`first_name, last_name, email, age, gender, height, weight, diet_type, allergens, disliked_ingredients, preferred_cuisines, meals_perday, prep_time_limit, activity_level, goal_type, target_weight`)
           .eq("id", user.id)
           .single();
         if (data) {
@@ -85,7 +85,7 @@ export default function ProfilePage() {
           setForm({
             firstName: data.first_name ?? "",
             lastName: data.last_name ?? "",
-            dob: data["birth-date"] ?? "",
+            age: data.age !== undefined && data.age !== null ? String(data.age) : "",
             gender: data.gender ?? "",
             height: data.height !== undefined && data.height !== null ? String(data.height) : "",
             weight: data.weight !== undefined && data.weight !== null ? String(data.weight) : "",
@@ -115,7 +115,7 @@ export default function ProfilePage() {
           setForm({
             firstName: "",
             lastName: "",
-            dob: "",
+            age: "",
             gender: "",
             height: "",
             weight: "",
@@ -142,7 +142,7 @@ export default function ProfilePage() {
         setForm({
           firstName: "",
           lastName: "",
-          dob: "",
+          age: "",
           gender: "",
           height: "",
           weight: "",
@@ -176,7 +176,7 @@ export default function ProfilePage() {
       .update({
         first_name: updatedForm.firstName,
         last_name: updatedForm.lastName,
-        "birth-date": updatedForm.dob,
+        age: updatedForm.age ? Number(updatedForm.age) : null,
         gender: updatedForm.gender === "" ? null : updatedForm.gender,
         height: updatedForm.height ? Number(updatedForm.height) : null,
         weight: updatedForm.weight ? Number(updatedForm.weight) : null,
