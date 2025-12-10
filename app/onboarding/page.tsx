@@ -70,7 +70,7 @@ export default function OnboardingPage() {
 
   const [formData, setFormData] = useState({
     // Basic Information
-    dateOfBirth: "",
+    age: "",
     gender: null,
 
     // Physical Data
@@ -157,7 +157,6 @@ export default function OnboardingPage() {
 
   const handleFinish = async () => {
     if (!fetchData) {
-      // Optionally show an error or return early
       console.error("No signup data found.");
       return;
     }
@@ -169,19 +168,33 @@ export default function OnboardingPage() {
     console.log("firstname is: ", firstName);
     console.log("lastname is: ", lastname);
 
-    const { data: userData, error: userError } = await supabase.auth.signUp({
+    // Sign up the user first (creates auth.users entry)
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/onboarding`,
+      }
     });
-    if (userData && userData.user) {
-      console.log("User id is:", userData.user.id);
-    } else {
-      console.log(
-        "User creation failed or user is undefined:",
-        userData,
-        userError
-      );
+
+    if (signUpError) {
+      console.error("Sign up error:", signUpError);
+      alert(`Sign up failed: ${signUpError.message}`);
+      return;
     }
+
+    if (!signUpData.user) {
+      console.error("No user returned from signUp");
+      return;
+    }
+
+    const userId = signUpData.user.id;
+    console.log("User created with ID:", userId);
+
+    // Verify the session was created
+    const { data: sessionCheck } = await supabase.auth.getSession();
+    console.log("Session after signUp:", sessionCheck);
+    console.log("auth.uid would be:", sessionCheck?.session?.user?.id);
 
     // Prepare allergens and cuisines for DB: replace 'other' with custom values if present
     let allergens = formData.allergens;
@@ -204,34 +217,53 @@ export default function OnboardingPage() {
         ...customCuisines
       ];
     }
+    
+    // Prepare user profile data (this will be inserted without authentication required)
+    const userProfileData = {
+      'id': userId,
+      'first_name': firstName,
+      'last_name': lastname,
+      'email': email,
+      'age': formData.age ? Number(formData.age) : null,
+      'gender': formData.gender || null,
+      'height': formData.height ? Number(formData.height) : null,
+      'weight': formData.weight ? Number(formData.weight) : null,
+      'activity_level': formData.activityLevel || null,
+      'goal_type': formData.goalType || null,
+      'target_weight': formData.targetWeight ? Number(formData.targetWeight) : null,
+      'diet_type': (formData.dietType === "other" && formData.dietTypeOther) ? formData.dietTypeOther : formData.dietType || null,
+      'allergens': allergens.length > 0 ? allergens : null,
+      'disliked_ingredients': formData.dislikedIngredients.length > 0 ? formData.dislikedIngredients : null,
+      'preferred_cuisines': preferredCuisines.length > 0 ? preferredCuisines : null,
+      'meals_perday': formData.mealsPerDay.length > 0 ? formData.mealsPerDay : null,
+      'prep_time_limit': formData.mealPrepTimeLimit || null,
+    };
+
+    console.log("User profile data to save:", userProfileData);
+
+    // Insert the user profile (RLS should allow insert without authentication)
     const { data, error } = await supabase
       .from("Users")
-      .insert({
-        'id': userData.user?.id,
-        'first_name': firstName,
-        'last_name': lastname,
-        'email': email,
-        "birth-date": formData.dateOfBirth,
-        'gender': formData.gender,
-        'height': formData.height,
-        'weight': formData.weight,
-        'activity_level': formData.activityLevel,
-        'goal_type': formData.goalType,
-        'target_weight': formData.targetWeight,
-        'diet_type': (formData.dietType === "other" && formData.dietTypeOther) ? formData.dietTypeOther : formData.dietType,
-        'allergens': allergens,
-        'disliked_ingredients': formData.dislikedIngredients,
-        'preferred_cuisines': preferredCuisines,
-        'meals_perday': formData.mealsPerDay,
-        'prep_time_limit': formData.mealPrepTimeLimit,
-      })
-      .eq("id", userData.user?.id);
+      .insert([userProfileData])
+      .select();
 
-    console.log("data: ", data);
-    console.log("dbay:", formData.dateOfBirth);
-    console.log("error:", error);
+    console.log("Insert result:", { data, error });
 
-    // Here you would typically send the data to your backend
+    if (error) {
+      console.error("Error saving user profile:", error);
+      alert(`Error saving profile: ${error.message}`);
+      // Don't continue if profile save fails
+      return;
+    }
+    
+    if (data) {
+      console.log("Profile saved successfully:", data);
+    }
+
+    // Clear the temp signup data
+    sessionStorage.removeItem("tempSignupData");
+
+    // Show completion step
     console.log("Onboarding completed with data:", formData);
     setCurrentStep(5);
   };

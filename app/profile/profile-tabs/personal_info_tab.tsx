@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Pencil, ChevronDown } from "lucide-react";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { EditButton } from "@/components/ui/edit-button";
 import { SaveCancelActions } from "@/components/ui/save-cancel-actions";
 
@@ -11,7 +9,7 @@ interface PersonalInfoTabProps {
   form: {
     firstName: string;
     lastName: string;
-    dob: string;
+    age: string;
     gender: string | null;
     height: string;
     weight: string;
@@ -19,18 +17,17 @@ interface PersonalInfoTabProps {
   };
   editMode: boolean;
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleSave: (form: { firstName: string; lastName: string; dob: string; gender: string | null; height: string; weight: string; activityLevel: string; }) => void;
+  handleSave: (form: { firstName: string; lastName: string; age: string; gender: string | null; height: string; weight: string; activityLevel: string; }) => void;
   handleCancel: () => void;
   handleEdit: () => void;
 }
 
 export default function PersonalInfoTab({ form, editMode, handleChange, handleSave, handleCancel, handleEdit }: PersonalInfoTabProps) {
-  const [calendarOpen, setCalendarOpen] = useState(false);
   const [genderDropdownOpen, setGenderDropdownOpen] = useState(false);
   const [activityLevelDropdownOpen, setActivityLevelDropdownOpen] = useState(false);
   const [firstNameError, setFirstNameError] = useState("");
   const [lastNameError, setLastNameError] = useState("");
-  const [dobError, setDobError] = useState("");
+  const [ageError, setAgeError] = useState("");
   const [heightError, setHeightError] = useState("");
   const [weightError, setWeightError] = useState("");
   const [localForm, setLocalForm] = useState(form);
@@ -61,31 +58,28 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
     return true;
   }
 
-  function validateDob(value: string) {
+  function validateAge(value: string) {
     if (!value || value.trim() === "") {
-      setDobError("Date of birth is required.");
+      setAgeError("Age is required.");
       return false;
     }
-    const [yyyy, mm, dd] = value.split("-");
-    const date = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
-    if (isNaN(date.getTime())) {
-      setDobError("Invalid date format.");
+    // Check for non-numeric input
+    if (!/^\d+$/.test(value)) {
+      setAgeError("Please enter a valid number.");
       return false;
     }
-    const today = new Date();
-    const dobNoTime = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const todayNoTime = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    if (dobNoTime >= todayNoTime) {
-      setDobError("Date must be before today.");
+    const age = parseInt(value, 10);
+    // Check minimum age (13 years)
+    if (age < 13) {
+      setAgeError("You must be at least 13 years old.");
       return false;
     }
-    const minAgeDate = new Date(todayNoTime);
-    minAgeDate.setFullYear(minAgeDate.getFullYear() - 13);
-    if (dobNoTime > minAgeDate) {
-      setDobError("You must be at least 13 years old.");
+    // Check maximum reasonable age (120 years)
+    if (age > 120) {
+      setAgeError("Please enter a realistic age (maximum 120 years).");
       return false;
     }
-    setDobError("");
+    setAgeError("");
     return true;
   }
 
@@ -123,46 +117,17 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
     const { name, value } = e.target;
     if (name === "firstName") validateFirstName(value);
     if (name === "lastName") validateLastName(value);
-    if (name === "dob") {
-      if (validateDob(value)) {
-        setDobError("");
-      }
+    if (name === "age") {
+      if (ageError) setAgeError("");
     }
     if (name === "height") validateHeight(value);
     if (name === "weight") validateWeight(value);
     setLocalForm({ ...localForm, [name]: value });
   }
 
-  // Helper to format date as yyyy-mm-dd
-  function formatDate(date: Date | undefined) {
-    if (!date) return "";
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-    const yyyy = date.getFullYear();
-    return `${yyyy}-${mm}-${dd}`;
-  }
-
-  function parseDate(value: string): Date | undefined {
-    if (!value) return undefined;
-    const [yyyy, mm, dd] = value.split("-");
-    const date = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
-    return isNaN(date.getTime()) ? undefined : date;
-  }
-
   function onGenderSelect(option: string) {
     setLocalForm({ ...localForm, gender: option });
     setGenderDropdownOpen(false);
-  }
-
-  function onDateSelect(date: Date | undefined) {
-    if (date) {
-      const formatted = formatDate(date);
-      setLocalForm({ ...localForm, dob: formatted });
-      if (validateDob(formatted)) {
-        setDobError("");
-      }
-    }
-    setCalendarOpen(false);
   }
 
   function onActivityLevelSelect(option: string) {
@@ -174,11 +139,11 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
     e.preventDefault();
     const validFirst = validateFirstName(localForm.firstName);
     const validLast = validateLastName(localForm.lastName);
-    const validDob = validateDob(localForm.dob);
+    const validAge = validateAge(localForm.age);
     const validHeight = validateHeight(localForm.height);
     const validWeight = validateWeight(localForm.weight);
-    if (!validFirst || !validLast || !validDob || !validHeight || !validWeight) return;
-    // Ensure gender is null if empty string
+    if (!validFirst || !validLast || !validAge || !validHeight || !validWeight) return;
+    
     const formToSave = {
       ...localForm,
       gender: localForm.gender === "" ? null : localForm.gender,
@@ -202,7 +167,7 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
     if (!editMode) {
       setFirstNameError("");
       setLastNameError("");
-      setDobError("");
+      setAgeError("");
       setHeightError("");
       setWeightError("");
     }
@@ -264,52 +229,21 @@ export default function PersonalInfoTab({ form, editMode, handleChange, handleSa
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="dob">Date of Birth</label>
-          <div className="relative">
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <input
-                  type="text"
-                  name="dob"
-                  id="dob"
-                  className={`w-full px-3 py-2 border ${dobError ? "border-red-500" : "border-gray-300"} rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white pr-10 ${editMode ? "cursor-pointer" : "cursor-default"}`}
-                  placeholder="mm/dd/yyyy"
-                  value={localForm.dob}
-                  readOnly
-                  onClick={editMode ? () => setCalendarOpen(true) : undefined}
-                  onBlur={editMode ? (e) => validateDob(e.target.value) : undefined}
-                  disabled={!editMode}
-                />
-              </PopoverTrigger>
-              {editMode && (
-                <div
-                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer z-10"
-                  onClick={editMode ? () => setCalendarOpen((v) => !v) : undefined}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2.66675H3.99998C2.52722 2.66675 1.33331 3.86066 1.33331 5.33341V12.0001C1.33331 13.4728 2.52722 14.6667 3.99998 14.6667H12C13.4727 14.6667 14.6666 13.4728 14.6666 12.0001V5.33341C14.6666 3.86066 13.4727 2.66675 12 2.66675Z" stroke="#6B7280" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M5.33331 1.33337V4.00004" stroke="#6B7280" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M10.6666 1.33337V4.00004" stroke="#6B7280" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M1.33331 6.66675H14.6666" stroke="#6B7280" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-              )}
-              {editMode && (
-                <PopoverContent align="start" className="p-0 w-auto bg-white">
-                  <Calendar
-                    mode="single"
-                    selected={parseDate(localForm.dob)}
-                    onSelect={onDateSelect}
-                    initialFocus
-                    fromYear={1900}
-                    toYear={new Date().getFullYear()}
-                  />
-                </PopoverContent>
-              )}
-            </Popover>
-          </div>
-          {dobError && editMode && (
-            <p className="text-xs text-red-500 mt-1">{dobError}</p>
+          <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="age">Age</label>
+          <input
+            type="text"
+            name="age"
+            id="age"
+            className={`w-full px-3 py-2 border ${ageError ? "border-red-500" : "border-gray-300"} rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-gray-900 bg-white`}
+            placeholder="Enter your age"
+            value={localForm.age}
+            onChange={editMode ? onInputChange : undefined}
+            onBlur={editMode ? (e) => validateAge(e.target.value) : undefined}
+            disabled={!editMode}
+            autoComplete="off"
+          />
+          {ageError && editMode && (
+            <p className="text-xs text-red-500 mt-1">{ageError}</p>
           )}
         </div>
         <div>
