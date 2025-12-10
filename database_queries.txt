@@ -1,0 +1,605 @@
+SMARTPLATE - SUPABASE DATABASE QUERIES DOCUMENTATION
+===================================================
+
+This document contains all the database queries used in the SmartPlate application.
+The application uses Supabase as its database backend.
+
+Database Configuration:
+-----------------------
+Location: lib/supabase.ts
+Client: Browser client using @supabase/ssr
+Environment Variables:
+  - NEXT_PUBLIC_SUPABASE_URL
+  - NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+
+DATABASE TABLES USED
+====================
+
+1. Users
+2. meal_plan
+3. meal_schedule
+4. recipe
+5. nutrition_info
+6. pg_catalog.pg_tables (PostgreSQL system table)
+
+
+QUERIES BY COMPONENT/FILE
+=========================
+
+
+1. AUTHENTICATION & USER MANAGEMENT
+------------------------------------
+
+File: app/auth/login-modal.tsx
+Query Type: SELECT
+Purpose: Check if email exists before login
+Query:
+  supabase
+    .from("Users")
+    .select("email")
+    .eq("email", email)
+    .maybeSingle()
+
+
+File: components/app-sidebar.tsx
+Query Type: SELECT
+Purpose: Fetch user profile information for sidebar display
+Query:
+  supabase
+    .from("Users")
+    .select("first_name, last_name, email")
+    .eq("id", user.id)
+    .single()
+
+Query Type: SIGN OUT
+Purpose: User logout
+Query:
+  supabase.auth.signOut()
+
+
+File: middleware.ts
+Query Type: AUTHENTICATION
+Purpose: Create Supabase server client for middleware authentication
+Uses: @supabase/ssr createServerClient
+  - process.env.NEXT_PUBLIC_SUPABASE_URL
+  - process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+
+2. USER ONBOARDING
+-------------------
+
+File: app/onboarding/page.tsx
+Query Type: INSERT
+Purpose: Create new user profile during onboarding
+Query:
+  supabase
+    .from("Users")
+    .insert({
+      'id': userData.user?.id,
+      'first_name': firstName,
+      'last_name': lastname,
+      'email': email,
+      "birth-date": formData.dateOfBirth,
+      'gender': formData.gender,
+      'height': formData.height,
+      'weight': formData.weight,
+      'activity_level': formData.activityLevel,
+      'goal_type': formData.goalType,
+      'target_weight': formData.targetWeight,
+      'diet_type': (formData.dietType === "other" && formData.dietTypeOther) ? formData.dietTypeOther : formData.dietType,
+      'allergens': allergens,
+      'disliked_ingredients': formData.dislikedIngredients,
+      'preferred_cuisines': preferredCuisines,
+      'meals_perday': formData.mealsPerDay,
+      'prep_time_limit': formData.mealPrepTimeLimit
+    })
+
+
+3. USER PROFILE MANAGEMENT
+---------------------------
+
+File: app/profile/page.tsx
+
+Query Type: SELECT
+Purpose: Fetch complete user profile data
+Query:
+  supabase
+    .from("Users")
+    .select(`first_name, last_name, email, "birth-date", gender, height, weight, diet_type, allergens, disliked_ingredients, preferred_cuisines, meals_perday, prep_time_limit, activity_level, goal_type, target_weight`)
+    .eq("id", user.id)
+    .single()
+
+Query Type: UPDATE
+Purpose: Update personal information
+Query:
+  supabase
+    .from("Users")
+    .update({
+      first_name: updatedForm.firstName,
+      last_name: updatedForm.lastName,
+      "birth-date": updatedForm.dob,
+      gender: updatedForm.gender === "" ? null : updatedForm.gender,
+      height: updatedForm.height ? Number(updatedForm.height) : null,
+      weight: updatedForm.weight ? Number(updatedForm.weight) : null,
+      activity_level: updatedForm.activityLevel ?? null
+    })
+    .eq("id", user.id)
+
+Query Type: UPDATE
+Purpose: Update dietary preferences
+Query:
+  supabase
+    .from("Users")
+    .update({
+      diet_type: updatedDietaryForm.dietType === "other" && updatedDietaryForm.dietTypeOther
+        ? updatedDietaryForm.dietTypeOther
+        : updatedDietaryForm.dietType,
+      allergens: updatedDietaryForm.allergens,
+      disliked_ingredients: updatedDietaryForm.dislikedIngredients,
+      preferred_cuisines: updatedDietaryForm.preferredCuisines,
+      meals_perday: updatedDietaryForm.mealsPerDay,
+      prep_time_limit: updatedDietaryForm.mealPrepTimeLimit || null
+    })
+    .eq("id", user.id)
+
+Query Type: UPDATE
+Purpose: Update health goals
+Query:
+  supabase
+    .from("Users")
+    .update({
+      goal_type: updatedHealthGoalsForm.healthGoal,
+      target_weight: updatedHealthGoalsForm.targetWeight ? Number(updatedHealthGoalsForm.targetWeight) : null
+    })
+    .eq("id", user.id)
+
+
+4. MEAL PLAN GENERATION (AI-POWERED)
+-------------------------------------
+
+File: app/api/gemini_meal_recommender/route.ts
+
+Query Type: SELECT
+Purpose: Test database connectivity and access
+Query:
+  supabase.from('meal_plan').select('*').limit(1)
+
+Query Type: SELECT
+Purpose: Get available database tables
+Query:
+  supabase
+    .from('pg_catalog.pg_tables')
+    .select('tablename')
+    .eq('schemaname', 'public')
+
+Query Type: SELECT
+Purpose: Fetch user onboarding data for meal plan generation
+Query:
+  supabase
+    .from("Users")
+    .select("*")
+    .eq("id", userId)
+
+Query Type: SELECT
+Purpose: Get maximum batch number for user (for versioning meal plans)
+Query:
+  supabaseAdmin
+    .from(mealPlanTable)
+    .select('batch_number')
+    .eq('user_id', userId)
+    .order('batch_number', { ascending: false })
+    .limit(1)
+
+Query Type: INSERT
+Purpose: Insert recipe information
+Query:
+  supabaseAdmin
+    .from('recipe')
+    .insert({
+      title: meal.name,
+      ingredients: meal.ingredients ? JSON.stringify(meal.ingredients) : '[]',
+      instruction: meal.instructions ? JSON.stringify(meal.instructions) : '[]',
+      cuisine_type: meal.cuisine_type || null,
+      prep_time: meal.prepTime || meal.prep_time || null,
+      image_url: null,
+      source_url: null,
+      day: dayNumber
+    })
+    .select('recipe_id')
+    .single()
+
+Query Type: INSERT
+Purpose: Insert nutrition information linked to recipe
+Query:
+  supabaseAdmin
+    .from('nutrition_info')
+    .insert({
+      created_at: new Date().toISOString(),
+      recipe_id: recipe_id,
+      calories: meal.nutrition.calories || 0,
+      protein_g: meal.nutrition.protein || 0,
+      carbs_g: meal.nutrition.carbs || 0,
+      fats_g: meal.nutrition.fats || 0,
+      vitamins: vitaminsString,
+      day: dayNumber,
+      total_calorie_count: dailyTotals.calories || 0,
+      total_protein_count: dailyTotals.protein || 0
+    })
+    .select('nutrition_id')
+    .single()
+
+Query Type: INSERT
+Purpose: Insert meal plan entry
+Query:
+  supabaseAdmin
+    .from(mealPlanTable)
+    .insert({
+      user_id: userId,
+      nutrition_id,
+      recipe_id,
+      plan_type: meal.type,
+      plan_name: meal.name,
+      description: meal.description || '',
+      start_date: formattedDate,
+      end_date: formattedDate,
+      days_covered: daysCovered,
+      day: dayNumber,
+      batch_number: nextBatchNumber
+    })
+    .select('plan_id')
+    .single()
+
+
+5. RECIPE SEARCH (AI-POWERED)
+------------------------------
+
+File: app/api/gemini/route.ts
+
+Query Type: SELECT
+Purpose: Fetch user preferences for recipe search
+Query:
+  supabase.from("Users").select("*").eq("id", userId).single()
+
+
+6. MEAL PLANS PAGE
+------------------
+
+File: app/meal-plans/page.tsx
+
+Query Type: SELECT
+Purpose: Get maximum batch number for user
+Query:
+  supabase
+    .from('meal_plan')
+    .select('batch_number')
+    .eq('user_id', user.id)
+    .order('batch_number', { ascending: false })
+    .limit(1)
+
+Query Type: SELECT
+Purpose: Fetch existing meal plans with related recipe and nutrition data
+Query:
+  supabase
+    .from('meal_plan')
+    .select(`
+      plan_id,
+      plan_type,
+      plan_name,
+      description,
+      days_covered,
+      day,
+      start_date,
+      batch_number,
+      recipe:recipe_id (
+        recipe_id,
+        title,
+        ingredients,
+        instruction,
+        cuisine_type,
+        prep_time
+      ),
+      nutrition:nutrition_id (
+        nutrition_id,
+        calories,
+        protein_g,
+        carbs_g,
+        fats_g
+      )
+    `)
+    .eq('user_id', user.id)
+    .eq('batch_number', batchNumberFilter)
+    .order('day', { ascending: true })
+    .limit(30)
+
+Query Type: SELECT
+Purpose: Check if user profile exists
+Query:
+  supabase
+    .from('Users')
+    .select('*')
+    .eq('id', user.id)
+
+Query Type: INSERT
+Purpose: Create basic user profile if missing
+Query:
+  supabase
+    .from('Users')
+    .insert([{
+      id: user.id,
+      email: user.email,
+      created_at: new Date().toISOString()
+    }])
+
+Query Type: SELECT
+Purpose: Get meal plan records for saving to schedule
+Query:
+  supabase
+    .from('meal_plan')
+    .select(`plan_id, day, start_date, plan_type, plan_name, recipe_id, nutrition_id, recipe:recipe_id (title)`)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(selectedDays * 4)
+
+Query Type: INSERT
+Purpose: Insert meal plan rows if not found
+Query:
+  supabase
+    .from('meal_plan')
+    .insert(mealPlanRows)
+    .select()
+
+Query Type: INSERT
+Purpose: Save meal plan to schedule
+Query:
+  supabase
+    .from('meal_schedule')
+    .insert(inserts)
+
+
+7. SCHEDULE MANAGEMENT
+----------------------
+
+File: app/schedule/page.tsx
+
+Query Type: SELECT
+Purpose: Load user's meal schedule
+Query:
+  supabase
+    .from('meal_schedule')
+    .select('*')
+    .eq('user_id', user.id)
+
+Query Type: INSERT
+Purpose: Add new meal to schedule
+Query:
+  supabase.from('meal_schedule').insert([
+    {
+      user_id: user.id,
+      meal_name: newMealName,
+      meal_date: dateStr,
+      meal_type: addMealDialog.type,
+      recipe_id: null,
+      nutrition_id: null
+    }
+  ])
+
+Query Type: DELETE
+Purpose: Remove meal from schedule
+Query:
+  supabase
+    .from('meal_schedule')
+    .delete()
+    .eq('meal_name', meal.name)
+    .eq('meal_date', dateStr)
+    .eq('meal_type', type)
+
+Query Type: SELECT
+Purpose: Refresh meal schedule data
+Query:
+  supabase
+    .from('meal_schedule')
+    .select('*')
+    .eq('user_id', user.id)
+
+Query Type: SELECT
+Purpose: Fetch meal plan details by plan_id
+Query:
+  supabase
+    .from("meal_plan")
+    .select("*")
+    .eq("plan_id", meal.plan_id)
+    .single()
+
+Query Type: SELECT
+Purpose: Fetch recipe details by recipe_id
+Query:
+  supabase
+    .from("recipe")
+    .select("*")
+    .eq("recipe_id", recipeId)
+    .single()
+
+Query Type: SELECT
+Purpose: Fetch nutrition information by nutrition_id
+Query:
+  supabase
+    .from("nutrition_info")
+    .select("*")
+    .eq("nutrition_id", nutritionId)
+    .single()
+
+
+8. NUTRITION TRACKING
+----------------------
+
+File: app/nutrition/page.tsx
+
+Query Type: SELECT
+Purpose: Fetch all nutrition information (ordered by creation date)
+Query:
+  supabase
+    .from("nutrition_info")
+    .select("*")
+    .order("created_at", { ascending: false })
+
+Query Type: SELECT
+Purpose: Fetch user's meal schedule (up to today)
+Query:
+  supabase
+    .from("meal_schedule")
+    .select("*")
+    .eq("user_id", user.id)
+    .lte("meal_date", new Date().toISOString().slice(0, 10))
+    .order("meal_date", { ascending: true })
+
+Query Type: SELECT
+Purpose: Fetch user profile for nutrition calculations
+Query:
+  supabase
+    .from("Users")
+    .select("*")
+    .eq("id", user.id)
+    .single()
+
+
+DATABASE SCHEMA INFERRED FROM QUERIES
+======================================
+
+Table: Users
+Columns:
+  - id (primary key, from auth)
+  - first_name
+  - last_name
+  - email
+  - birth-date
+  - gender
+  - height (numeric)
+  - weight (numeric)
+  - activity_level
+  - goal_type
+  - target_weight (numeric)
+  - diet_type
+  - allergens (array/json)
+  - disliked_ingredients (array/json)
+  - preferred_cuisines (array/json)
+  - meals_perday (array/json)
+  - prep_time_limit
+  - created_at (timestamp)
+
+Table: meal_plan
+Columns:
+  - plan_id (primary key)
+  - user_id (foreign key to Users)
+  - nutrition_id (foreign key to nutrition_info)
+  - recipe_id (foreign key to recipe)
+  - plan_type (e.g., breakfast, lunch, dinner)
+  - plan_name
+  - description
+  - start_date (date)
+  - end_date (date)
+  - days_covered (integer)
+  - day (integer)
+  - batch_number (integer)
+  - created_at (timestamp)
+
+Table: meal_schedule
+Columns:
+  - schedule_id (primary key)
+  - user_id (foreign key to Users)
+  - meal_name
+  - meal_date (date)
+  - meal_type (breakfast/lunch/dinner)
+  - recipe_id (foreign key to recipe, nullable)
+  - nutrition_id (foreign key to nutrition_info, nullable)
+  - plan_id (foreign key to meal_plan, nullable)
+
+Table: recipe
+Columns:
+  - recipe_id (primary key)
+  - title
+  - ingredients (JSON string)
+  - instruction (JSON string)
+  - cuisine_type
+  - prep_time (numeric)
+  - image_url
+  - source_url
+  - day (integer)
+
+Table: nutrition_info
+Columns:
+  - nutrition_id (primary key)
+  - recipe_id (foreign key to recipe)
+  - calories (numeric)
+  - protein_g (numeric)
+  - carbs_g (numeric)
+  - fats_g (numeric)
+  - vitamins (JSON string)
+  - day (integer)
+  - total_calorie_count (numeric)
+  - total_protein_count (numeric)
+  - created_at (timestamp)
+
+
+AUTHENTICATION QUERIES
+======================
+
+Session Management:
+  supabase.auth.getSession()
+  supabase.auth.onAuthStateChange()
+  supabase.auth.signOut()
+
+
+COMMON QUERY PATTERNS
+======================
+
+1. User Profile Operations:
+   - SELECT with .single() for individual user data
+   - UPDATE with .eq("id", user.id) for profile updates
+   - INSERT for new user creation
+
+2. Meal Plan Operations:
+   - INSERT with batch_number for versioning
+   - SELECT with JOIN-like syntax for related data
+   - Complex SELECT with multiple table relationships
+
+3. Schedule Operations:
+   - INSERT for adding meals
+   - DELETE with multiple conditions
+   - SELECT with date filtering
+
+4. Relationship Queries:
+   - Use of foreign keys (recipe_id, nutrition_id, user_id)
+   - Nested SELECT syntax for joins (recipe:recipe_id)
+   - Single and multiple result queries
+
+
+PERFORMANCE CONSIDERATIONS
+===========================
+
+1. Indexes should be created on:
+   - user_id in all tables
+   - batch_number in meal_plan
+   - meal_date in meal_schedule
+   - created_at in nutrition_info
+
+2. Batch operations used for:
+   - Multiple meal insertions (meal_plan, recipe, nutrition_info)
+   - Schedule insertions
+
+3. Order clauses used for:
+   - Recent-first queries (created_at DESC)
+   - Date-based ordering (meal_date ASC)
+   - Batch versioning (batch_number DESC)
+
+
+NOTES
+=====
+
+1. The application uses both regular supabase client and supabaseAdmin
+2. Authentication token is passed in Authorization header for API routes
+3. LocalStorage is used alongside database for caching meal plans
+4. Batch numbering system tracks meal plan versions per user
+5. Date handling uses both UTC and local time (GMT+8 mentioned in code)
+6. JSON fields are used for complex data (ingredients, instructions, vitamins)
+7. Nullable foreign keys allow for manual meal entries vs generated ones
